@@ -845,6 +845,63 @@ def test_shape_change_2(tsd, slicing, expected_type):
         np.testing.assert_array_almost_equal(a.values, slicing(tsd.values))
 
 
+@pytest.mark.parametrize("n_times", [2, 3])
+@pytest.mark.parametrize(
+    "key, expected_type, time_key",
+    [
+        ((slice(None), [0, 1], None, 0), np.ndarray, None),
+        ((slice(None), [0, 1], 0, None), nap.TsdTensor, slice(None)),
+        ((slice(None), [0, 1], Ellipsis, 0, None), np.ndarray, None),
+        ((slice(None), 0, None, [0, 1]), np.ndarray, None),
+        ((slice(None), None, [0, 1], 0), nap.TsdTensor, slice(None)),
+        ((None, [0, 1], None, [0, 1], 0), nap.TsdTensor, [0, 1]),
+        (([0, 1], None, [0, 1], 0), nap.TsdFrame, [0, 1]),
+        ((slice(None), np.array([[0], [1]]), None, 0), np.ndarray, None),
+        (([0, 1], np.array([[0], [1]]), None), np.ndarray, None),
+        ((np.array([[0], [1]]), None), np.ndarray, None),
+        (
+            (slice(None), np.array([[0], [1]]), 0, None),
+            nap.TsdTensor,
+            slice(None),
+        ),
+    ],
+)
+def test_newaxis_with_advanced_index_groups(n_times, key, expected_type, time_key):
+    """Separated advanced indices can move an axis before time, even at equal sizes."""
+    times = 10.0 + 2 * np.arange(n_times)
+    values = np.arange(n_times * 4).reshape(n_times, 2, 2)
+    support = nap.IntervalSet(start=9, end=20)
+    tensor = nap.TsdTensor(t=times, d=values, time_support=support)
+
+    result = tensor[key]
+
+    assert isinstance(result, expected_type)
+    actual = result if isinstance(result, np.ndarray) else result.values
+    np.testing.assert_array_equal(actual, values[key])
+    if time_key is not None:
+        np.testing.assert_array_equal(result.t, times[time_key])
+        np.testing.assert_array_equal(result.time_support.values, support.values)
+
+
+def test_newaxis_empty_advanced_selection_broadcasts_before_selecting_time():
+    frame = nap.TsdFrame(t=[], d=np.empty((0, 2)), time_support=nap.IntervalSet(0, 50))
+    key = ([0], None, [])
+    # NumPy versions can differ in whether an empty advanced result validates
+    # unused, out-of-bounds positions. Preserve the backing array's behavior.
+    try:
+        expected = frame.values[key]
+    except IndexError:
+        with pytest.raises(IndexError):
+            frame[key]
+        return
+
+    result = frame[key]
+    assert isinstance(result, nap.TsdFrame)
+    np.testing.assert_array_equal(result.values, expected)
+    np.testing.assert_array_equal(result.t, [])
+    np.testing.assert_array_equal(result.time_support.values, frame.time_support.values)
+
+
 @pytest.mark.parametrize(
     "a, b, expected_type",
     [
