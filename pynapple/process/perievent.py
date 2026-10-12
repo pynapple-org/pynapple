@@ -529,11 +529,9 @@ def _align_regular(data, events, window, new_time_support):
     """
     epochs = data.time_support
     bin_size = np.round(np.median(data.time_diff(align="start").values), 9)
-    n_before = int(np.round(window[0] / bin_size))
-    n_after = int(np.round(window[1] / bin_size))
 
-    idx1 = -np.arange(n_before, 0, -1) * bin_size
-    idx2 = np.arange(1, n_after + 1) * bin_size
+    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
+    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
 
