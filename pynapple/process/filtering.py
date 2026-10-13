@@ -87,7 +87,7 @@ def _compute_butterworth_filter(
     else:
         from scipy.signal import sosfiltfilt
 
-        out = np.zeros_like(data.d)
+        out = np.zeros_like(data.d, dtype=np.result_type(data.d.dtype, sos.dtype))
         for ep in data.time_support:
             slc = data.get_slice(start=ep.start[0], end=ep.end[0])
             out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
