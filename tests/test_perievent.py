@@ -285,6 +285,105 @@ class TestComputePerieventContinuous:
         with pytest.raises(RuntimeError, match="regularly sampled"):
             nap.compute_perievent(tsd, nap.Ts(t=[0.3]), window=0.2)
 
+    # Edge cases immediately inside and outside the 1e-6 tolerance used by _is_regularly_sampled 
+    # and _align_regular. Update these cases if that tolerance is intentionally changed.
+    @pytest.mark.parametrize(
+        "relative_dt_error, expected_n_bins, edge_snap",
+        [
+            (-0.9e-6, 161, True),
+            (+0.9e-6, 161, True), # in tolerance
+            (+1.1e-6, 159, False), # should be outside tolerance thus 159 bins
+            (-1.1e-6, 161, False), # should have 161 bins, but not trigger edge snap
+        ],
+    ) 
+    def test_bin_count_tolerance(
+        self,
+        relative_dt_error,
+        expected_n_bins,
+        edge_snap,
+    ):
+        nominal_dt = 0.05
+        dt = nominal_dt * (1 + relative_dt_error)
+
+        t = np.arange(0, 20, dt)
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        peth = nap.compute_perievent(
+            tsd,
+            nap.Ts(t=[10.0]),
+            window=(-4, 4),
+        )
+
+        assert len(peth.t) == expected_n_bins
+
+        if edge_snap:
+            assert peth.t[0] == -4.0
+            assert peth.t[-1] == 4.0
+        else:
+            assert peth.t[0] != -4.0
+            assert peth.t[-1] != 4.0
+
+    @pytest.mark.parametrize(
+        "relative_variation",
+        [
+            -1.1e-6,
+            +1.1e-6,
+        ]
+    )
+    def test_regular_sampling_tolerance_boundary(
+        self,
+        relative_variation,
+    ):
+        nominal_dt = 0.05
+        n_samples = 400
+
+        dts = np.full(
+            n_samples - 1,
+            nominal_dt * (1 + relative_variation),
+        )
+        dts[0] = nominal_dt
+
+        t = np.concatenate(([0.0], np.cumsum(dts)))
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        with pytest.raises(RuntimeError, match="regularly sampled"):
+            nap.compute_perievent(
+                tsd,
+                nap.Ts(t=[10.0]),
+                window=(-4, 4),
+            )
+    @pytest.mark.parametrize(
+        "relative_variation",
+        [
+            -0.9e-6,
+            +0.9e-6,
+        ],
+    )
+    def test_regular_sampling_variation_gives_consistent_bin_count(
+        self,
+        relative_variation,
+    ):
+        nominal_dt = 0.05
+        n_samples = 400
+
+        dts = np.full(
+            n_samples - 1,
+            nominal_dt * (1 + relative_variation),
+        )
+        dts[0] = nominal_dt
+
+        t = np.concatenate(([0.0], np.cumsum(dts)))
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        peth = nap.compute_perievent(
+            tsd,
+            nap.Ts(t=[10.0]),
+            window=(-4, 4),
+        )
+
+        assert len(peth.t) == 161
+        assert peth.t[0] == -4.0
+        assert peth.t[-1] == 4.0
 
 # =============================================================================
 # compute_perievent — error handling

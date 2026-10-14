@@ -548,11 +548,7 @@ def _align_regular(data, events, window, new_time_support, tolerance=1e-6):
         ratio_atol = abs(ratio) * tolerance
         if np.isclose(ratio, nearest, rtol=0, atol=ratio_atol):
             ratio = nearest
-        else:
-            print(
-                f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
-                f"Final result will round down."
-            )
+
         return int(np.floor(ratio))
 
     n_before = _full_bin_count(window[0], bin_size, tolerance)
