@@ -8,6 +8,32 @@ import pynapple as nap
 from .helper_tests import MockArray
 
 
+@pytest.mark.parametrize(
+    "cls, shape", [(nap.Tsd, (3,)), (nap.TsdFrame, (3, 2)), (nap.TsdTensor, (3, 2, 2))]
+)
+@pytest.mark.parametrize("key", [None, (None, Ellipsis), (slice(None), None), Ellipsis])
+def test_newaxis_preserves_backing_array_indexing(cls, shape, key):
+    class ArrayWithoutConversion(MockArray):
+        def __array__(self, *args, **kwargs):
+            raise AssertionError("The backing array must not be materialized")
+
+    data = np.arange(np.prod(shape), dtype=float).reshape(shape)
+    backing = ArrayWithoutConversion(data)
+    tsd = cls(
+        t=[10, 12, 14],
+        d=backing,
+        time_support=nap.IntervalSet(9, 15),
+        load_array=False,
+    )
+
+    out = tsd[key]
+
+    actual = out if isinstance(out, np.ndarray) else out.values
+    np.testing.assert_array_equal(actual, data[key])
+    assert np.shares_memory(actual, data)
+    assert tsd.values is backing
+
+
 class TestTsArray:
 
     @pytest.mark.filterwarnings("ignore")
