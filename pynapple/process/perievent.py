@@ -468,7 +468,9 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
             "calling compute_perievent."
         )
 
-    return _align_regular(data, events, window, new_time_support, tolerance=tolerance_regular)
+    return _align_regular(
+        data, events, window, new_time_support, tolerance=tolerance_regular
+    )
 
 
 def _align_discrete(data, events, window, new_time_support):
@@ -508,9 +510,7 @@ def _align_discrete(data, events, window, new_time_support):
     )
 
 
-
-
-def _align_regular(data, events, window, new_time_support,tolerance=1e-6):
+def _align_regular(data, events, window, new_time_support, tolerance=1e-6):
     """
     Align regularly-sampled continuous data to events using optimized matrix approach.
 
@@ -546,12 +546,15 @@ def _align_regular(data, events, window, new_time_support,tolerance=1e-6):
 
         # compute tolerance based on absolute value or ratio.
         ratio_atol = abs(ratio) * tolerance
-        if np.isclose(ratio, nearest, rtol = 0, atol=ratio_atol):
+        if np.isclose(ratio, nearest, rtol=0, atol=ratio_atol):
             ratio = nearest
-        else: 
-            print(f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
-                f"Final result will round down.")
+        else:
+            print(
+                f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
+                f"Final result will round down."
+            )
         return int(np.floor(ratio))
+
     n_before = _full_bin_count(window[0], bin_size, tolerance)
     n_after = _full_bin_count(window[1], bin_size, tolerance)
 
@@ -562,8 +565,7 @@ def _align_regular(data, events, window, new_time_support,tolerance=1e-6):
         idx1[0] = -window[0]
     if np.isclose(idx2[-1], window[1], rtol=tolerance, atol=0):
         idx2[-1] = window[1]
-    
-    
+
     # compute new time index for output, and window size for alignment to events.
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
