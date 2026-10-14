@@ -516,7 +516,7 @@ print(project["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"])
 
 A good practice for sharing datasets is to write as many 
 metainformation as possible. Following 
-[BIDS](https://bids-standard.github.io/bids-starter-kit/index.html) 
+[BIDS](https://bids.neuroimaging.io/getting_started/index.html) 
 specifications, any data files should be accompanied by a JSON sidecar file.
 
 This is possible using the `Folder` class of pynapple with the argument `description`.
