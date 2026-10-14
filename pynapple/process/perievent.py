@@ -454,17 +454,23 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     events = events.restrict(epochs)
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
+    # define tolerance for regularity check and alignment here. Because they need
+    # to be consistent to get stable binning.
+    tolerance_regular = 1e-6
+
     if isinstance(data, nap.Ts):
         return _align_discrete(data, events, window, new_time_support)
 
-    if not nap.utils._is_regularly_sampled(data):
+    if not nap.utils._is_regularly_sampled(data, tolerance=tolerance_regular):
         raise RuntimeError(
             "Continuous data must be regularly sampled. "
             "Please interpolate or NaN-pad your data to a uniform time grid before "
             "calling compute_perievent."
         )
 
-    return _align_regular(data, events, window, new_time_support)
+    return _align_regular(
+        data, events, window, new_time_support, tolerance=tolerance_regular
+    )
 
 
 def _align_discrete(data, events, window, new_time_support):
@@ -504,7 +510,7 @@ def _align_discrete(data, events, window, new_time_support):
     )
 
 
-def _align_regular(data, events, window, new_time_support):
+def _align_regular(data, events, window, new_time_support, tolerance=1e-6):
     """
     Align regularly-sampled continuous data to events using optimized matrix approach.
 
@@ -521,6 +527,9 @@ def _align_regular(data, events, window, new_time_support):
         [before, after] window
     new_time_support : IntervalSet
         Time support for output
+    tolerance : float, optional
+        Relative tolerance for determining the number of bins and snapping edge
+        bins to window edges. Default is 1e-6.
 
     Returns
     -------
@@ -528,17 +537,38 @@ def _align_regular(data, events, window, new_time_support):
         Aligned data with columns/slice 0 as events
     """
     epochs = data.time_support
-    bin_size = np.round(np.median(data.time_diff(align="start").values), 9)
+    bin_size = np.median(data.time_diff(align="start").values)
 
-    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
-    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
+    # determine number of bins before and after the event with the specified tolerance.
+    def _full_bin_count(length: float, bin_size: float, tolerance: float) -> int:
+        ratio = length / bin_size
+        nearest = np.rint(ratio)
+
+        # compute tolerance based on absolute value or ratio.
+        ratio_atol = abs(ratio) * tolerance
+        if np.isclose(ratio, nearest, rtol=0, atol=ratio_atol):
+            ratio = nearest
+
+        return int(np.floor(ratio))
+
+    n_before = _full_bin_count(window[0], bin_size, tolerance)
+    n_after = _full_bin_count(window[1], bin_size, tolerance)
+
+    # get new time index and snap edge bins to windows edges to avoid floating point errors.
+    idx1 = -np.arange(n_before, 0, -1) * bin_size
+    idx2 = np.arange(1, n_after + 1) * bin_size
+    if np.isclose(idx1[0], -window[0], rtol=tolerance, atol=0):
+        idx1[0] = -window[0]
+    if np.isclose(idx2[-1], window[1], rtol=tolerance, atol=0):
+        idx2[-1] = window[1]
+
+    # compute new time index for output, and window size for alignment to events.
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
 
     new_data_array = _perievent_continuous(
         data.t, data.values, events.times(), epochs.start, epochs.end, windowsize
     )
-
     if new_data_array.size == 0:
         raise ValueError(
             "No overlap between input and epochs, perievent matrix is empty..."
