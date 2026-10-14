@@ -503,41 +503,10 @@ def _align_discrete(data, events, window, new_time_support):
         aligned, metadata={"events": event_times}, time_support=new_time_support
     )
 
-def _full_bin_count(length: float, bin_size: float, tolerance: float = 1e-6) -> int:
-    """
-    Compute the number of full bins that fit into a given length, considering a 
-    specified bin size and tolerance.
-    
-    Parameters
-    ----------
-    length : float
-        The total length to be divided into bins.
-    bin_size : float
-        The size of each bin.
-    tolerance : float, optional
-        The relative tolerance for floating-point comparisons (default is 1e-6, note
-        this should be consistent with tolerance in utils._is_regularly_sampled()).
-    
-    Returns
-    -------
-    int
-        The number of full bins that fit into the given length.
-    """
-    ratio = length / bin_size
-    nearest = np.rint(ratio)
-
-    # compute tolerance based on absolute value or ratio.
-    ratio_atol = abs(ratio) * tolerance
-    if np.isclose(ratio, nearest, rtol = 0, atol=ratio_atol):
-        ratio = nearest
-    else: 
-        print(f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
-              f"Final result will round down.")
-    return int(np.floor(ratio))
-        
 
 
-def _align_regular(data, events, window, new_time_support):
+
+def _align_regular(data, events, window, new_time_support,tolerance=1e-6):
     """
     Align regularly-sampled continuous data to events using optimized matrix approach.
 
@@ -554,6 +523,9 @@ def _align_regular(data, events, window, new_time_support):
         [before, after] window
     new_time_support : IntervalSet
         Time support for output
+    tolerance : float, optional
+        Relative tolerance for determining the number of bins and snapping edge
+        bins to window edges. Default is 1e-6.
 
     Returns
     -------
@@ -563,14 +535,32 @@ def _align_regular(data, events, window, new_time_support):
     epochs = data.time_support
     bin_size = np.median(data.time_diff(align="start").values)
     # bin_size = np.median(data.time_diff(align="start").values)
+    print(f"Windos: {window}, time support: {new_time_support}")
 
-    # determine number of bins before and after the event.
-    n_before = _full_bin_count(window[0], bin_size)
-    n_after = _full_bin_count(window[1], bin_size)
+    # determine number of bins before and after the event with the specified tolerance.
+    def _full_bin_count(length: float, bin_size: float, tolerance: float) -> int:
+        ratio = length / bin_size
+        nearest = np.rint(ratio)
 
-    # compute
+        # compute tolerance based on absolute value or ratio.
+        ratio_atol = abs(ratio) * tolerance
+        if np.isclose(ratio, nearest, rtol = 0, atol=ratio_atol):
+            ratio = nearest
+        else: 
+            print(f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
+                f"Final result will round down.")
+        return int(np.floor(ratio))
+    n_before = _full_bin_count(window[0], bin_size, tolerance)
+    n_after = _full_bin_count(window[1], bin_size, tolerance)
+
+    # get new time index and snap edge bins to windows edges to avoid floating point errors.
     idx1 = -np.arange(n_before, 0, -1) * bin_size
     idx2 = np.arange(1, n_after + 1) * bin_size
+    if np.isclose(idx1[0], -window[0], rtol=tolerance, atol=0):
+        idx1[0] = -window[0]
+    if np.isclose(idx2[-1], window[1], rtol=tolerance, atol=0):
+        idx2[-1] = window[1]
+    
     
     # compute new time index for output, and window size for alignment to events.
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
