@@ -285,17 +285,17 @@ class TestComputePerieventContinuous:
         with pytest.raises(RuntimeError, match="regularly sampled"):
             nap.compute_perievent(tsd, nap.Ts(t=[0.3]), window=0.2)
 
-    # Edge cases immediately inside and outside the 1e-6 tolerance used by _is_regularly_sampled 
+    # Edge cases immediately inside and outside the 1e-6 tolerance used by _is_regularly_sampled
     # and _align_regular. Update these cases if that tolerance is intentionally changed.
     @pytest.mark.parametrize(
         "relative_dt_error, expected_n_bins, edge_snap",
         [
             (-0.9e-6, 161, True),
-            (+0.9e-6, 161, True), # in tolerance
-            (+1.1e-6, 159, False), # should be outside tolerance thus 159 bins
-            (-1.1e-6, 161, False), # should have 161 bins, but not trigger edge snap
+            (+0.9e-6, 161, True),  # in tolerance
+            (+1.1e-6, 159, False),  # should be outside tolerance thus 159 bins
+            (-1.1e-6, 161, False),  # should have 161 bins, but not trigger edge snap
         ],
-    ) 
+    )
     def test_bin_count_tolerance(
         self,
         relative_dt_error,
@@ -328,7 +328,7 @@ class TestComputePerieventContinuous:
         [
             -1.1e-6,
             +1.1e-6,
-        ]
+        ],
     )
     def test_regular_sampling_tolerance_boundary(
         self,
@@ -352,6 +352,7 @@ class TestComputePerieventContinuous:
                 nap.Ts(t=[10.0]),
                 window=(-4, 4),
             )
+
     @pytest.mark.parametrize(
         "relative_variation",
         [
@@ -384,6 +385,7 @@ class TestComputePerieventContinuous:
         assert len(peth.t) == 161
         assert peth.t[0] == -4.0
         assert peth.t[-1] == 4.0
+
 
 # =============================================================================
 # compute_perievent — error handling
