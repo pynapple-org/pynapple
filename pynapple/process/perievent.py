@@ -561,13 +561,14 @@ def _align_regular(data, events, window, new_time_support):
         Aligned data with columns/slice 0 as events
     """
     epochs = data.time_support
-    bin_size = np.round(np.median(data.time_diff(align="start").values), 9)
+    bin_size = np.median(data.time_diff(align="start").values)
     # bin_size = np.median(data.time_diff(align="start").values)
 
     # determine number of bins before and after the event.
     n_before = _full_bin_count(window[0], bin_size)
     n_after = _full_bin_count(window[1], bin_size)
 
+    # compute
     idx1 = -np.arange(n_before, 0, -1) * bin_size
     idx2 = np.arange(1, n_after + 1) * bin_size
     
