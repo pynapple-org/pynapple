@@ -503,6 +503,39 @@ def _align_discrete(data, events, window, new_time_support):
         aligned, metadata={"events": event_times}, time_support=new_time_support
     )
 
+def _full_bin_count(length: float, bin_size: float, tolerance: float = 1e-6) -> int:
+    """
+    Compute the number of full bins that fit into a given length, considering a 
+    specified bin size and tolerance.
+    
+    Parameters
+    ----------
+    length : float
+        The total length to be divided into bins.
+    bin_size : float
+        The size of each bin.
+    tolerance : float, optional
+        The relative tolerance for floating-point comparisons (default is 1e-6, note
+        this should be consistent with tolerance in utils._is_regularly_sampled()).
+    
+    Returns
+    -------
+    int
+        The number of full bins that fit into the given length.
+    """
+    ratio = length / bin_size
+    nearest = np.rint(ratio)
+
+    # compute tolerance based on absolute value or ratio.
+    ratio_atol = abs(ratio) * tolerance
+    if np.isclose(ratio, nearest, rtol = 0, atol=ratio_atol):
+        ratio = nearest
+    else: 
+        print(f"Ratio {ratio} is not close to a nearest integer {nearest} within tolerance {ratio_atol}."
+              f"Final result will round down.")
+    return int(np.floor(ratio))
+        
+
 
 def _align_regular(data, events, window, new_time_support):
     """
@@ -529,16 +562,22 @@ def _align_regular(data, events, window, new_time_support):
     """
     epochs = data.time_support
     bin_size = np.round(np.median(data.time_diff(align="start").values), 9)
+    # bin_size = np.median(data.time_diff(align="start").values)
 
-    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
-    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
+    # determine number of bins before and after the event.
+    n_before = _full_bin_count(window[0], bin_size)
+    n_after = _full_bin_count(window[1], bin_size)
+
+    idx1 = -np.arange(n_before, 0, -1) * bin_size
+    idx2 = np.arange(1, n_after + 1) * bin_size
+    
+    # compute new time index for output, and window size for alignment to events.
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
 
     new_data_array = _perievent_continuous(
         data.t, data.values, events.times(), epochs.start, epochs.end, windowsize
     )
-
     if new_data_array.size == 0:
         raise ValueError(
             "No overlap between input and epochs, perievent matrix is empty..."
