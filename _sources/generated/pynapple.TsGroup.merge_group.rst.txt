@@ -1,0 +1,6 @@
+pynapple.TsGroup.merge\_group
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.merge_group

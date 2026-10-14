@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.pop
+===========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.pop

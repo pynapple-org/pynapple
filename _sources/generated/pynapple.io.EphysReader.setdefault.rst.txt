@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.setdefault
+==================================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.setdefault

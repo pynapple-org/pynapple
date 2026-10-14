@@ -1,0 +1,6 @@
+pynapple.TsdFrame.get\_info
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.get_info

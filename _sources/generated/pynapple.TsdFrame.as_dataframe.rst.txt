@@ -1,0 +1,6 @@
+pynapple.TsdFrame.as\_dataframe
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.as_dataframe

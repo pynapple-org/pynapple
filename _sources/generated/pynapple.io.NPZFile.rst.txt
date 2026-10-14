@@ -1,0 +1,26 @@
+﻿pynapple.io.NPZFile
+===================
+
+.. currentmodule:: pynapple.io
+
+.. autoclass:: NPZFile
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~NPZFile.__init__
+      ~NPZFile.load
+   
+   
+
+   
+   
+   

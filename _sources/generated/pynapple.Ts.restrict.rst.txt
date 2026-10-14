@@ -1,0 +1,6 @@
+pynapple.Ts.restrict
+====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.restrict

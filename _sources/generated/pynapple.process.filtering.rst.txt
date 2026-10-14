@@ -1,0 +1,16 @@
+﻿pynapple.process.filtering
+==========================
+
+.. automodule:: pynapple.process.filtering
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_bandpass_filter
+      apply_bandstop_filter
+      apply_highpass_filter
+      apply_lowpass_filter
+      get_filter_frequency_response
+   

@@ -1,0 +1,6 @@
+pynapple.IntervalSet.as\_dataframe
+==================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.as_dataframe

@@ -1,0 +1,15 @@
+﻿pynapple.process.signal
+=======================
+
+.. automodule:: pynapple.process.signal
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_hilbert_transform
+      compute_hilbert_envelope
+      compute_hilbert_phase
+      detect_oscillatory_events
+   

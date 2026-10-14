@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.get
+=============================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.get

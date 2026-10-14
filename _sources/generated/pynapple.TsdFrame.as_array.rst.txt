@@ -1,0 +1,6 @@
+pynapple.TsdFrame.as\_array
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.as_array

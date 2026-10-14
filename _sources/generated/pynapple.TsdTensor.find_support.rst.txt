@@ -1,0 +1,6 @@
+pynapple.TsdTensor.find\_support
+================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.find_support

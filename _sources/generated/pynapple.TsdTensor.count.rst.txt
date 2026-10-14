@@ -1,0 +1,6 @@
+pynapple.TsdTensor.count
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.count

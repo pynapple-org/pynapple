@@ -1,0 +1,6 @@
+pynapple.IntervalSet.groupby
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.groupby

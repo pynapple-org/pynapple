@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.items
+===============================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.items

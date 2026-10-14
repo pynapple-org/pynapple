@@ -1,0 +1,6 @@
+pynapple.TsdFrame.convolve
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.convolve

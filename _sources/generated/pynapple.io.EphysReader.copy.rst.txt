@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.copy
+============================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.copy

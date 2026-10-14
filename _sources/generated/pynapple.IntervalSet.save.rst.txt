@@ -1,0 +1,6 @@
+pynapple.IntervalSet.save
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.save

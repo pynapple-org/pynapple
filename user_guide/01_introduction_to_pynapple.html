@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Introduction to pynapple &#8212; pynapple 0.11.4.post1.dev3 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=52434729" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../_static/documentation_options.js?v=19ed5b2d"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/01_introduction_to_pynapple';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Input-output &amp; lazy-loading" href="02_input_output.html" />
+    <link rel="prev" title="User guide" href="../user_guide.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.4" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.4.post1.dev3 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.4.post1.dev3 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Introduction to pynapple</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="02_input_output.html">Input-output &amp; lazy-loading</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_interacting_with_numpy.html">Interaction with numpy</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_core_methods.html">Core methods</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_metadata.html">Metadata</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="05_correlograms_isi.html">Correlograms &amp; ISI</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="06_tuning_curves.html">Tuning curves</a></li>
+
+
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="07_decoding.html">Decoding</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="08_perievent.html">Perievent / Spike-triggered average</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="09_randomization.html">Randomization</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="10_power_spectral_density.html">Power spectral density</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="11_wavelets.html">Wavelet decomposition</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="12_filtering.html">Filtering time series</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="13_phases_and_envelopes.html">Extracting phases and envelopes</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="14_warping.html">Building trial-based tensors</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../user_guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Introduction to pynapple</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="introduction-to-pynapple">
+<h1>Introduction to pynapple<a class="headerlink" href="#introduction-to-pynapple" title="Link to this heading">#</a></h1>
+<p>The goal of this tutorial is to quickly learn enough about pynapple to get started with data analysis. This tutorial assumes familiarity with the basics functionalities of numpy.</p>
+<p>You can check how to install pynapple <a class="reference internal" href="../installing.html"><span class="std std-doc">here</span></a>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>By default, pynapple will assume a time units in seconds when passing timestamps array or time parameters such as bin size (unless specified with the <code class="docutils literal notranslate"><span class="pre">time_units</span></code> argument)</p>
+</div>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#importing-pynapple" id="id1">Importing pynapple</a></p></li>
+<li><p><a class="reference internal" href="#instantiating-pynapple-objects" id="id2">Instantiating pynapple objects</a></p>
+<ul>
+<li><p><a class="reference internal" href="#nap-tsd-1-dimensional-time-series" id="id3"><a class="reference internal" href="../generated/pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.Tsd</span></code></span></a>: 1-dimensional time series</a></p></li>
+<li><p><a class="reference internal" href="#nap-tsdframe-2-dimensional-time-series" id="id4"><a class="reference internal" href="../generated/pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdFrame</span></code></span></a>: 2-dimensional time series</a></p></li>
+<li><p><a class="reference internal" href="#nap-tsdtensor-n-dimensional-time-series" id="id5"><a class="reference internal" href="../generated/pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdTensor</span></code></span></a>: n-dimensional time series</a></p></li>
+<li><p><a class="reference internal" href="#nap-intervalset-intervals" id="id6"><a class="reference internal" href="../generated/pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.IntervalSet</span></code></span></a>: intervals</a></p></li>
+<li><p><a class="reference internal" href="#nap-ts-timestamps" id="id7"><a class="reference internal" href="../generated/pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.Ts</span></code></span></a>: timestamps</a></p></li>
+<li><p><a class="reference internal" href="#nap-tsgroup-group-of-timestamps" id="id8"><a class="reference internal" href="../generated/pynapple.TsGroup.html#pynapple.TsGroup" title="pynapple.TsGroup"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsGroup</span></code></span></a>: group of timestamps</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#interaction-between-pynapple-objects" id="id9">Interaction between pynapple objects</a></p>
+<ul>
+<li><p><a class="reference internal" href="#time-support-attribute-of-time-series" id="id10">Time support : attribute of time series</a></p></li>
+<li><p><a class="reference internal" href="#restricting-time-series-to-epochs" id="id11">Restricting time series to epochs</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#numpy-pynapple" id="id12">Numpy &amp; pynapple</a></p></li>
+<li><p><a class="reference internal" href="#slicing-objects" id="id13">Slicing objects</a></p>
+<ul>
+<li><p><a class="reference internal" href="#slicing-time-series-and-intervals" id="id14">Slicing time series and intervals</a></p></li>
+<li><p><a class="reference internal" href="#slicing-tsgroup" id="id15">Slicing TsGroup</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#core-functions" id="id16">Core functions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#binning-counting-events" id="id17">Binning: counting events</a></p></li>
+<li><p><a class="reference internal" href="#thresholding" id="id18">Thresholding</a></p></li>
+<li><p><a class="reference internal" href="#time-bin-averaging-of-data" id="id19">Time-bin averaging of data</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#loading-data" id="id20">Loading data</a></p>
+<ul>
+<li><p><a class="reference internal" href="#loading-nwb" id="id21">Loading NWB</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#overview-of-advanced-analysis" id="id22">Overview of advanced analysis</a></p></li>
+</ul>
+</nav>
+<hr class="docutils" />
+<section id="importing-pynapple">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Importing pynapple</a><a class="headerlink" href="#importing-pynapple" title="Link to this heading">#</a></h2>
+<p>The convention is to import pynapple with a namespace:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-cell docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+
+<span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+</section>
+<hr class="docutils" />
+<section id="instantiating-pynapple-objects">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Instantiating pynapple objects</a><a class="headerlink" href="#instantiating-pynapple-objects" title="Link to this heading">#</a></h2>
+<section id="nap-tsd-1-dimensional-time-series">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.Tsd</span></code></span></a>: 1-dimensional time series</a><a class="headerlink" href="#nap-tsd-1-dimensional-time-series" title="Link to this heading">#</a></h3>
+<p>If you have a 1-dimensional time series, you use the <a class="reference internal" href="../generated/pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.Tsd</span></code></span></a> object. The arguments <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span></code> are the arguments for timestamps and data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---------
+0.0         0.186692
+1.0         0.0584898
+2.0         0.953792
+3.0         0.0206506
+4.0         0.656827
+5.0         0.541003
+6.0         0.0712807
+...
+93.0        0.52275
+94.0        0.259731
+95.0        0.286987
+96.0        0.170476
+97.0        0.317588
+98.0        0.458038
+99.0        0.293482
+dtype: float64, shape: (100,)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nap-tsdframe-2-dimensional-time-series">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdFrame</span></code></span></a>: 2-dimensional time series</a><a class="headerlink" href="#nap-tsdframe-2-dimensional-time-series" title="Link to this heading">#</a></h3>
+<p>If you have a 2-dimensional time series, you use the <a class="reference internal" href="../generated/pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdFrame</span></code></span></a> object. The arguments <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span></code> are the arguments for timestamps and data. You can add the argument <code class="docutils literal notranslate"><span class="pre">columns</span></code> to label each columns.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span>
+    <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)           a           b         c
+----------  --------  ----------  --------
+0.0         0.735578  0.0923586   0.163201
+1.0         0.956388  0.462336    0.875708
+2.0         0.159868  0.89595     0.437328
+3.0         0.869937  0.282365    0.431393
+4.0         0.548772  0.00254393  0.328366
+5.0         0.213888  0.483901    0.915165
+6.0         0.740494  0.938885    0.793916
+...
+93.0        0.194238  0.591946    0.558185
+94.0        0.990586  0.192972    0.186723
+95.0        0.311333  0.751752    0.846317
+96.0        0.873421  0.385836    0.198322
+97.0        0.683563  0.274438    0.685149
+98.0        0.385282  0.272793    0.536595
+99.0        0.283649  0.367066    0.661982
+dtype: float64, shape: (100, 3)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nap-tsdtensor-n-dimensional-time-series">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdTensor</span></code></span></a>: n-dimensional time series</a><a class="headerlink" href="#nap-tsdtensor-n-dimensional-time-series" title="Link to this heading">#</a></h3>
+<p>If you have larger than 2 dimensions time series (typically movies), you use the <a class="reference internal" href="../generated/pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsdTensor</span></code></span></a> object . The arguments <code class="docutils literal notranslate"><span class="pre">t</span></code> and <code class="docutils literal notranslate"><span class="pre">d</span></code> are the arguments for timestamps and data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdtensor</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">(</span>
+    <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdtensor</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  -----------------------------
+0.0         [[0.435365 ... 0.261254] ...]
+1.0         [[0.411434 ... 0.294697] ...]
+2.0         [[0.527693 ... 0.359994] ...]
+3.0         [[0.111626 ... 0.733191] ...]
+4.0         [[0.794481 ... 0.622684] ...]
+5.0         [[0.26038  ... 0.572627] ...]
+6.0         [[0.27052  ... 0.865455] ...]
+...
+93.0        [[0.263    ... 0.244202] ...]
+94.0        [[0.713006 ... 0.974396] ...]
+95.0        [[0.597712 ... 0.104471] ...]
+96.0        [[0.827283 ... 0.285449] ...]
+97.0        [[0.186765 ... 0.208465] ...]
+98.0        [[0.047052 ... 0.31883 ] ...]
+99.0        [[0.681105 ... 0.426108] ...]
+dtype: float64, shape: (100, 3, 4)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nap-intervalset-intervals">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.IntervalSet</span></code></span></a>: intervals</a><a class="headerlink" href="#nap-intervalset-intervals" title="Link to this heading">#</a></h3>
+<p>The <a class="reference internal" href="../generated/pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code></span></a> object stores multiple epochs with a common time unit in a table format. The epochs are strictly <em>non-overlapping</em>. Both <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span></code> arguments are necessary.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">epochs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">15</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      5
+      1       10     15
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nap-ts-timestamps">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.Ts</span></code></span></a>: timestamps</a><a class="headerlink" href="#nap-ts-timestamps" title="Link to this heading">#</a></h3>
+<p>The <a class="reference internal" href="../generated/pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">Ts</span></code></span></a> object stores timestamps data (typically spike times or reward times). The argument <code class="docutils literal notranslate"><span class="pre">t</span></code> for timestamps is necessary.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">)))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+9.257668639584027
+22.070180400173356
+29.426815914452952
+35.83927800334432
+37.581376140468016
+62.4298296773688
+70.5451884596394
+83.7643489436675
+90.54139263494937
+93.91457824383393
+shape: 10
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="nap-tsgroup-group-of-timestamps">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink"><a class="reference internal" href="../generated/pynapple.TsGroup.html#pynapple.TsGroup" title="pynapple.TsGroup"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">nap.TsGroup</span></code></span></a>: group of timestamps</a><a class="headerlink" href="#nap-tsgroup-group-of-timestamps" title="Link to this heading">#</a></h3>
+<p><a class="reference internal" href="../generated/pynapple.TsGroup.html#pynapple.TsGroup" title="pynapple.TsGroup"><span class="xref myst py py-class"><code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></span></a> is a dictionary that stores multiple time series with different time stamps (.i.e. a group of neurons with different spike times from one session). The first argument <code class="docutils literal notranslate"><span class="pre">data</span></code> can be a dictionary of <code class="docutils literal notranslate"><span class="pre">Ts</span></code>, <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> or numpy 1d array.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">))),</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">2000</span><span class="p">))),</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">3000</span><span class="p">))),</span>
+<span class="p">}</span>
+
+<span class="n">tsgroup</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate
+-------  -------
+      0  10.0022
+      1  20.0043
+      2  30.0065 
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="interaction-between-pynapple-objects">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Interaction between pynapple objects</a><a class="headerlink" href="#interaction-between-pynapple-objects" title="Link to this heading">#</a></h2>
+<section id="time-support-attribute-of-time-series">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Time support : attribute of time series</a><a class="headerlink" href="#time-support-attribute-of-time-series" title="Link to this heading">#</a></h3>
+<p>A key feature of how pynapple manipulates time series is an inherent time support object defined for <code class="docutils literal notranslate"><span class="pre">Ts</span></code>, <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> objects. The time support object is defined as an <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> that provides the time series with a context. For example, the restrict operation will automatically update the time support object for the new time series. Ideally, the time support object should be defined for all time series when instantiating them. If no time series is given, the time support is inferred from the start and end of the time series.</p>
+<p>In this example, a <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> is instantiated with and without a time support of intervals 0 to 5 seconds. Notice how the shape of the <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> varies.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">time_support</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">time_support</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      2
+shape: (1, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Without time support :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">d</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  --
+0            0
+1            1
+2            2
+3            3
+4            4
+dtype: int64, shape: (5,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>With time support :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
+    <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span>
+        <span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">d</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> 
+        <span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  --
+0            0
+1            1
+2            2
+dtype: int64, shape: (3,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>The time support object has become an attribute of the time series. Depending on the operation applied to the time series, it will be updated.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span>
+    <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> 
+    <span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span>
+    <span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      2
+shape: (1, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="restricting-time-series-to-epochs">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Restricting time series to epochs</a><a class="headerlink" href="#restricting-time-series-to-epochs" title="Link to this heading">#</a></h3>
+<p>The central function of pynapple is the <a class="reference internal" href="../generated/pynapple.Tsd.restrict.html#pynapple.Tsd.restrict" title="pynapple.Tsd.restrict"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">restrict</span></code></span></a> method of <code class="docutils literal notranslate"><span class="pre">Ts</span></code>, <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>. The argument is an <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> object. Only time points within the intervals of the <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> object are returned. The time support of the time series is updated accordingly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="p">[</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">12.4</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0    3.5
+      1        7   12.4
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>From :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---------
+0           -1.8387
+1           -0.698564
+2           -1.10918
+3           -1.26117
+4            0.895353
+5           -2.20269
+6            0.252363
+7            0.644598
+8            0.895731
+9           -0.10883
+dtype: float64, shape: (10,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>to :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_tsd</span> <span class="o">=</span> <span class="n">tsd</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">new_tsd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---------
+0           -1.8387
+1           -0.698564
+2           -1.10918
+3           -1.26117
+7            0.644598
+8            0.895731
+9           -0.10883
+dtype: float64, shape: (7,)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="numpy-pynapple">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Numpy &amp; pynapple</a><a class="headerlink" href="#numpy-pynapple" title="Link to this heading">#</a></h2>
+<p>Pynapple relies on numpy to store the data. Pynapple objects behave very similarly to numpy and numpy functions can be applied directly</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdtensor</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>If a numpy function preserves the time axis, a pynapple object is returned.</p>
+<p>In this example, averaging a <code class="docutils literal notranslate"><span class="pre">TsdTensor</span></code> along the second dimension returns a <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tsdtensor</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)           0         1         2         3
+----------  --------  --------  --------  --------
+0.0         0.383892  0.40138   0.311536  0.558869
+1.0         0.451837  0.902545  0.483746  0.71024
+2.0         0.874661  0.565339  0.211734  0.556049
+3.0         0.553197  0.446846  0.509472  0.651342
+4.0         0.376945  0.570276  0.309544  0.364869
+5.0         0.684604  0.619488  0.50153   0.484291
+6.0         0.457847  0.487666  0.492055  0.143066
+...
+93.0        0.606988  0.508242  0.61306   0.564666
+94.0        0.281482  0.595852  0.295384  0.343307
+95.0        0.521206  0.307546  0.384952  0.63179
+96.0        0.497075  0.337748  0.26567   0.317049
+97.0        0.192799  0.502951  0.385146  0.378688
+98.0        0.633869  0.348668  0.493177  0.398842
+99.0        0.384479  0.797064  0.473748  0.789222
+dtype: float64, shape: (100, 4)
+</pre></div>
+</div>
+</div>
+</div>
+<p>Averaging along the time axis will return a numpy array object:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tsdtensor</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[[0.52492872 0.49840182 0.49404674 0.51964588]
+ [0.48522054 0.52899371 0.48002122 0.45437012]
+ [0.52056134 0.53852703 0.46093151 0.49425633]]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="slicing-objects">
+<h2><a class="toc-backref" href="#id13" role="doc-backlink">Slicing objects</a><a class="headerlink" href="#slicing-objects" title="Link to this heading">#</a></h2>
+<section id="slicing-time-series-and-intervals">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Slicing time series and intervals</a><a class="headerlink" href="#slicing-time-series-and-intervals" title="Link to this heading">#</a></h3>
+<section id="like-numpy-array">
+<h4>Like numpy array<a class="headerlink" href="#like-numpy-array" title="Link to this heading">#</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">Ts</span></code>, <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdTensor</span></code> and <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> can be sliced similar to numpy array:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)             0          1          2          3
+----------  ----------  ---------  ---------  ---------
+0           -0.436318    0.320296   0.100917   0.756777
+0.1         -0.9427     -0.970657  -2.48148   -2.04484
+0.2          0.688484   -0.130928   1.27715   -1.25756
+0.3          0.301824    1.2182     0.454298  -0.79868
+0.4          0.807748    0.474869  -0.514188   1.53822
+0.5         -0.520685   -0.854424   1.51489   -0.39525
+0.6         -0.623677   -1.0544     0.909653  -0.519583
+0.7          1.36431     1.39069   -0.265951   0.852696
+0.8          0.0135265  -0.252417  -1.04008   -0.342777
+0.9          2.10238     1.68901   -0.108188  -3.49223
+dtype: float64, shape: (10, 4)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">7</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)            0          1          2          3
+----------  ---------  ---------  ---------  ---------
+0.4          0.807748   0.474869  -0.514188   1.53822
+0.5         -0.520685  -0.854424   1.51489   -0.39525
+0.6         -0.623677  -1.0544     0.909653  -0.519583
+dtype: float64, shape: (3, 4)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ----------
+0           -0.436318
+0.1         -0.9427
+0.2          0.688484
+0.3          0.301824
+0.4          0.807748
+0.5         -0.520685
+0.6         -0.623677
+0.7          1.36431
+0.8          0.0135265
+0.9          2.10238
+dtype: float64, shape: (10,)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      4
+      1       10     15
+      2       20     25
+shape: (3, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      4
+      1       10     15
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0       10     15
+shape: (1, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="like-pandas-dataframe">
+<h4>Like pandas DataFrame<a class="headerlink" href="#like-pandas-dataframe" title="Link to this heading">#</a></h4>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>This <a class="reference internal" href="03_core_methods.html#special-slicing-tsdframe"><span class="std std-ref">page</span></a> references all the way to slice <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code></p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> can be sliced like pandas DataFrame when the columns have been labelled with strings :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ----------
+0            0.0616972
+1            0.728371
+2            0.171383
+3           -0.815099
+4            0.857433
+5           -0.667063
+6            1.94087
+7            0.482904
+8           -1.17835
+9           -1.11117
+dtype: float64, shape: (10,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>but integer-indexing only works like numpy if a list of integers is used to label columns :</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)            3          2          1
+----------  ---------  ---------  ---------
+0           -2.18333    2.7491     1.24608
+1            1.06522   -1.28359    0.684987
+2           -1.9737    -0.483331  -0.163351
+3           -0.201421   1.20217   -1.1366
+dtype: float64, shape: (4, 3) 
+
+[-0.20142135  1.20217104 -1.13660168]
+</pre></div>
+</div>
+</div>
+</div>
+<p>The <a class="reference internal" href="../generated/pynapple.TsdFrame.html#pynapple.TsdFrame.loc" title="pynapple.TsdFrame.loc"><span class="xref myst py py-attr"><code class="docutils literal notranslate"><span class="pre">loc</span></code></span></a> method can be used to slice column-based only:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="slicing-tsgroup">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Slicing TsGroup</a><a class="headerlink" href="#slicing-tsgroup" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> object can be indexed to return directly the timestamp object or sliced to return a new <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>.</p>
+<p>Indexing:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+0.16554703681905814
+0.35564800865611756
+0.4598676887117237
+0.4706333732023227
+0.5128984308708895
+0.5683612396526927
+0.6268428879451782
+...
+99.17383417237915
+99.21309653068946
+99.35729827455219
+99.3842954397683
+99.39588755765763
+99.43283922964505
+99.9497841400977
+shape: 1000 
+</pre></div>
+</div>
+</div>
+</div>
+<p>Slicing:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate
+-------  -------
+      0  10.0022
+      2  30.0065
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="core-functions">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Core functions</a><a class="headerlink" href="#core-functions" title="Link to this heading">#</a></h2>
+<p>Objects have methods that can help transform and refine time series. This is a non exhaustive list.</p>
+<section id="binning-counting-events">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Binning: counting events</a><a class="headerlink" href="#binning-counting-events" title="Link to this heading">#</a></h3>
+<p>Time series objects have the <a class="reference internal" href="../generated/pynapple.Tsd.count.html#pynapple.Tsd.count" title="pynapple.Tsd.count"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">count</span></code></span></a> method that count the number of timestamps. This is typically used when counting number of spikes within a particular bin over multiple intervals. The returned object is a <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> or <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> with the timestamps being the center of the bins.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">count</span> <span class="o">=</span> <span class="n">tsgroup</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)              0    1    2
+------------------  ---  ---  ---
+0.5162740124851402   12   26   37
+1.516274012          10   14   33
+2.516274012          12   16   24
+3.516274012          10   24   31
+4.516274012          18   26   28
+5.516274012           9   17   30
+6.516274012           9   22   31
+...
+93.516274012          6   17   34
+94.516274012          9   17   29
+95.516274012         10   23   37
+96.516274012          8   19   26
+97.516274012         13   25   26
+98.516274012          8   16   21
+99.516274012          7   15   27
+dtype: int64, shape: (100, 3)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="thresholding">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Thresholding</a><a class="headerlink" href="#thresholding" title="Link to this heading">#</a></h3>
+<p>Some time series have specific methods. The <a class="reference internal" href="../generated/pynapple.Tsd.threshold.html#pynapple.Tsd.threshold" title="pynapple.Tsd.threshold"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">threshold</span></code></span></a> method of <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> returns a new <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> with all the data above or below a given value.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="mf">0.5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  --------
+0           0.276458
+1           0.678111
+2           0.624869
+3           0.970133
+4           0.341076
+5           0.247336
+6           0.259953
+7           0.304425
+8           0.131651
+9           0.560809
+dtype: float64, shape: (10,)
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  --------
+1           0.678111
+2           0.624869
+3           0.970133
+9           0.560809
+dtype: float64, shape: (4,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>An important aspect of the tresholding is that the time support get updated based on the time points remaining. To get the epochs above/below a certain threshold, you can access the time support of the returned object.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsd</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;below&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end
+      0        0      9
+shape: (1, 2), time unit: sec.
+  index    start    end
+      0      0      0.5
+      1      3.5    8.5
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="time-bin-averaging-of-data">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Time-bin averaging of data</a><a class="headerlink" href="#time-bin-averaging-of-data" title="Link to this heading">#</a></h3>
+<p>Many analyses requires to bring time series to the same rates and same dimensions. A quick way to downsample a time series to match in size for example a count array is to bin average. The <a class="reference internal" href="../generated/pynapple.TsdFrame.bin_average.html#pynapple.TsdFrame.bin_average" title="pynapple.TsdFrame.bin_average"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">bin_average</span></code></span></a> method takes a bin size in unit of time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span><span class="o">/</span><span class="mi">10</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)            0            1           2
+----------  ---------  -----------  ----------
+0.0          0.362692  -0.437984    -0.167359
+0.1         -0.317843  -1.44436      1.15531
+0.2         -0.327866  -1.76921     -0.61043
+0.3          0.563524  -0.00522059  -1.18855
+0.4          0.939607  -0.803718     0.833118
+0.5         -0.093179  -2.18647     -1.36437
+0.6         -0.641716   0.554087    -0.146128
+...
+9.3         -0.198127   1.38602      1.27076
+9.4         -0.569093   2.82563     -0.817044
+9.5          0.473236  -0.181735     0.163458
+9.6          0.705792  -0.236879     0.0514112
+9.7          0.579514  -0.782088     0.588866
+9.8         -0.12694    0.630077    -0.0545509
+9.9          1.28226    0.0660253    0.181876
+dtype: float64, shape: (100, 3)
+</pre></div>
+</div>
+</div>
+</div>
+<p>Here we go from a timepoint every 100ms to a timepoint every second.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="o">.</span><span class="n">bin_average</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)              0          1           2
+----------  -----------  ---------  ----------
+0.5         -0.033445    -0.699179  -0.0706888
+1.5         -0.29536      0.114049   0.237915
+2.5          0.205847     0.287525   0.0978722
+3.5          0.00604706  -0.240211   0.263527
+4.5          0.500979    -0.227536   0.439478
+5.5          0.0110232    0.175718   0.123501
+6.5         -0.126402    -0.262607   0.101979
+7.5         -0.308386     0.182544  -0.302269
+8.5         -0.63741      0.108053   0.166357
+9.5          0.182534     0.367617  -0.191733
+dtype: float64, shape: (10, 3)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="loading-data">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">Loading data</a><a class="headerlink" href="#loading-data" title="Link to this heading">#</a></h2>
+<p>See <a class="reference internal" href="02_input_output.html"><span class="std std-doc">here</span></a> for more details about loading data.</p>
+<section id="loading-nwb">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Loading NWB</a><a class="headerlink" href="#loading-nwb" title="Link to this heading">#</a></h3>
+<p>Pynapple supports by default the <a class="reference external" href="https://pynwb.readthedocs.io/en/latest/">NWB standard</a>.</p>
+<p>NWB files can be loaded with :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nwb</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;path/to/my.nwb&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or directly with the <code class="docutils literal notranslate"><span class="pre">NWBFile</span></code> class:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nwb</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">NWBFile</span><span class="p">(</span><span class="s2">&quot;path/to/my.nwb&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">nwb</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>my.nwb
+┍━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+│ Keys            │ Type        │
+┝━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+│ units           │ TsGroup     │
+┕━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+</pre></div>
+</div>
+<p>The returned object behaves like a dictionary. The first column indicates the keys. The second column indicate the object type.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">nwb</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">Index</span>    <span class="n">rate</span>  <span class="n">location</span>      <span class="n">group</span>
+<span class="o">-------</span>  <span class="o">------</span>  <span class="o">----------</span>  <span class="o">-------</span>
+      <span class="mi">0</span>    <span class="mf">1.0</span>  <span class="n">brain</span>        <span class="mi">0</span>
+      <span class="mi">1</span>    <span class="mf">1.0</span>  <span class="n">brain</span>        <span class="mi">0</span>
+      <span class="mi">2</span>    <span class="mf">1.0</span>  <span class="n">brain</span>        <span class="mi">0</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="overview-of-advanced-analysis">
+<h2><a class="toc-backref" href="#id22" role="doc-backlink">Overview of advanced analysis</a><a class="headerlink" href="#overview-of-advanced-analysis" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">process</span></code> module of pynapple contains submodules that group methods that can be applied for high level analysis. All of the method are directly available from the <code class="docutils literal notranslate"><span class="pre">nap</span></code> namespace.</p>
+<p><strong><a class="reference internal" href="05_correlograms_isi.html"><span class="doc std std-doc">Discrete correlograms &amp; ISI</span></a></strong></p>
+<p>This module analyses discrete events, specifically correlograms (for example by computing the cross-correlograms of a population of neurons) and interspike interval (ISI) distributions.</p>
+<p><strong><a class="reference internal" href="07_decoding.html"><span class="doc std std-doc">Bayesian decoding</span></a></strong></p>
+<p>The decoding module performs bayesian decoding given a set of tuning curves and a <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>.</p>
+<p><strong><a class="reference internal" href="12_filtering.html"><span class="doc std std-doc">Filtering</span></a></strong></p>
+<p>Bandpass, lowpass, highpass or bandstop filtering can be done to any time series using either Butterworth filter or windowed-sinc convolution.</p>
+<p><strong><a class="reference internal" href="08_perievent.html"><span class="doc std std-doc">Perievent time histogram</span></a></strong></p>
+<p>The perievent module has a set of functions to center time series and timestamps data around a particular events.</p>
+<p><strong><a class="reference internal" href="09_randomization.html"><span class="doc std std-doc">Randomizing</span></a></strong></p>
+<p>The randomize module holds multiple technique to shuffle timestamps in order to create surrogate datasets.</p>
+<p><strong><a class="reference internal" href="10_power_spectral_density.html"><span class="doc std std-doc">Spectrum</span></a></strong></p>
+<p>The spectrum module contains the methods to return the (mean) power spectral density of a time series.</p>
+<p><strong><a class="reference internal" href="06_tuning_curves.html"><span class="doc std std-doc">Tuning curves</span></a></strong></p>
+<p>Tuning curves of neurons based on spiking or calcium activity can be computed.</p>
+<p><strong><a class="reference internal" href="11_wavelets.html"><span class="doc std std-doc">Wavelets</span></a></strong></p>
+<p>The wavelets module performs Morlet wavelets decomposition of a time series.</p>
+<p><strong><a class="reference internal" href="13_phases_and_envelopes.html"><span class="doc std std-doc">Phases &amp; envelopes</span></a></strong></p>
+<p>This modules allows for computing analytic signals and extracting the phase and envelope.</p>
+<p><strong><a class="reference internal" href="14_warping.html"><span class="doc std std-doc">Warping</span></a></strong></p>
+<p>This module provides methods for building trial-based tensors and time-warped trial-based tensors.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../user_guide.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">User guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="02_input_output.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Input-output &amp; lazy-loading</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-pynapple">Importing pynapple</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#instantiating-pynapple-objects">Instantiating pynapple objects</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-tsd-1-dimensional-time-series"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.Tsd</span></code></span>: 1-dimensional time series</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-tsdframe-2-dimensional-time-series"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.TsdFrame</span></code></span>: 2-dimensional time series</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-tsdtensor-n-dimensional-time-series"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.TsdTensor</span></code></span>: n-dimensional time series</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-intervalset-intervals"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.IntervalSet</span></code></span>: intervals</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-ts-timestamps"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.Ts</span></code></span>: timestamps</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nap-tsgroup-group-of-timestamps"><span class="xref myst"><code class="docutils literal notranslate"><span class="pre">nap.TsGroup</span></code></span>: group of timestamps</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interaction-between-pynapple-objects">Interaction between pynapple objects</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-support-attribute-of-time-series">Time support : attribute of time series</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#restricting-time-series-to-epochs">Restricting time series to epochs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#numpy-pynapple">Numpy &amp; pynapple</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#slicing-objects">Slicing objects</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#slicing-time-series-and-intervals">Slicing time series and intervals</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#like-numpy-array">Like numpy array</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#like-pandas-dataframe">Like pandas DataFrame</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#slicing-tsgroup">Slicing TsGroup</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#core-functions">Core functions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#binning-counting-events">Binning: counting events</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#thresholding">Thresholding</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-bin-averaging-of-data">Time-bin averaging of data</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-data">Loading data</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-nwb">Loading NWB</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview-of-advanced-analysis">Overview of advanced analysis</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/user_guide/01_introduction_to_pynapple.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.4</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

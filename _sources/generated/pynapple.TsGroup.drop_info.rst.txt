@@ -1,0 +1,6 @@
+pynapple.TsGroup.drop\_info
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.drop_info

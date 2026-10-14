@@ -1,0 +1,6 @@
+pynapple.TsGroup.groupby\_apply
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.groupby_apply

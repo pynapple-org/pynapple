@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.clear
+=============================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.clear

@@ -1,0 +1,6 @@
+pynapple.TsGroup.fromkeys
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.fromkeys

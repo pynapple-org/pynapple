@@ -1,0 +1,6 @@
+pynapple.TsdFrame.as\_units
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.as_units

@@ -1,0 +1,6 @@
+pynapple.IntervalSet.drop\_info
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.drop_info

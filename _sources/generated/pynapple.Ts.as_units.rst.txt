@@ -1,0 +1,6 @@
+pynapple.Ts.as\_units
+=====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.as_units

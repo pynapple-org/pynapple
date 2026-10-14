@@ -1,0 +1,6 @@
+pynapple.TsdFrame.to\_trial\_tensor
+===================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.to_trial_tensor

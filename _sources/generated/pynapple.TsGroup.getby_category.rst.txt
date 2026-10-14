@@ -1,0 +1,6 @@
+pynapple.TsGroup.getby\_category
+================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.getby_category

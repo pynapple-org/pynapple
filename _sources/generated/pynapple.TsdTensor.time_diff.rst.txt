@@ -1,0 +1,6 @@
+pynapple.TsdTensor.time\_diff
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.time_diff
