@@ -126,9 +126,11 @@ def _metadata_summary(
             [
                 column,
                 *[
-                    "..."
-                    if item_position is None
-                    else metadata.iloc[item_position, metadata_position]
+                    (
+                        "..."
+                        if item_position is None
+                        else metadata.iloc[item_position, metadata_position]
+                    )
                     for item_position in item_positions
                 ],
             ]
@@ -416,12 +418,14 @@ class TsTrials(_TrialMetadataMixin):
                 continue
 
             metadata_values = [
-                "..."
-                if metadata_position is None
-                else self.trial_metadata.iloc[
-                    position,
-                    metadata_position,
-                ]
+                (
+                    "..."
+                    if metadata_position is None
+                    else self.trial_metadata.iloc[
+                        position,
+                        metadata_position,
+                    ]
+                )
                 for metadata_position in metadata_positions
             ]
 
@@ -1109,12 +1113,14 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 continue
 
             metadata_values = [
-                "..."
-                if metadata_position is None
-                else self.trial_metadata.iloc[
-                    position,
-                    metadata_position,
-                ]
+                (
+                    "..."
+                    if metadata_position is None
+                    else self.trial_metadata.iloc[
+                        position,
+                        metadata_position,
+                    ]
+                )
                 for metadata_position in metadata_positions
             ]
 
