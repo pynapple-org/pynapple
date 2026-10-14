@@ -199,8 +199,8 @@ plt.show()
 
 ## Decoding choice
 Say we now want to decode the trial outcome from these binned spike counts.
-We cna use the [scikit-learn library]() to fit a [logistic regression]().
-We can use their [cross-validation tools]() to pick the regularization parameter
+We can use the [scikit-learn library](https://scikit-learn.org/stable/) to fit a [logistic regression](https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression).
+We can use their [cross-validation tools](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html) to pick the regularization parameter
 
 We will define the label:
 ```{code-cell} ipython3
