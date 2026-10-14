@@ -454,17 +454,21 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     events = events.restrict(epochs)
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
+    # define tolerance for regularity check and alignment here. Because they need
+    # to be consistent to get stable binning.
+    tolerance_regular = 1e-6
+
     if isinstance(data, nap.Ts):
         return _align_discrete(data, events, window, new_time_support)
 
-    if not nap.utils._is_regularly_sampled(data):
+    if not nap.utils._is_regularly_sampled(data, tolerance=tolerance_regular):
         raise RuntimeError(
             "Continuous data must be regularly sampled. "
             "Please interpolate or NaN-pad your data to a uniform time grid before "
             "calling compute_perievent."
         )
 
-    return _align_regular(data, events, window, new_time_support)
+    return _align_regular(data, events, window, new_time_support, tolerance=tolerance_regular)
 
 
 def _align_discrete(data, events, window, new_time_support):
@@ -534,8 +538,6 @@ def _align_regular(data, events, window, new_time_support,tolerance=1e-6):
     """
     epochs = data.time_support
     bin_size = np.median(data.time_diff(align="start").values)
-    # bin_size = np.median(data.time_diff(align="start").values)
-    print(f"Windos: {window}, time support: {new_time_support}")
 
     # determine number of bins before and after the event with the specified tolerance.
     def _full_bin_count(length: float, bin_size: float, tolerance: float) -> int:
