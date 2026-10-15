@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
 
@@ -232,6 +233,34 @@ class _TrialMetadataMixin:
         return "duration" if self.alignment == "start" else "window"
 
 
+@njit(cache=True)
+def _count_spikes(
+    spike_times_ns: np.ndarray,
+    trial_index: np.ndarray,
+    neuron_index: np.ndarray,
+    first_edge_ns: int,
+    bin_size_ns: int,
+    valid: np.ndarray,
+    n_units: int,
+) -> np.ndarray:
+    """Count spikes using integer bin indices."""
+    n_trials, n_bins = valid.shape
+    counts = np.zeros(
+        (n_trials, n_bins, n_units),
+        dtype=np.int64,
+    )
+
+    for event in range(len(spike_times_ns)):
+        trial = trial_index[event]
+        neuron = neuron_index[event]
+        bin_index = (spike_times_ns[event] - first_edge_ns) // bin_size_ns
+
+        if 0 <= bin_index < n_bins and valid[trial, bin_index]:
+            counts[trial, bin_index, neuron] += 1
+
+    return counts
+
+
 class TsTrials(_TrialMetadataMixin):
     """
     Trial-aligned timestamps.
@@ -245,9 +274,8 @@ class TsTrials(_TrialMetadataMixin):
 
     Notes
     -----
-    All aligned spikes are stored in one sorted array.
-    The underlying ``index`` has shape ``(n_trials, n_units, 2)``
-    and stores the start and stop offsets for each trial/unit spike train.
+    Events are represented by three parallel arrays: sorted aligned spike
+    times, positional trial indices, and positional neuron indices.
     """
 
     def __init__(
@@ -282,14 +310,19 @@ class TsTrials(_TrialMetadataMixin):
             unit_index,
         ).drop(columns="rate", errors="ignore")
 
-        self.spikes, self.index = self._pack(source, trials, self.unit_keys)
+        (
+            self.spikes,
+            self.trial_index,
+            self.neuron_index,
+        ) = self._pack(source, trials, self.unit_keys)
 
     @classmethod
-    def _from_packed(
+    def _from_events(
         cls,
         *,
         spikes: np.ndarray,
-        index: np.ndarray,
+        trial_index: np.ndarray,
+        neuron_index: np.ndarray,
         durations: np.ndarray,
         window_starts: np.ndarray,
         window_ends: np.ndarray,
@@ -299,17 +332,29 @@ class TsTrials(_TrialMetadataMixin):
         unit_keys: np.ndarray,
         unit_metadata: pd.DataFrame,
         alignment: str,
+        sort: bool = False,
     ) -> TsTrials:
+        spikes = np.asarray(spikes)
+        trial_index = np.asarray(trial_index, dtype=np.int64)
+        neuron_index = np.asarray(neuron_index, dtype=np.int64)
+
+        if sort and len(spikes):
+            order = np.argsort(spikes, kind="stable")
+            spikes = spikes[order]
+            trial_index = trial_index[order]
+            neuron_index = neuron_index[order]
+
         obj = cls.__new__(cls)
         obj.spikes = spikes
-        obj.index = index
-        obj.durations = durations
-        obj.window_starts = window_starts
-        obj.window_ends = window_ends
+        obj.trial_index = trial_index
+        obj.neuron_index = neuron_index
+        obj.durations = np.asarray(durations, dtype=float)
+        obj.window_starts = np.asarray(window_starts, dtype=float)
+        obj.window_ends = np.asarray(window_ends, dtype=float)
         obj.trials = trials
-        obj.trial_ids = trial_ids
+        obj.trial_ids = pd.Index(trial_ids)
         obj.trial_metadata = trial_metadata
-        obj.unit_keys = unit_keys
+        obj.unit_keys = np.asarray(unit_keys)
         obj.unit_metadata = unit_metadata
         obj.alignment = alignment
         return obj
@@ -319,49 +364,37 @@ class TsTrials(_TrialMetadataMixin):
         source: TsGroup,
         trials: IntervalSet,
         unit_keys: np.ndarray,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Pack aligned spikes in trial-major/unit-major order."""
-        n_trials = len(trials)
-        n_units = len(unit_keys)
-        index = np.zeros(
-            (n_trials, n_units, 2),
-            dtype=np.int64,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Create sorted aligned event arrays."""
+        events = source.to_tsd()
+        assignments = trials.in_interval(events)
+
+        absolute_times = np.asarray(events.t, dtype=float)
+        unit_labels = np.asarray(events.d)
+        assigned_trials = np.asarray(assignments, dtype=float)
+
+        inside = np.isfinite(assigned_trials)
+
+        absolute_times = absolute_times[inside]
+        unit_labels = unit_labels[inside]
+        trial_index = assigned_trials[inside].astype(
+            np.int64,
+            copy=False,
         )
 
-        starts = np.asarray(trials.start, dtype=float)
-        ends = np.asarray(trials.end, dtype=float)
-        timestamps = {key: np.asarray(source[key].t, dtype=float) for key in unit_keys}
+        neuron_index = pd.Index(unit_keys).get_indexer(unit_labels)
+        if np.any(neuron_index < 0):
+            raise RuntimeError("Could not map all spike unit labels.")
 
-        chunks = []
-        offset = 0
+        trial_starts = np.asarray(trials.start, dtype=float)
+        spikes = absolute_times - trial_starts[trial_index]
 
-        for trial, (start, end) in enumerate(zip(starts, ends, strict=True)):
-            for unit, key in enumerate(unit_keys):
-                unit_timestamps = timestamps[key]
-                left = np.searchsorted(
-                    unit_timestamps,
-                    start,
-                    side="left",
-                )
-                right = np.searchsorted(
-                    unit_timestamps,
-                    end,
-                    side="left",
-                )
-
-                aligned = unit_timestamps[left:right] - start
-                stop = offset + len(aligned)
-                index[trial, unit] = offset, stop
-
-                if len(aligned):
-                    chunks.append(aligned)
-
-                offset = stop
-
-        if not chunks:
-            return np.array([], dtype=float), index
-
-        return np.concatenate(chunks), index
+        order = np.argsort(spikes, kind="stable")
+        return (
+            spikes[order],
+            trial_index[order],
+            neuron_index[order].astype(np.int64, copy=False),
+        )
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -382,7 +415,10 @@ class TsTrials(_TrialMetadataMixin):
 
     def _trial_summary(self) -> str:
         """Return a compact trial summary table."""
-        spike_counts = (self.index[:, :, 1] - self.index[:, :, 0]).sum(axis=1)
+        spike_counts = np.bincount(
+            self.trial_index,
+            minlength=self.shape[0],
+        )
 
         denominators = self.durations * self.shape[1]
         rates = np.divide(
@@ -508,10 +544,10 @@ class TsTrials(_TrialMetadataMixin):
         return key
 
     def _get_spike_train(self, trial: int, unit: int) -> Ts:
-        start, stop = self.index[trial, unit]
+        selected = (self.trial_index == trial) & (self.neuron_index == unit)
 
         return Ts(
-            t=self.spikes[start:stop],
+            t=self.spikes[selected],
             time_support=IntervalSet(
                 start=self.window_starts[trial],
                 end=self.window_ends[trial],
@@ -554,38 +590,54 @@ class TsTrials(_TrialMetadataMixin):
         trial_positions: np.ndarray,
         unit_positions: np.ndarray,
     ) -> TsTrials:
-        """Create a packed subset."""
-        n_trials = len(trial_positions)
-        n_units = len(unit_positions)
-        index = np.zeros((n_trials, n_units, 2), dtype=np.int64)
-
-        chunks = []
-        offset = 0
+        """Create a subset with remapped event indices."""
+        spike_chunks = []
+        trial_chunks = []
+        neuron_chunks = []
 
         for new_trial, trial in enumerate(trial_positions):
-            for new_unit, unit in enumerate(unit_positions):
-                start, stop = self.index[trial, unit]
-                chunk = self.spikes[start:stop]
-                new_stop = offset + len(chunk)
+            trial_selected = self.trial_index == trial
 
-                index[new_trial, new_unit] = offset, new_stop
+            for new_neuron, neuron in enumerate(unit_positions):
+                selected = trial_selected & (self.neuron_index == neuron)
+                spikes = self.spikes[selected]
 
-                if len(chunk):
-                    chunks.append(chunk)
+                if not len(spikes):
+                    continue
 
-                offset = new_stop
+                spike_chunks.append(spikes)
+                trial_chunks.append(
+                    np.full(
+                        len(spikes),
+                        new_trial,
+                        dtype=np.int64,
+                    )
+                )
+                neuron_chunks.append(
+                    np.full(
+                        len(spikes),
+                        new_neuron,
+                        dtype=np.int64,
+                    )
+                )
 
-        spikes = (
-            np.concatenate(chunks) if chunks else np.array([], dtype=self.spikes.dtype)
-        )
+        if spike_chunks:
+            spikes = np.concatenate(spike_chunks)
+            trial_index = np.concatenate(trial_chunks)
+            neuron_index = np.concatenate(neuron_chunks)
+        else:
+            spikes = np.array([], dtype=self.spikes.dtype)
+            trial_index = np.array([], dtype=np.int64)
+            neuron_index = np.array([], dtype=np.int64)
 
         trial_ids = self.trial_ids.take(trial_positions)
         unit_keys = self.unit_keys[unit_positions]
         unit_index = pd.Index(unit_keys)
 
-        return self._from_packed(
+        return self._from_events(
             spikes=spikes,
-            index=index,
+            trial_index=trial_index,
+            neuron_index=neuron_index,
             durations=self.durations[trial_positions],
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
@@ -595,6 +647,7 @@ class TsTrials(_TrialMetadataMixin):
             unit_keys=unit_keys,
             unit_metadata=self.unit_metadata.loc[unit_index],
             alignment=self.alignment,
+            sort=True,
         )
 
     def _select_trial_positions(
@@ -635,11 +688,11 @@ class TsTrials(_TrialMetadataMixin):
             )
 
         shifts = alignment - trial_starts
-        spike_counts = (self.index[:, :, 1] - self.index[:, :, 0]).sum(axis=1)
 
-        return self._from_packed(
-            spikes=self.spikes - np.repeat(shifts, spike_counts),
-            index=self.index.copy(),
+        return self._from_events(
+            spikes=self.spikes - shifts[self.trial_index],
+            trial_index=self.trial_index.copy(),
+            neuron_index=self.neuron_index.copy(),
             durations=self.durations.copy(),
             window_starts=self.window_starts - shifts,
             window_ends=self.window_ends - shifts,
@@ -649,28 +702,14 @@ class TsTrials(_TrialMetadataMixin):
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=column,
+            sort=True,
         )
 
     def to_tsdframe(self) -> TsdFrame:
         """Return all aligned spikes as a two-column event table."""
-        counts = self.index[:, :, 1] - self.index[:, :, 0]
-        flat_counts = counts.ravel()
-
-        pair_trials = np.repeat(
-            self.trial_ids.to_numpy(),
-            self.shape[1],
-        )
-        pair_units = np.tile(self.unit_keys, self.shape[0])
-
-        trial_labels = np.repeat(pair_trials, flat_counts)
-        unit_labels = np.repeat(pair_units, flat_counts)
-
-        times = self.spikes.copy()
+        trial_labels = self.trial_ids.to_numpy()[self.trial_index]
+        unit_labels = self.unit_keys[self.neuron_index]
         values = np.column_stack([trial_labels, unit_labels])
-
-        order = np.argsort(times, kind="stable")
-        times = times[order]
-        values = values[order]
 
         if len(self.durations):
             support = IntervalSet(
@@ -681,61 +720,41 @@ class TsTrials(_TrialMetadataMixin):
             support = IntervalSet([], [])
 
         return TsdFrame(
-            t=times,
+            t=self.spikes.copy(),
             d=values,
             columns=["trial", "unit"],
             time_support=support,
         )
 
-    def restrict(self, before: float, after: float) -> TsTrials:
-        """Restrict trials around the alignment point."""
-        if before < 0:
-            raise ValueError("before must be non-negative.")
-        if after < 0:
-            raise ValueError("after must be non-negative.")
+    def get(self, start: float, end: float) -> TsTrials:
+        """Return data within an aligned time window."""
+        start = float(start)
+        end = float(end)
 
-        requested_start = -float(before)
-        requested_end = float(after)
+        if not np.isfinite(start) or not np.isfinite(end):
+            raise ValueError("start and end must be finite.")
+        if start >= end:
+            raise ValueError("start must be less than end.")
 
-        window_starts = np.maximum(self.window_starts, requested_start)
-        window_ends = np.minimum(self.window_ends, requested_end)
-
-        n_trials, n_units = self.shape
-        index = np.zeros((n_trials, n_units, 2), dtype=np.int64)
-        chunks = []
-        offset = 0
-
-        for trial in range(n_trials):
-            for unit in range(n_units):
-                start, stop = self.index[trial, unit]
-                spikes = self.spikes[start:stop]
-
-                left = np.searchsorted(
-                    spikes,
-                    window_starts[trial],
-                    side="left",
-                )
-                right = np.searchsorted(
-                    spikes,
-                    window_ends[trial],
-                    side="left",
-                )
-                chunk = spikes[left:right]
-                new_stop = offset + len(chunk)
-
-                index[trial, unit] = offset, new_stop
-                if len(chunk):
-                    chunks.append(chunk)
-
-                offset = new_stop
-
-        spikes = (
-            np.concatenate(chunks) if chunks else np.array([], dtype=self.spikes.dtype)
+        window_starts = np.clip(
+            start,
+            self.window_starts,
+            self.window_ends,
+        )
+        window_ends = np.clip(
+            end,
+            self.window_starts,
+            self.window_ends,
         )
 
-        return self._from_packed(
-            spikes=spikes,
-            index=index,
+        event_starts = window_starts[self.trial_index]
+        event_ends = window_ends[self.trial_index]
+        selected = (self.spikes >= event_starts) & (self.spikes < event_ends)
+
+        return self._from_events(
+            spikes=self.spikes[selected],
+            trial_index=self.trial_index[selected],
+            neuron_index=self.neuron_index[selected],
             durations=window_ends - window_starts,
             window_starts=window_starts,
             window_ends=window_ends,
@@ -794,38 +813,57 @@ class TsTrials(_TrialMetadataMixin):
                 alignment=self.alignment,
             )
 
-        first_bin = int(np.floor(self.window_starts.min() / bin_size))
-        last_bin = int(np.ceil(self.window_ends.max() / bin_size))
+        nanoseconds = 1_000_000_000
+        bin_size_ns = int(np.rint(bin_size * nanoseconds))
 
-        edges = np.arange(first_bin, last_bin + 1, dtype=float) * bin_size
-        time = edges[:-1] + bin_size / 2
+        if bin_size_ns <= 0:
+            raise ValueError("bin_size must be at least one nanosecond.")
 
-        tolerance = np.finfo(float).eps * 16
-        valid = (edges[:-1][None, :] >= self.window_starts[:, None] - tolerance) & (
-            edges[1:][None, :] <= self.window_ends[:, None] + tolerance
+        bin_size = bin_size_ns / nanoseconds
+
+        window_starts_ns = np.rint(self.window_starts * nanoseconds).astype(np.int64)
+        window_ends_ns = np.rint(self.window_ends * nanoseconds).astype(np.int64)
+        spike_times_ns = np.rint(self.spikes * nanoseconds).astype(np.int64)
+
+        first_bin = int(
+            np.floor_divide(
+                window_starts_ns.min(),
+                bin_size_ns,
+            )
+        )
+        last_bin = int(
+            -np.floor_divide(
+                -window_ends_ns.max(),
+                bin_size_ns,
+            )
         )
 
-        n_bins = len(time)
-        values = np.full(
-            (n_trials, n_bins, n_units),
-            np.nan,
-            dtype=dtype,
+        edge_numbers = np.arange(
+            first_bin,
+            last_bin + 1,
+            dtype=np.int64,
+        )
+        edges_ns = edge_numbers * bin_size_ns
+        first_edge_ns = int(edges_ns[0])
+
+        time = (edges_ns[:-1].astype(float) + bin_size_ns / 2) / nanoseconds
+
+        valid = (edges_ns[:-1][None, :] >= window_starts_ns[:, None]) & (
+            edges_ns[1:][None, :] <= window_ends_ns[:, None]
         )
 
-        for trial in range(n_trials):
-            trial_valid = valid[trial]
+        counts = _count_spikes(
+            spike_times_ns,
+            self.trial_index,
+            self.neuron_index,
+            first_edge_ns,
+            bin_size_ns,
+            valid,
+            n_units,
+        )
 
-            if not np.any(trial_valid):
-                continue
-
-            for unit in range(n_units):
-                start, stop = self.index[trial, unit]
-                spikes = self.spikes[start:stop]
-
-                positions = np.searchsorted(spikes, edges, side="left")
-                counts = np.diff(positions)
-
-                values[trial, trial_valid, unit] = counts[trial_valid]
+        values = np.full(counts.shape, np.nan, dtype=dtype)
+        values[valid] = counts[valid]
 
         return TsdTrials._from_arrays(
             values=values,
@@ -900,9 +938,12 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             trials,
             self.trial_ids,
         )
-        self.durations = self.window_ends - self.window_starts
+        starts = np.asarray(trials.start, dtype=float)
+        ends = np.asarray(trials.end, dtype=float)
+
         self.window_starts = np.zeros(len(trials), dtype=float)
-        self.window_ends = self.durations.copy()
+        self.window_ends = ends - starts
+        self.durations = self.window_ends - self.window_starts
 
         source_values = np.asarray(source.d)
 
@@ -1448,34 +1489,41 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             alignment=self.alignment,
         )
 
-    def restrict(self, before: float, after: float) -> TsdTrials:
-        """Restrict trials around the alignment point."""
-        if before < 0:
-            raise ValueError("before must be non-negative.")
-        if after < 0:
-            raise ValueError("after must be non-negative.")
+    def get(self, start: float, end: float) -> TsdTrials:
+        """Return data within an aligned time window."""
+        start = float(start)
+        end = float(end)
 
-        requested_start = -float(before)
-        requested_end = float(after)
+        if not np.isfinite(start) or not np.isfinite(end):
+            raise ValueError("start and end must be finite.")
+        if start >= end:
+            raise ValueError("start must be less than end.")
+
         tolerance = np.finfo(float).eps * 16
 
         if self.data_kind == "count":
             half_bin = self.bin_size / 2
-            selected = (self.t - half_bin >= requested_start - tolerance) & (
-                self.t + half_bin <= requested_end + tolerance
+            selected = (self.t - half_bin >= start - tolerance) & (
+                self.t + half_bin <= end + tolerance
             )
         else:
-            selected = (self.t >= requested_start - tolerance) & (
-                self.t < requested_end - tolerance
-            )
+            selected = (self.t >= start - tolerance) & (self.t < end - tolerance)
 
         time_positions = np.flatnonzero(selected)
         time = self.t[time_positions]
         values = np.take(self.values, time_positions, axis=1)
         valid = np.take(self.valid, time_positions, axis=1)
 
-        window_starts = np.maximum(self.window_starts, requested_start)
-        window_ends = np.minimum(self.window_ends, requested_end)
+        window_starts = np.clip(
+            start,
+            self.window_starts,
+            self.window_ends,
+        )
+        window_ends = np.clip(
+            end,
+            self.window_starts,
+            self.window_ends,
+        )
 
         if self.data_kind == "count":
             half_bin = self.bin_size / 2
