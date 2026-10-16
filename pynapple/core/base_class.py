@@ -322,6 +322,10 @@ class _Base(abc.ABC):
         Tsd
             The time differences.
 
+        Notes
+        -----
+        Only timestamps are used; signal values are not loaded.
+
         """
         if align not in ["start", "center", "end"]:
             raise RuntimeError("align should be 'start', 'center' or 'end'")
@@ -338,15 +342,14 @@ class _Base(abc.ABC):
 
         start = 0
         alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
+        time_array = self.index.values
         for i in range(len(epochs)):
-            tmp = self.get(epochs[i, 0], epochs[i, 1])
+            tmp = time_array[self.get_slice(epochs[i, 0], epochs[i, 1])]
 
             if len(tmp) > 1:
-                diff = tmp.index.values[1:] - tmp.index.values[:-1]
+                diff = tmp[1:] - tmp[:-1]
                 new_d[start : start + len(tmp) - 1] = diff
-                new_t[start : start + len(tmp) - 1] = (
-                    tmp.index.values[:-1] + alpha * diff
-                )
+                new_t[start : start + len(tmp) - 1] = tmp[:-1] + alpha * diff
                 start += len(tmp) - 1
 
         # differences are emitted per-epoch in order -> sorted and within `epochs`
