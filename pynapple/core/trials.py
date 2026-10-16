@@ -1,61 +1,21 @@
 from __future__ import annotations
 
+from itertools import zip_longest
+from textwrap import wrap
+
 import numpy as np
 import pandas as pd
 from numba import njit
 from numpy.lib.mixins import NDArrayOperatorsMixin
-from tabulate import tabulate
 
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame
 from .ts_group import TsGroup
+from .utils import _format_bytes
 
-MAX_REPR_TRIALS = 10
-MAX_REPR_TRIAL_METADATA = 4
-MAX_REPR_UNIT = 8
-MAX_REPR_UNIT_METADATA = 4
-MAX_REPR_FEATURE = 8
-MAX_REPR_FEATURE_METADATA = 4
-
-
-def _repr_positions(size: int, limit: int) -> list[int | None]:
-    """Return head/tail positions separated by an ellipsis."""
-    if size <= limit:
-        return list(range(size))
-
-    leading = (limit - 1) // 2
-    trailing = limit - leading - 1
-
-    return [
-        *range(leading),
-        None,
-        *range(size - trailing, size),
-    ]
-
-
-def _format_bytes(size: int) -> str:
-    """Return a compact decimal byte size."""
-    units = ("B", "kB", "MB", "GB", "TB")
-    value = float(size)
-
-    for unit in units:
-        if value < 1000 or unit == units[-1]:
-            return f"{value:g}{unit}"
-        value /= 1000
-
-    return f"{value:g}TB"
-
-
-def _get_metadata(obj, index: pd.Index) -> pd.DataFrame:
-    """Return object metadata as a DataFrame."""
-    metadata = getattr(obj, "_metadata", None)
-    if metadata is None:
-        return pd.DataFrame(index=index)
-
-    columns = getattr(metadata, "columns", [])
-    data = {column: np.asarray(metadata[column]) for column in columns}
-    return pd.DataFrame(data, index=index)
+REPR_WIDTH = 100
+REPR_COLUMN_GAP = 2
 
 
 def _normalize_positions(
@@ -85,121 +45,84 @@ def _normalize_positions(
     return positions.astype(int, copy=False), False
 
 
-def _metadata_summary(
-    labels: pd.Index,
-    metadata: pd.DataFrame | None,
+def _format_axes(
+    left_title: str,
+    left_count: int | str,
+    left_columns,
+    right_title: str,
+    right_count: int | str,
+    right_columns,
     *,
-    label_header: str,
-    max_items: int,
-    max_metadata: int,
+    width: int = REPR_WIDTH,
 ) -> str:
-    if metadata is None:
-        metadata = pd.DataFrame(index=labels)
+    """Format two axis summaries side by side."""
+    metadata_label = "metadata: "
+    label_width = len(metadata_label)
+    gap = " " * REPR_COLUMN_GAP
+    column_width = (width - label_width - REPR_COLUMN_GAP) // 2
 
-    item_positions = _repr_positions(len(labels), max_items)
-    metadata_positions = _repr_positions(
-        metadata.shape[1],
-        max_metadata,
+    left_names = ", ".join(str(column) for column in left_columns) or "none"
+    right_names = ", ".join(str(column) for column in right_columns) or "none"
+
+    left_lines = wrap(
+        left_names,
+        width=column_width,
+        break_long_words=False,
+        break_on_hyphens=False,
+    )
+    right_lines = wrap(
+        right_names,
+        width=column_width,
+        break_long_words=False,
+        break_on_hyphens=False,
     )
 
-    headers = [
-        label_header,
-        *[
-            "..." if position is None else labels[position]
-            for position in item_positions
-        ],
+    indent = " " * label_width
+    lines = [
+        f"{indent}{left_title:<{column_width}}{gap}{right_title}",
+        f"{indent}{f'count: {left_count}':<{column_width}}{gap}count: {right_count}",
     ]
 
-    rows = [
-        [
-            "Metadata",
-            *["..." if position is None else "" for position in item_positions],
-        ]
-    ]
+    for index, (left, right) in enumerate(
+        zip_longest(left_lines, right_lines, fillvalue="")
+    ):
+        label = metadata_label if index == 0 else indent
+        lines.append(f"{label}{left:<{column_width}}{gap}{right}".rstrip())
 
-    for metadata_position in metadata_positions:
-        if metadata_position is None:
-            rows.append(["..."] * len(headers))
-            continue
+    return "\n".join(lines)
 
-        column = metadata.columns[metadata_position]
-        rows.append(
-            [
-                column,
-                *[
-                    (
-                        "..."
-                        if item_position is None
-                        else metadata.iloc[item_position, metadata_position]
-                    )
-                    for item_position in item_positions
-                ],
-            ]
-        )
 
-    return tabulate(
-        rows,
-        headers=headers,
-        tablefmt="simple",
-        floatfmt=".3f",
-        numalign="left",
-        stralign="left",
-    )
+def _copy_metadata(obj, *, drop: tuple[str, ...] = ()):
+    """Copy an object's metadata."""
+    metadata = obj._metadata.copy()
+
+    for column in drop:
+        if column in metadata.columns:
+            metadata.drop(column)
+
+    return metadata
 
 
 class _TrialMetadataMixin:
-    trial_ids: pd.Index
-    trial_metadata: pd.DataFrame
+    trials: IntervalSet
     durations: np.ndarray
     alignment: str
     window_starts: np.ndarray
     window_ends: np.ndarray
 
-    def query(self, expr: str, **kwargs):
-        """Select trials using a pandas metadata query."""
-        if not isinstance(expr, str):
-            raise TypeError("expr must be a string.")
-        if "inplace" in kwargs:
-            raise TypeError("query does not support the inplace argument.")
-        kwargs["level"] = kwargs.get("level", 0) + 1
-        selected = self.trial_metadata.query(
-            expr,
-            inplace=False,
-            **kwargs,
-        )
-        return self._select_trials(selected.index)
+    @property
+    def trial_ids(self) -> np.ndarray:
+        return self.trials.index
 
     def groupby(self, by: str):
         """Group trials by a metadata column."""
-        if by not in self.trial_metadata.columns:
+        if by not in self.trials.metadata_columns:
             raise KeyError(f"Unknown trial metadata column: {by!r}")
 
-        groups = self.trial_metadata.groupby(
-            by,
-            sort=False,
-        ).groups
-
-        return {key: self._select_trials(index) for key, index in groups.items()}
-
-    def _trial_metadata_positions(self) -> list[int | None]:
-        """Return metadata columns shown in representations."""
-        return _repr_positions(
-            self.trial_metadata.shape[1],
-            MAX_REPR_TRIAL_METADATA,
-        )
-
-    def _trial_positions(self, trial_ids) -> np.ndarray:
-        """Convert trial labels to positional indices."""
-        trial_ids = pd.Index(trial_ids)
-        positions = self.trial_ids.get_indexer(trial_ids)
-        if np.any(positions < 0):
-            missing = trial_ids[positions < 0].tolist()
-            raise KeyError(f"Trials not found: {missing}")
-        return positions
-
-    def _select_trials(self, trial_ids):
-        """Select trials by label."""
-        return self._select_trial_positions(self._trial_positions(trial_ids))
+        return {
+            key: self._select_trial_positions(np.asarray(positions, dtype=np.int64))
+            for key, positions in self.trials.groupby(by).items()
+        }
 
     def _select_trial_positions(self, positions: np.ndarray):
         """Select trials by position."""
@@ -209,20 +132,25 @@ class _TrialMetadataMixin:
         """Return the trial duration or aligned window summary."""
         if not len(self.durations):
             return "empty"
+
         if self.alignment == "start":
             if np.allclose(self.durations, self.durations[0]):
                 return f"{self.durations[0]:g} sec"
+
             minimum = float(np.min(self.durations))
             maximum = float(np.max(self.durations))
             return f"variable ({minimum:g}–{maximum:g} sec)"
+
         if np.allclose(self.window_starts, self.window_starts[0]) and np.allclose(
             self.window_ends, self.window_ends[0]
         ):
             return f"({self.window_starts[0]:g}, {self.window_ends[0]:g}) sec"
+
         start_min = float(np.min(self.window_starts))
         start_max = float(np.max(self.window_starts))
         end_min = float(np.min(self.window_ends))
         end_max = float(np.max(self.window_ends))
+
         return (
             f"variable (start: {start_min:g}–{start_max:g}, "
             f"end: {end_min:g}–{end_max:g}) sec"
@@ -292,9 +220,6 @@ class TsTrials(_TrialMetadataMixin):
             raise TypeError("TsTrials requires a TsGroup containing Ts entries.")
 
         self.trials = trials
-        self.trial_ids = pd.Index(trials.index)
-        self.trial_metadata = _get_metadata(trials, self.trial_ids)
-
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
 
@@ -304,11 +229,7 @@ class TsTrials(_TrialMetadataMixin):
         self.durations = self.window_ends - self.window_starts
 
         self.unit_keys = np.asarray(source.index)
-        unit_index = pd.Index(self.unit_keys)
-        self.unit_metadata = _get_metadata(
-            source,
-            unit_index,
-        ).drop(columns="rate", errors="ignore")
+        self.unit_metadata = _copy_metadata(source, drop=("rate",))
 
         (
             self.spikes,
@@ -327,10 +248,8 @@ class TsTrials(_TrialMetadataMixin):
         window_starts: np.ndarray,
         window_ends: np.ndarray,
         trials: IntervalSet,
-        trial_ids: pd.Index,
-        trial_metadata: pd.DataFrame,
         unit_keys: np.ndarray,
-        unit_metadata: pd.DataFrame,
+        unit_metadata,
         alignment: str,
         sort: bool = False,
     ) -> TsTrials:
@@ -352,8 +271,6 @@ class TsTrials(_TrialMetadataMixin):
         obj.window_starts = np.asarray(window_starts, dtype=float)
         obj.window_ends = np.asarray(window_ends, dtype=float)
         obj.trials = trials
-        obj.trial_ids = pd.Index(trial_ids)
-        obj.trial_metadata = trial_metadata
         obj.unit_keys = np.asarray(unit_keys)
         obj.unit_metadata = unit_metadata
         obj.alignment = alignment
@@ -366,34 +283,55 @@ class TsTrials(_TrialMetadataMixin):
         unit_keys: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create sorted aligned event arrays."""
-        events = source.to_tsd()
-        assignments = trials.in_interval(events)
+        time_chunks = []
+        neuron_chunks = []
 
-        absolute_times = np.asarray(events.t, dtype=float)
-        unit_labels = np.asarray(events.d)
-        assigned_trials = np.asarray(assignments, dtype=float)
+        for neuron, key in enumerate(unit_keys):
+            times = np.asarray(source[key].t, dtype=float)
+            if not len(times):
+                continue
 
-        inside = np.isfinite(assigned_trials)
+            time_chunks.append(times)
+            neuron_chunks.append(np.full(len(times), neuron, dtype=np.int64))
 
-        absolute_times = absolute_times[inside]
-        unit_labels = unit_labels[inside]
-        trial_index = assigned_trials[inside].astype(
-            np.int64,
-            copy=False,
-        )
+        if not time_chunks:
+            return (
+                np.array([], dtype=float),
+                np.array([], dtype=np.int64),
+                np.array([], dtype=np.int64),
+            )
 
-        neuron_index = pd.Index(unit_keys).get_indexer(unit_labels)
-        if np.any(neuron_index < 0):
-            raise RuntimeError("Could not map all spike unit labels.")
+        absolute_times = np.concatenate(time_chunks)
+        neuron_index = np.concatenate(neuron_chunks)
 
         trial_starts = np.asarray(trials.start, dtype=float)
-        spikes = absolute_times - trial_starts[trial_index]
+        trial_ends = np.asarray(trials.end, dtype=float)
 
+        if not len(trial_starts):
+            return (
+                np.array([], dtype=float),
+                np.array([], dtype=np.int64),
+                np.array([], dtype=np.int64),
+            )
+
+        trial_index = np.searchsorted(trial_starts, absolute_times, side="right") - 1
+        candidates = trial_index >= 0
+        inside = np.zeros(len(absolute_times), dtype=bool)
+        inside[candidates] = (
+            absolute_times[candidates] <= trial_ends[trial_index[candidates]]
+        )
+
+        absolute_times = absolute_times[inside]
+        neuron_index = neuron_index[inside]
+        trial_index = trial_index[inside]
+
+        spikes = absolute_times - trial_starts[trial_index]
         order = np.argsort(spikes, kind="stable")
+
         return (
             spikes[order],
-            trial_index[order],
-            neuron_index[order].astype(np.int64, copy=False),
+            trial_index[order].astype(np.int64, copy=False),
+            neuron_index[order],
         )
 
     @property
@@ -404,95 +342,26 @@ class TsTrials(_TrialMetadataMixin):
         return self.shape[0]
 
     def __repr__(self) -> str:
-        """Return compact trial and unit summaries."""
+        """Return a compact trial and unit summary."""
+        axes = _format_axes(
+            "Trials",
+            self.shape[0],
+            self.trials.metadata_columns,
+            "Units",
+            self.shape[1],
+            self.unit_metadata.columns,
+        )
+        divider = "-" * REPR_WIDTH
+        size = self.spikes.nbytes + self.trial_index.nbytes + self.neuron_index.nbytes
+
         return (
-            f"{self._trial_summary()}\n\n"
-            f"{self._unit_summary()}\n\n"
+            f"{divider}\n"
+            f"{axes}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}\n"
-            f"unbinned, shape: {self.shape} (trial, unit)"
-        )
-
-    def _trial_summary(self) -> str:
-        """Return a compact trial summary table."""
-        spike_counts = np.bincount(
-            self.trial_index,
-            minlength=self.shape[0],
-        )
-
-        denominators = self.durations * self.shape[1]
-        rates = np.divide(
-            spike_counts,
-            denominators,
-            out=np.zeros(len(self), dtype=float),
-            where=denominators > 0,
-        )
-
-        trial_positions = _repr_positions(
-            len(self),
-            MAX_REPR_TRIALS,
-        )
-        metadata_positions = self._trial_metadata_positions()
-
-        metadata_headers = [
-            "..." if position is None else str(self.trial_metadata.columns[position])
-            for position in metadata_positions
-        ]
-        headers = [
-            "Trial",
-            "start",
-            "end",
-            *metadata_headers,
-            "n spikes",
-            "rate (Hz)",
-        ]
-
-        rows = []
-        for position in trial_positions:
-            if position is None:
-                rows.append(["..."] * len(headers))
-                continue
-
-            metadata_values = [
-                (
-                    "..."
-                    if metadata_position is None
-                    else self.trial_metadata.iloc[
-                        position,
-                        metadata_position,
-                    ]
-                )
-                for metadata_position in metadata_positions
-            ]
-
-            rows.append(
-                [
-                    self.trial_ids[position],
-                    self.trials.start[position],
-                    self.trials.end[position],
-                    *metadata_values,
-                    spike_counts[position],
-                    rates[position],
-                ]
-            )
-
-        return tabulate(
-            rows,
-            headers=headers,
-            tablefmt="simple",
-            floatfmt=".3f",
-            numalign="left",
-            stralign="left",
-        )
-
-    def _unit_summary(self) -> str:
-        """Return a compact unit metadata table."""
-        return _metadata_summary(
-            pd.Index(self.unit_keys),
-            self.unit_metadata,
-            label_header="Unit",
-            max_items=MAX_REPR_UNIT,
-            max_metadata=MAX_REPR_UNIT_METADATA,
+            f"unbinned, shape: {self.shape} (trial, unit), "
+            f"size: {_format_bytes(size)}\n"
+            f"{divider}"
         )
 
     def __getitem__(self, key):
@@ -591,61 +460,36 @@ class TsTrials(_TrialMetadataMixin):
         unit_positions: np.ndarray,
     ) -> TsTrials:
         """Create a subset with remapped event indices."""
-        spike_chunks = []
-        trial_chunks = []
-        neuron_chunks = []
+        trial_map = np.full(self.shape[0], -1, dtype=np.int64)
+        unit_map = np.full(self.shape[1], -1, dtype=np.int64)
 
-        for new_trial, trial in enumerate(trial_positions):
-            trial_selected = self.trial_index == trial
+        trial_map[trial_positions] = np.arange(
+            len(trial_positions),
+            dtype=np.int64,
+        )
+        unit_map[unit_positions] = np.arange(
+            len(unit_positions),
+            dtype=np.int64,
+        )
 
-            for new_neuron, neuron in enumerate(unit_positions):
-                selected = trial_selected & (self.neuron_index == neuron)
-                spikes = self.spikes[selected]
+        trial_index = trial_map[self.trial_index]
+        neuron_index = unit_map[self.neuron_index]
+        selected = (trial_index >= 0) & (neuron_index >= 0)
 
-                if not len(spikes):
-                    continue
-
-                spike_chunks.append(spikes)
-                trial_chunks.append(
-                    np.full(
-                        len(spikes),
-                        new_trial,
-                        dtype=np.int64,
-                    )
-                )
-                neuron_chunks.append(
-                    np.full(
-                        len(spikes),
-                        new_neuron,
-                        dtype=np.int64,
-                    )
-                )
-
-        if spike_chunks:
-            spikes = np.concatenate(spike_chunks)
-            trial_index = np.concatenate(trial_chunks)
-            neuron_index = np.concatenate(neuron_chunks)
-        else:
-            spikes = np.array([], dtype=self.spikes.dtype)
-            trial_index = np.array([], dtype=np.int64)
-            neuron_index = np.array([], dtype=np.int64)
-
-        trial_ids = self.trial_ids.take(trial_positions)
+        trials = self.trials[trial_positions]
         unit_keys = self.unit_keys[unit_positions]
-        unit_index = pd.Index(unit_keys)
+        unit_metadata = self.unit_metadata.loc[unit_keys].copy()
 
         return self._from_events(
-            spikes=spikes,
-            trial_index=trial_index,
-            neuron_index=neuron_index,
+            spikes=self.spikes[selected],
+            trial_index=trial_index[selected],
+            neuron_index=neuron_index[selected],
             durations=self.durations[trial_positions],
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
-            trials=self.trials[trial_positions],
-            trial_ids=trial_ids,
-            trial_metadata=self.trial_metadata.loc[trial_ids],
+            trials=trials,
             unit_keys=unit_keys,
-            unit_metadata=self.unit_metadata.loc[unit_index],
+            unit_metadata=unit_metadata,
             alignment=self.alignment,
             sort=True,
         )
@@ -660,17 +504,19 @@ class TsTrials(_TrialMetadataMixin):
         )
 
     def realign_to(self, column: str) -> TsTrials:
-        """Return trials aligned to absolute timestamps in a metadata column."""
-        if column not in self.trial_metadata.columns:
+        """Return trials aligned to metadata timestamps."""
+        if column not in self.trials.metadata_columns:
             raise KeyError(f"Unknown trial metadata column: {column!r}")
 
-        series = self.trial_metadata[column]
-        if not pd.api.types.is_numeric_dtype(
-            series.dtype
-        ) or pd.api.types.is_bool_dtype(series.dtype):
+        alignment = np.asarray(self.trials[column])
+
+        if not np.issubdtype(alignment.dtype, np.number) or np.issubdtype(
+            alignment.dtype, np.bool_
+        ):
             raise TypeError(f"Trial metadata column {column!r} must be numeric.")
 
-        alignment = series.to_numpy(dtype=float)
+        alignment = alignment.astype(float, copy=False)
+
         if not np.all(np.isfinite(alignment)):
             raise ValueError(
                 f"Trial metadata column {column!r} contains missing or "
@@ -679,8 +525,8 @@ class TsTrials(_TrialMetadataMixin):
 
         trial_starts = np.asarray(self.trials.start, dtype=float)
         trial_ends = np.asarray(self.trials.end, dtype=float)
-
         outside = (alignment < trial_starts) | (alignment > trial_ends)
+
         if np.any(outside):
             trial_ids = self.trial_ids[outside].tolist()
             raise ValueError(
@@ -697,8 +543,6 @@ class TsTrials(_TrialMetadataMixin):
             window_starts=self.window_starts - shifts,
             window_ends=self.window_ends - shifts,
             trials=self.trials,
-            trial_ids=self.trial_ids.copy(),
-            trial_metadata=self.trial_metadata.copy(),
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=column,
@@ -707,7 +551,7 @@ class TsTrials(_TrialMetadataMixin):
 
     def to_tsdframe(self) -> TsdFrame:
         """Return all aligned spikes as a two-column event table."""
-        trial_labels = self.trial_ids.to_numpy()[self.trial_index]
+        trial_labels = self.trial_ids[self.trial_index]
         unit_labels = self.unit_keys[self.neuron_index]
         values = np.column_stack([trial_labels, unit_labels])
 
@@ -759,8 +603,6 @@ class TsTrials(_TrialMetadataMixin):
             window_starts=window_starts,
             window_ends=window_ends,
             trials=self.trials,
-            trial_ids=self.trial_ids.copy(),
-            trial_metadata=self.trial_metadata.copy(),
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=self.alignment,
@@ -803,8 +645,6 @@ class TsTrials(_TrialMetadataMixin):
                 window_starts=np.array([], dtype=float),
                 window_ends=np.array([], dtype=float),
                 trials=self.trials,
-                trial_ids=self.trial_ids,
-                trial_metadata=self.trial_metadata,
                 feature_names=pd.Index(self.unit_keys),
                 feature_metadata=self.unit_metadata,
                 sample_period=bin_size,
@@ -873,8 +713,6 @@ class TsTrials(_TrialMetadataMixin):
             window_starts=self.window_starts.copy(),
             window_ends=self.window_ends.copy(),
             trials=self.trials,
-            trial_ids=self.trial_ids.copy(),
-            trial_metadata=self.trial_metadata.copy(),
             feature_names=pd.Index(self.unit_keys),
             feature_metadata=self.unit_metadata.copy(),
             sample_period=bin_size,
@@ -933,11 +771,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         self.alignment = "start"
         self.trials = trials
-        self.trial_ids = pd.Index(trials.index)
-        self.trial_metadata = _get_metadata(
-            trials,
-            self.trial_ids,
-        )
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
 
@@ -952,10 +785,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             self.feature_metadata = None
         else:
             self.feature_names = pd.Index(source.columns)
-            self.feature_metadata = _get_metadata(
-                source,
-                self.feature_names,
-            )
+            self.feature_metadata = _copy_metadata(source)
 
         (
             self.values,
@@ -981,10 +811,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         window_starts: np.ndarray,
         window_ends: np.ndarray,
         trials: IntervalSet,
-        trial_ids: pd.Index,
-        trial_metadata: pd.DataFrame,
         feature_names: pd.Index | None,
-        feature_metadata: pd.DataFrame | None,
+        feature_metadata,
         sample_period: float | None,
         bin_size: float | None,
         data_kind: str,
@@ -998,8 +826,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         obj.window_starts = np.asarray(window_starts, dtype=float)
         obj.window_ends = np.asarray(window_ends, dtype=float)
         obj.trials = trials
-        obj.trial_ids = pd.Index(trial_ids)
-        obj.trial_metadata = trial_metadata
         obj.feature_names = feature_names
         obj.feature_metadata = feature_metadata
         obj.sample_period = sample_period
@@ -1107,138 +933,38 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         return self.shape[0]
 
     def __repr__(self) -> str:
-        """Return compact trial and feature summaries."""
+        """Return a compact trial and feature summary."""
         sampling_label = (
             "bin_size" if self.data_kind == "count" else "sampling interval"
         )
+
+        if self.feature_names is None:
+            feature_count = "scalar"
+            feature_columns = []
+        else:
+            feature_count = len(self.feature_names)
+            feature_columns = self.feature_metadata.columns
+
+        axes = _format_axes(
+            "Trials",
+            self.shape[0],
+            self.trials.metadata_columns,
+            "Features",
+            feature_count,
+            feature_columns,
+        )
+        divider = "-" * REPR_WIDTH
+
         return (
-            f"{self._trial_summary()}\n\n"
-            f"{self._feature_summary()}\n\n"
+            f"{divider}\n"
+            f"{axes}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}, "
             f"{sampling_label}: {self._sample_size_summary()}\n"
             f"dtype: {self.values.dtype}, "
             f"shape: {self.shape} {self._shape_axes()}, "
-            f"size: {_format_bytes(self.values.nbytes)}"
-        )
-
-    def _trial_summary(self) -> str:
-        """Return a compact per-trial summary."""
-        trial_positions = _repr_positions(
-            len(self),
-            MAX_REPR_TRIALS,
-        )
-        metadata_positions = self._trial_metadata_positions()
-
-        metadata_headers = [
-            "..." if position is None else str(self.trial_metadata.columns[position])
-            for position in metadata_positions
-        ]
-
-        value_header = "rate (Hz)" if self.data_kind == "count" else "mean"
-        headers = [
-            "Trial",
-            "start",
-            "end",
-            *metadata_headers,
-            value_header,
-            "std",
-        ]
-
-        means, standard_deviations = self._trial_statistics()
-        rows = []
-
-        for position in trial_positions:
-            if position is None:
-                rows.append(["..."] * len(headers))
-                continue
-
-            metadata_values = [
-                (
-                    "..."
-                    if metadata_position is None
-                    else self.trial_metadata.iloc[
-                        position,
-                        metadata_position,
-                    ]
-                )
-                for metadata_position in metadata_positions
-            ]
-
-            rows.append(
-                [
-                    self.trial_ids[position],
-                    self.trials.start[position],
-                    self.trials.end[position],
-                    *metadata_values,
-                    means[position],
-                    standard_deviations[position],
-                ]
-            )
-
-        return tabulate(
-            rows,
-            headers=headers,
-            tablefmt="simple",
-            floatfmt=".3f",
-            numalign="left",
-            stralign="left",
-        )
-
-    def _trial_statistics(
-        self,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Return per-trial mean and standard deviation."""
-        values = self.values.astype(float, copy=False)
-
-        valid = self.valid
-        if values.ndim == 3:
-            valid = np.broadcast_to(
-                valid[:, :, None],
-                values.shape,
-            )
-
-        valid = valid & np.isfinite(values)
-        scaled = values / self.bin_size if self.data_kind == "count" else values
-
-        axes = tuple(range(1, values.ndim))
-        count = valid.sum(axis=axes)
-        total = np.where(valid, scaled, 0.0).sum(axis=axes)
-
-        mean = np.divide(
-            total,
-            count,
-            out=np.full(len(self), np.nan),
-            where=count > 0,
-        )
-
-        mean_shape = (len(self),) + (1,) * (values.ndim - 1)
-        squared_error = np.where(
-            valid,
-            (scaled - mean.reshape(mean_shape)) ** 2,
-            0.0,
-        ).sum(axis=axes)
-
-        variance = np.divide(
-            squared_error,
-            count,
-            out=np.full(len(self), np.nan),
-            where=count > 0,
-        )
-
-        return mean, np.sqrt(variance)
-
-    def _feature_summary(self) -> str:
-        """Return a compact feature metadata table."""
-        if self.feature_names is None:
-            return "Feature\n-------\nscalar"
-
-        return _metadata_summary(
-            self.feature_names,
-            self.feature_metadata,
-            label_header="Feature",
-            max_items=MAX_REPR_FEATURE,
-            max_metadata=MAX_REPR_FEATURE_METADATA,
+            f"size: {_format_bytes(self.values.nbytes)}\n"
+            f"{divider}\n"
         )
 
     def _sample_size_summary(self) -> str:
@@ -1391,8 +1117,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             feature_names = None
             feature_metadata = None
 
-        trial_ids = self.trial_ids.take(trial_positions)
-
         return self._from_arrays(
             values=values,
             time=self.t[time_positions],
@@ -1401,8 +1125,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
             trials=self.trials[trial_positions],
-            trial_ids=trial_ids,
-            trial_metadata=self.trial_metadata.loc[trial_ids],
             feature_names=feature_names,
             feature_metadata=feature_metadata,
             sample_period=self.sample_period,
@@ -1479,8 +1201,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_starts=self.window_starts,
             window_ends=self.window_ends,
             trials=self.trials,
-            trial_ids=self.trial_ids,
-            trial_metadata=self.trial_metadata,
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
             sample_period=self.sample_period,
@@ -1548,8 +1268,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_starts=window_starts,
             window_ends=window_ends,
             trials=self.trials,
-            trial_ids=self.trial_ids.copy(),
-            trial_metadata=self.trial_metadata.copy(),
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
             sample_period=self.sample_period,

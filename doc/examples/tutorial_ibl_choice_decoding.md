@@ -103,7 +103,7 @@ trial_data
 ## Subselecting trials based on metadata
 We can now easily discard trials where a choice was not made (a more complete analysis may include more criteria): 
 ```{code-cell} ipython3
-trial_data = trial_data.query("mouse_wheel_choice != 'none'")
+trial_data = trial_data[trial_data.trials["mouse_wheel_choice"] != "none"]
 trial_data
 ```
 
@@ -150,7 +150,7 @@ To get a better overview of what is happening, we might want to restrict to a
 fixed window around the alignment point:
 
 ```{code-cell} ipython3
-trial_data = trial_data.restrict(before=0.1, after=0.5)
+trial_data = trial_data.get(start=-0.1, end=0.5)
 trial_data
 ```
 

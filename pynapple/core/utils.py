@@ -150,11 +150,7 @@ def is_array_like(obj):
     # not_tsd_type = not isinstance(obj, _AbstractTsd)
 
     return (
-        has_shape
-        and has_dtype
-        and has_ndim
-        and is_indexable
-        and is_iterable
+        has_shape and has_dtype and has_ndim and is_indexable and is_iterable
         # and not_tsd_type
     )
 
@@ -675,3 +671,16 @@ def take(array, idx):
     for start, stop in zip(run_starts, run_stops):
         out[start:stop] = array[idx[start] : idx[stop - 1] + 1]
     return out
+
+
+def _format_bytes(size: int) -> str:
+    """Return a compact decimal byte size."""
+    units = ("B", "kB", "MB", "GB", "TB")
+    value = float(size)
+
+    for unit in units:
+        if value < 1000 or unit == units[-1]:
+            return f"{value:g}{unit}"
+        value /= 1000
+
+    return f"{value:g}TB"
