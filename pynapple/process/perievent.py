@@ -2,22 +2,28 @@
 Functions to realign time series relative to a reference time.
 """
 
+from __future__ import annotations
+
 from numbers import Number
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
+from numba import jit, prange
 
 from .. import core as nap
 from ._process_functions import _perievent_continuous, _perievent_triggered_average
 
 
 def compute_event_triggered_average(
-    data,
-    events,
-    binsize,
-    window=0,
-    time_unit="s",
-    epochs=None,
-):
+    data: Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor],
+    events: Union[
+        nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup, nap.IntervalSet
+    ],
+    binsize: float,
+    window: Union[float, Tuple[float, float]] = 0,
+    time_unit: str = "s",
+    epochs: Optional[nap.IntervalSet] = None,
+) -> Union[nap.TsdFrame, nap.TsdTensor]:
     """
     Bin the event timestamps and compute the Event-Triggered Average (ETA).
 
@@ -225,13 +231,13 @@ def compute_event_triggered_average(
 
 
 def compute_spike_triggered_average(
-    data,
-    spikes,
-    binsize,
-    window=0,
-    time_unit="s",
-    epochs=None,
-):
+    data: Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor],
+    spikes: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup],
+    binsize: float,
+    window: Union[float, Tuple[float, float]] = 0,
+    time_unit: str = "s",
+    epochs: Optional[nap.IntervalSet] = None,
+) -> Union[nap.TsdFrame, nap.TsdTensor]:
     """
     Alias for :func:`~pynapple.process.perievent.compute_event_triggered_average` with ``spikes`` as the events argument.
 
@@ -277,7 +283,18 @@ def compute_spike_triggered_average(
     )
 
 
-def compute_perievent(data, events, window, time_unit="s", epochs=None):
+def compute_perievent(
+    data: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup],
+    events: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor],
+    window: Union[float, Tuple[float, float]],
+    time_unit: str = "s",
+    epochs: Optional[nap.IntervalSet] = None,
+) -> Union[
+    nap.TsGroup,
+    nap.TsdFrame,
+    nap.TsdTensor,
+    Dict[int, Union[nap.TsGroup, nap.TsdFrame, nap.TsdTensor]],
+]:
     """
     Perievent alignment, handles both discrete and continuous data.
 
@@ -434,14 +451,14 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     if len(window) != 2 or not all(isinstance(x, Number) for x in window):
         raise RuntimeError("window should be a tuple of 2 numbers or a single number.")
 
-    # Call recursively if data is a TsGroup
     if isinstance(data, nap.TsGroup):
-        return {
-            i: compute_perievent(data[i], events, window, time_unit, epochs)
-            for i in data
-        }
-
-    if not isinstance(data, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+        # Members with values align as continuous data: one unit at a time
+        if data._data is not None and np.any(data._is_tsd):
+            return {
+                i: compute_perievent(data[i], events, window, time_unit, epochs)
+                for i in data
+            }
+    elif not isinstance(data, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
         raise TypeError(f"data should be a time series object: {type(data)}")
 
     if not isinstance(events, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
@@ -454,8 +471,18 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     events = events.restrict(epochs)
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
+    if isinstance(data, nap.TsGroup):
+        return _align_group(data, events, window)
+
     if isinstance(data, nap.Ts):
-        return _align_discrete(data, events, window, new_time_support)
+        # a Ts aligns as a group of one unit
+        event_times = events.times()
+        relative_times, event_idx, _ = _align_sorted(
+            data.t, np.zeros(len(data), dtype=np.int64), 1, event_times, window
+        )
+        return _aligned_tsgroup(
+            relative_times, event_idx, event_times, new_time_support
+        )
 
     if not nap.utils._is_regularly_sampled(data):
         raise RuntimeError(
@@ -467,40 +494,195 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     return _align_regular(data, events, window, new_time_support)
 
 
-def _align_discrete(data, events, window, new_time_support):
+def _align_sorted(times, unit_pos, n_units, event_times, window):
     """
-    Align a ``Ts`` to events, returning a TsGroup.
+    Align the spikes of all the units to the events in one pass.
+
+    ``times`` holds the spikes of every unit in one sorted array, as a
+    ``TsGroup`` stores them. For each event, two binary searches find the
+    spikes in ``[event - window[0], event + window[1]]``. Both bounds are
+    included. The subtraction ``t - event`` can give a relative time just
+    outside ``[-window[0], window[1]]``, by the smallest step between two
+    floats. These times are dropped, as a ``Ts`` on the output support (the
+    window) drops them. Spikes in overlapping windows are aligned to each of
+    their events.
 
     Parameters
     ----------
-    data : Ts
-        Data to align
+    times : numpy.ndarray
+        Spike times of all the units, sorted.
+    unit_pos : numpy.ndarray
+        Position of the unit of each spike, in ``0..n_units-1``.
+    n_units : int
+        Number of units.
+    event_times : numpy.ndarray
+        Event times.
+    window : numpy.ndarray
+        ``[before, after]`` window, both positive.
+
+    Returns
+    -------
+    relative_times : numpy.ndarray
+        Spike times relative to their event (``t - event``), sorted by unit,
+        then by relative time, then by event.
+    event_idx : numpy.ndarray
+        Index in ``event_times`` of the event of each spike.
+    offsets : numpy.ndarray
+        ``relative_times[offsets[i]:offsets[i + 1]]`` are the spikes of unit ``i``.
+    """
+    relative_times, event_idx, offsets = _jitalign_sorted(
+        times, unit_pos, n_units, event_times, window[0], window[1]
+    )
+    _jitsort_units(relative_times, event_idx, offsets)
+    return relative_times, event_idx, offsets
+
+
+@jit(nopython=True, cache=True)
+def _jitalign_sorted(times, unit_pos, n_units, event_times, before, after):
+    """Spikes in the window of each event, grouped by unit. In each unit,
+    the spikes are sorted by event, then by time. See ``_align_sorted``."""
+    lo = np.searchsorted(times, event_times - before, side="left")
+    hi = np.searchsorted(times, event_times + after, side="right")
+
+    # `t - event` can fall just outside the window, by the smallest step
+    # between two floats (e.g. 1.4 - 1.7 gives -0.30000000000000004, not
+    # -0.3). The output support is the window, and a Ts on that support
+    # drops these times: drop them here too.
+
+    # first pass: number of spikes of each unit
+    counts = np.zeros(n_units, dtype=np.int64)
+    for j in range(len(event_times)):
+        for k in range(lo[j], hi[j]):
+            relative_time = times[k] - event_times[j]
+            if relative_time >= -before and relative_time <= after:
+                counts[unit_pos[k]] += 1
+    offsets = np.zeros(n_units + 1, dtype=np.int64)
+    for i in range(n_units):
+        offsets[i + 1] = offsets[i] + counts[i]
+
+    # second pass: write each spike in the block of its unit
+    relative_times = np.empty(offsets[-1], dtype=np.float64)
+    event_idx = np.empty(offsets[-1], dtype=np.int64)
+    pos = offsets[:-1].copy()
+    for j in range(len(event_times)):
+        for k in range(lo[j], hi[j]):
+            relative_time = times[k] - event_times[j]
+            if relative_time >= -before and relative_time <= after:
+                u = unit_pos[k]
+                relative_times[pos[u]] = relative_time
+                event_idx[pos[u]] = j
+                pos[u] += 1
+    return relative_times, event_idx, offsets
+
+
+@jit(nopython=True, cache=True, parallel=True)
+def _jitsort_units(relative_times, event_idx, offsets):
+    """Sort the block of each unit by relative time, in place. The sort is
+    stable: spikes with the same relative time stay in event order. The
+    units are independent, thus they are sorted in parallel."""
+    for i in prange(len(offsets) - 1):
+        a, b = offsets[i], offsets[i + 1]
+        order = np.argsort(relative_times[a:b], kind="mergesort") + a
+        relative_times[a:b] = relative_times[order]
+        event_idx[a:b] = event_idx[order]
+
+
+def _event_windows(event_times, window):
+    """
+    The windows ``[event - window[0], event + window[1]]`` as an IntervalSet,
+    for ``TsGroup._load_in_memory``: a lazy group then reads only the spikes
+    that ``_align_sorted`` aligns.
+
+    Overlapping or touching windows are merged first: an IntervalSet takes
+    1 microsecond off bounds that touch. The merged bounds are the same
+    floats as in ``_align_sorted``. An IntervalSet drops windows of zero
+    length. Thus a zero window gives None, to read all the spikes.
+
+    Spikes outside ``epochs`` but in a window are read, as in the regular
+    group, which does not restrict the spikes to ``epochs``.
+    """
+    if window[0] + window[1] == 0:
+        return None
+    if len(event_times) == 0:
+        return nap.IntervalSet(start=[], end=[])
+    starts = event_times - window[0]
+    ends = event_times + window[1]
+    # events are sorted, thus starts and ends are sorted too: a window
+    # starts a new block when it starts after the end of the previous one
+    new_block = np.concatenate(([True], starts[1:] > ends[:-1]))
+    last_of_block = np.concatenate((new_block[1:], [True]))
+    return nap.IntervalSet(start=starts[new_block], end=ends[last_of_block])
+
+
+def _align_group(data, events, window):
+    """
+    Align every unit of a ``TsGroup`` to events, with one ``_align_sorted``
+    pass over the merged spikes.
+
+    Gives the same output as aligning each unit as a ``Ts``, without
+    building one ``Ts`` per unit and per event.
+
+    Parameters
+    ----------
+    data : TsGroup
+        Group with no values (all members are ``Ts``). A lazy group reads
+        only the spikes in the event windows.
     events : Ts or other timeseries
         Event timestamps (pre-filtered by epochs)
     window : array-like
         [before, after] window
-    new_time_support : IntervalSet
-        Time support for output
+
+    Returns
+    -------
+    dict
+        One TsGroup per unit, indexed by event number
+    """
+    event_times = events.times()
+    data = data._load_in_memory(_event_windows(event_times, window))
+    relative_times, event_idx, offsets = _align_sorted(
+        data._times, data._cluster_positions, len(data.index), event_times, window
+    )
+    aligned = {}
+    for i, key in enumerate(data):
+        start, end = offsets[i], offsets[i + 1]
+        aligned[key] = _aligned_tsgroup(
+            relative_times[start:end],
+            event_idx[start:end],
+            event_times,
+            nap.IntervalSet(start=-window[0], end=window[1]),
+        )
+    return aligned
+
+
+def _aligned_tsgroup(relative_times, event_idx, event_times, time_support):
+    """
+    The aligned spikes of one unit as a TsGroup, with one member per event.
+
+    Parameters
+    ----------
+    relative_times : numpy.ndarray
+        Spike times relative to their event, sorted (from ``_align_sorted``).
+    event_idx : numpy.ndarray
+        Index in ``event_times`` of the event of each spike.
+    event_times : numpy.ndarray
+        Event times, kept in the ``events`` metadata column.
+    time_support : IntervalSet
+        The window, ``[-before, after]``.
 
     Returns
     -------
     TsGroup
-        Aligned data, indexed by event number
+        Aligned spikes, indexed by event number
     """
-    aligned = {}
-    event_times = events.times()
-
-    for event_idx, event_time in enumerate(event_times):
-        start_time = event_time - window[0]
-        end_time = event_time + window[1]
-
-        mask = (data.t >= start_time) & (data.t <= end_time)
-        shifted_times = data.t[mask] - event_time
-
-        aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
-
-    return nap.TsGroup(
-        aligned, metadata={"events": event_times}, time_support=new_time_support
+    n_events = len(event_times)
+    return nap.TsGroup._from_arrays(
+        relative_times,
+        event_idx,
+        None,
+        np.zeros(n_events, dtype=bool),
+        np.arange(n_events),
+        time_support,
+        metadata={"events": event_times},
     )
 
 

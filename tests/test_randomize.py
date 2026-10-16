@@ -224,7 +224,7 @@ def test_shuffle_intervals_ts():
     assert np.diff(ts.times()) == pytest.approx(np.diff(shuff_ts.times()))
 
 
-def test_resample_tsgroup():
+def test_shuffle_intervals_tsgroup():
     tsgroup = nap.TsGroup(
         {0: nap.Ts(t=np.arange(0, 100)), 1: nap.Ts(t=np.arange(0, 200))}
     )
@@ -288,3 +288,63 @@ def test_resample_tsgroup():
     for j, k in zip(tsgroup.keys(), resampled_tsgroup.keys()):
         assert j == k
         assert len(tsgroup[j]) == len(resampled_tsgroup[k])
+
+
+@pytest.mark.parametrize("group", [False, True])
+def test_resample_uses_all_epochs(group):
+    # Epochs of lengths 30, 10 and 30, with gaps between them
+    epochs = nap.IntervalSet(start=[0, 40, 70], end=[30, 50, 100])
+    times = np.linspace(0, 100, 20000)
+    if group:
+        data = nap.TsGroup(
+            {0: nap.Ts(t=times[::2]), 7: nap.Ts(t=times[1::2])}, time_support=epochs
+        )
+    else:
+        data = nap.Ts(t=times, time_support=epochs)
+    n_times = data.count(ep=epochs).values.sum()
+
+    np.random.seed(0)
+    resampled = nap.resample_timestamps(data)
+    counts = resampled.count(ep=epochs).values.reshape(3, -1).sum(1)
+
+    # No time falls in the gaps between the epochs
+    assert counts.sum() == n_times
+    # Each epoch gets a share of the times that follows its length
+    np.testing.assert_allclose(counts / n_times, [3 / 7, 1 / 7, 3 / 7], atol=0.02)
+
+
+@pytest.mark.parametrize("group", [False, True])
+def test_shuffle_intervals_across_epochs(group):
+    # On the epochs put end to end, the times are 1, 2, 3, 11, 12: the
+    # intervals are 1, 1, 8, 1, and the interval of 8 crosses the gap
+    epochs = nap.IntervalSet(start=[0, 100], end=[10, 110])
+    ts = nap.Ts(t=[1.0, 2.0, 3.0, 101.0, 102.0], time_support=epochs)
+    if group:
+        data = nap.TsGroup(
+            {0: ts, 3: nap.Ts(t=[5.0, 105.0, 109.0])}, time_support=epochs
+        )
+    else:
+        data = ts
+
+    outputs = set()
+    for seed in range(100):
+        np.random.seed(seed)
+        shuffled = nap.shuffle_ts_intervals(data)
+        np.testing.assert_array_equal(shuffled.time_support.values, epochs.values)
+        # No time falls in the gap between the epochs
+        if group:
+            np.testing.assert_array_equal(shuffled.index, data.index)
+            for key in data.index:
+                assert len(shuffled[key].restrict(epochs)) == len(data[key])
+                assert shuffled[key].t[0] == data[key].t[0]
+            shuffled = shuffled[0]
+        assert len(shuffled.restrict(epochs)) == len(ts)
+        outputs.add(tuple(shuffled.t))
+
+    # The interval of 8 takes each of the 4 places, on both sides of the gap
+    assert outputs == {
+        (1.0, 2.0, 3.0, 4.0, 102.0),
+        (1.0, 2.0, 3.0, 101.0, 102.0),
+        (1.0, 2.0, 100.0, 101.0, 102.0),
+        (1.0, 9.0, 100.0, 101.0, 102.0),
+    }

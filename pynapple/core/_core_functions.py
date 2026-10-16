@@ -15,11 +15,14 @@ import numpy as np
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
+    jitcount_clusters,
+    jitcount_epochs,
+    jitgroup_by_unit,
     jitremove_nan,
     jitrestrict,
-    jitrestrict_with_count,
     jitthreshold,
-    jitvaluefrom_ranges,
+    jittimediff_grouped,
+    jitvaluefrom,
 )
 from .utils import get_backend
 
@@ -41,14 +44,15 @@ def _use_searchsorted_restrict(n_intervals, n_samples):
     return n_intervals * 1024 < n_samples
 
 
-def _restrict_ranges(time_array, data_array, starts, ends):
+def _restrict_ranges(time_array, starts, ends, *arrays):
     """Restrict to intervals via searchsorted boundaries + contiguous copies.
 
-    Returns copied ``(new_time, new_data)``; ``new_data`` is None when
-    ``data_array`` is None (timestamps-only objects). Assumes ``time_array`` is
-    sorted and ``starts``/``ends`` are sorted and disjoint (guaranteed by
-    IntervalSet), so the result is sorted and lies within the intervals. The
-    inclusivity ``start <= t <= end`` matches :func:`jitrestrict`.
+    Returns copied ``(new_time, *new_arrays)``, each of ``arrays`` (aligned with
+    ``time_array``) restricted with the same selection; None entries stay None
+    (timestamps-only objects). Assumes ``time_array`` is sorted and
+    ``starts``/``ends`` are sorted and disjoint (guaranteed by IntervalSet), so
+    the result is sorted and lies within the intervals. The inclusivity
+    ``start <= t <= end`` matches :func:`jitrestrict`.
 
     The selected ranges are copied with plain numpy contiguous slice assignment
     (one memcpy per interval), which beats both a fancy-index gather and a numba
@@ -57,12 +61,29 @@ def _restrict_ranges(time_array, data_array, starts, ends):
     il = np.searchsorted(time_array, starts, side="left")
     ir = np.searchsorted(time_array, ends, side="right")
 
-    new_time = _concat_ranges(time_array, il, ir, copy=True)
-    new_data = (
-        None if data_array is None else _concat_ranges(data_array, il, ir, copy=True)
+    return (
+        _concat_ranges(time_array, il, ir, copy=True),
+        *(None if a is None else _concat_ranges(a, il, ir, copy=True) for a in arrays),
     )
 
-    return new_time, new_data
+
+def _restrict_arrays(time_array, starts, ends, *arrays, use_ranges=None):
+    """Restrict ``time_array`` to intervals, and ``arrays`` with the same selection.
+
+    Each of ``arrays`` is aligned with ``time_array`` (values of a time series,
+    unit keys of a TsGroup, ...); None entries stay None. Returns
+    ``(new_time, *new_arrays)``.
+
+    ``use_ranges`` picks :func:`_restrict_ranges` (True) or the numba merge scan
+    :func:`_restrict` plus a gather (False); None decides from the number of
+    intervals and timestamps (:func:`_use_searchsorted_restrict`).
+    """
+    if use_ranges is None:
+        use_ranges = _use_searchsorted_restrict(len(starts), len(time_array))
+    if use_ranges:
+        return _restrict_ranges(time_array, starts, ends, *arrays)
+    idx = _restrict(time_array, starts, ends)
+    return (time_array[idx], *(None if a is None else a[idx] for a in arrays))
 
 
 def _concat_ranges(array, range_starts, range_stops, copy):
@@ -110,13 +131,63 @@ def _concat_ranges(array, range_starts, range_stops, copy):
     return out
 
 
-def _count(time_array, starts, ends, bin_size=None, dtype=None):
+def _count(
+    time_array, starts, ends, bin_size=None, dtype=None, cluster_pos=None, n_units=None
+):
+    """Count timestamps per bin (``bin_size``) or per epoch (no ``bin_size``).
+
+    With ``cluster_pos`` (the dense ``0..n_units-1`` column of each timestamp of a
+    merged multi-unit array), returns a ``(n_bins, n_units)`` count matrix.
+    Without it, ``time_array`` is a single series and the counts are 1-d.
+    """
+    single = cluster_pos is None
+    if single:
+        # one column for every timestamp, without allocating it
+        cluster_pos = np.broadcast_to(np.int64(0), len(time_array))
+        n_units = 1
     if isinstance(bin_size, (float, int)):
-        t, d = jitcount(time_array, starts, ends, bin_size, dtype)
+        t, d = jitcount(time_array, cluster_pos, starts, ends, bin_size, n_units, dtype)
     else:
-        _, d = jitrestrict_with_count(time_array, starts, ends, dtype)
+        d = jitcount_epochs(time_array, cluster_pos, starts, ends, n_units, dtype)
         t = starts + (ends - starts) / 2
-    return t, d
+    return t, (d[:, 0] if single else d)
+
+
+def _group_by_unit(unit_pos, n_units):
+    """``(order, offsets)``: ``order[offsets[i]:offsets[i + 1]]`` are the
+    positions of unit ``i`` in their original order (stable counting sort)."""
+    return jitgroup_by_unit(np.asarray(unit_pos, dtype=np.int64), n_units)
+
+
+def _is_dense_index(index):
+    """Whether a ``key - min(key)`` lookup table over the sorted ``index`` is
+    small enough to use: its size must stay O(number of keys), so that sparse
+    keys (e.g. ``{0, 10**12}``) cannot blow up memory."""
+    span = int(index[-1]) - int(index[0]) + 1
+    return span <= 4 * len(index) + 1024
+
+
+def _count_clusters(clusters, index):
+    """Number of entries of ``clusters`` equal to each key of the sorted ``index``."""
+    if len(index) == 0:
+        return np.zeros(0, dtype=np.int64)
+    index = np.asarray(index, dtype=np.int64)
+    if not _is_dense_index(index):
+        return np.bincount(
+            np.searchsorted(index, np.asarray(clusters, dtype=np.int64)),
+            minlength=len(index),
+        ).astype(np.int64)
+    lo = int(index[0])
+    span = int(index[-1]) - lo + 1
+    counts = jitcount_clusters(np.asarray(clusters, dtype=np.int64), lo, span)
+    return counts[index - lo]
+
+
+def _time_diff_grouped(time_array, unit_pos, n_units, starts, ends, alpha):
+    """Per-unit differences between subsequent timestamps, within epochs, of a
+    merged multi-unit array. Returns ``(new_t, new_d, offsets)``, unit ``i``
+    holding the block ``[offsets[i]:offsets[i + 1]]``."""
+    return jittimediff_grouped(time_array, unit_pos, starts, ends, n_units, alpha)
 
 
 def _value_from(
@@ -125,8 +196,17 @@ def _value_from(
     data_target_array,
     starts,
     ends,
+    *arrays,
     mode: Literal["closest", "before", "after"] = "closest",
 ):
+    """Values of ``data_target_array`` matched to the timestamps of
+    ``time_array`` inside the epochs ``[starts, ends]``.
+
+    Returns ``(times, values, *arrays)``: the timestamps of ``time_array``
+    inside the epochs, their matched values, and each extra array of
+    ``arrays`` (aligned with ``time_array``, ``None`` allowed) sliced the same
+    way as the timestamps.
+    """
     # replace flag with int
     if mode == "closest":
         mode = 1
@@ -140,14 +220,20 @@ def _value_from(
     # the kernel reads both full arrays through these bounds.
     in_start = np.searchsorted(time_array, starts, side="left")
     in_stop = np.searchsorted(time_array, ends, side="right")
-    tg_start = np.searchsorted(time_target_array, starts, side="left")
-    tg_stop = np.searchsorted(time_target_array, ends, side="right")
+    target_start = np.searchsorted(time_target_array, starts, side="left")
+    target_stop = np.searchsorted(time_target_array, ends, side="right")
 
     new_time_array = _concat_ranges(time_array, in_start, in_stop, copy=False)
 
     # index into the *full* target for each kept timestamp, -1 where unmatched
-    gather_idx = jitvaluefrom_ranges(
-        time_array, time_target_array, in_start, in_stop, tg_start, tg_stop, mode
+    gather_idx = jitvaluefrom(
+        time_array,
+        time_target_array,
+        in_start,
+        in_stop,
+        target_start,
+        target_stop,
+        mode,
     )
     matched = gather_idx >= 0
     all_matched = bool(matched.all())
@@ -168,12 +254,14 @@ def _value_from(
         # fancy indices, and serve scattered ones element by element (~100x a
         # hyperslab of the same span). Read the epoch ranges as slices instead and
         # gather in numpy.
-        target_values = _concat_ranges(data_target_array, tg_start, tg_stop, copy=True)
+        target_values = _concat_ranges(
+            data_target_array, target_start, target_stop, copy=True
+        )
         # map full-target indices onto their position in the concatenated ranges
-        offsets = np.zeros(len(tg_start) + 1, dtype=np.int64)
-        np.cumsum(tg_stop - tg_start, out=offsets[1:])
-        epoch = np.searchsorted(tg_start, take_idx, side="right") - 1
-        values = target_values[take_idx - tg_start[epoch] + offsets[epoch]]
+        offsets = np.zeros(len(target_start) + 1, dtype=np.int64)
+        np.cumsum(target_stop - target_start, out=offsets[1:])
+        epoch = np.searchsorted(target_start, take_idx, side="right") - 1
+        values = target_values[take_idx - target_start[epoch] + offsets[epoch]]
 
     if all_matched:
         new_data_array = np.empty(out_shape, dtype=use_type)
@@ -188,7 +276,14 @@ def _value_from(
             data_target_array[take_idx] if values is None else values
         )
 
-    return new_time_array, new_data_array
+    return (
+        new_time_array,
+        new_data_array,
+        *(
+            None if a is None else _concat_ranges(a, in_start, in_stop, copy=True)
+            for a in arrays
+        ),
+    )
 
 
 def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
