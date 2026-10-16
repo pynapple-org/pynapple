@@ -204,7 +204,7 @@ We can use their [cross-validation tools](https://scikit-learn.org/stable/module
 
 We will define the label:
 ```{code-cell} ipython3
-y = (binned.trial_metadata["mouse_wheel_choice"] == "clockwise").astype(int)
+y = (binned.trials["mouse_wheel_choice"] == "clockwise").astype(int)
 y
 ```
 
