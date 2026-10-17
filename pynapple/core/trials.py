@@ -45,6 +45,122 @@ def _normalize_positions(
     return positions.astype(int, copy=False), False
 
 
+def _format_preview(
+    preview: pd.DataFrame,
+    *,
+    show_index: bool = True,
+) -> list[str]:
+    """Format a bounded, left-aligned table."""
+
+    def positions(size: int) -> list[int | None]:
+        if size <= 6:
+            return list(range(size))
+        return [0, 1, None, size - 2, size - 1]
+
+    def format_value(value: object) -> str:
+        if pd.isna(value):
+            return "—"
+        if isinstance(value, (float, np.floating)):
+            return f"{value:.6g}"
+        return str(value)
+
+    row_positions = positions(len(preview))
+    column_positions = positions(len(preview.columns))
+
+    headers = [
+        "…" if column is None else str(preview.columns[column])
+        for column in column_positions
+    ]
+    if show_index:
+        headers.insert(
+            0,
+            str(preview.columns.name or preview.index.name or ""),
+        )
+
+    rows = [headers]
+
+    if show_index and preview.columns.name and preview.index.name:
+        rows.append([str(preview.index.name)] + [""] * len(column_positions))
+
+    for row in row_positions:
+        if row is None:
+            rows.append(["…"] * len(headers))
+            continue
+
+        values = [
+            "…" if column is None else format_value(preview.iloc[row, column])
+            for column in column_positions
+        ]
+        if show_index:
+            values.insert(0, str(preview.index[row]))
+        rows.append(values)
+
+    widths = [max(len(row[column]) for row in rows) for column in range(len(headers))]
+
+    return [
+        "  ".join(
+            value.ljust(width) for value, width in zip(row, widths, strict=True)
+        ).rstrip()
+        for row in rows
+    ]
+
+
+def _format_trial_stack(
+    preview: pd.DataFrame,
+    trial_ids: np.ndarray,
+    *,
+    show_index: bool = True,
+) -> str:
+    """Render a bounded preview of the first trial."""
+    if not len(trial_ids):
+        return "No trials."
+
+    table = _format_preview(preview, show_index=show_index)
+
+    labels = [str(trial_ids[0])]
+    if len(trial_ids) <= 3:
+        labels.extend(str(trial_id) for trial_id in trial_ids[1:])
+    else:
+        labels.extend(
+            [
+                str(trial_ids[1]),
+                "…",
+                str(trial_ids[-1]),
+            ]
+        )
+
+    inner_width = max(
+        max(map(len, table)) + 2,
+        max(map(len, labels)) + 4,
+    )
+    height = len(table) + 2
+    offset = 2 * (len(labels) - 1)
+    canvas = [[" "] * (inner_width + 2 + offset) for _ in range(height + offset)]
+
+    for depth in reversed(range(len(labels))):
+        x = 2 * depth
+        y = 2 * (len(labels) - depth - 1)
+        title = f"─ {labels[depth]} "
+        top = f"┌{title.ljust(inner_width, '─')}┐"
+        bottom = f"└{'─' * inner_width}┘"
+        content = table if depth == 0 else [""] * len(table)
+        lines = [
+            top,
+            *(f"│ {line:<{inner_width - 2}} │" for line in content),
+            bottom,
+        ]
+
+        for row, line in enumerate(lines, start=y):
+            canvas[row][x : x + len(line)] = line
+
+    label = "trial ↗ "
+    front_row = 2 * (len(labels) - 1)
+    return "\n".join(
+        (label if row == front_row else " " * len(label)) + "".join(line).rstrip()
+        for row, line in enumerate(canvas)
+    )
+
+
 def _format_axes(
     left_title: str,
     left_count: int | str,
@@ -326,13 +442,8 @@ class TsTrials(_TrialMetadataMixin):
         trial_index = trial_index[inside]
 
         spikes = absolute_times - trial_starts[trial_index]
-        order = np.argsort(spikes, kind="stable")
 
-        return (
-            spikes[order],
-            trial_index[order].astype(np.int64, copy=False),
-            neuron_index[order],
-        )
+        return (spikes, trial_index.astype(np.int64, copy=False), neuron_index)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -342,26 +453,36 @@ class TsTrials(_TrialMetadataMixin):
         return self.shape[0]
 
     def __repr__(self) -> str:
-        """Return a compact trial and unit summary."""
-        axes = _format_axes(
-            "Trials",
-            self.shape[0],
-            self.trials.metadata_columns,
-            "Units",
-            self.shape[1],
-            self.unit_metadata.columns,
+        """Return per-unit spike previews and a trial summary."""
+        selected = self.trial_index == 0
+        times = self.spikes[selected]
+        neurons = self.neuron_index[selected]
+        rows = []
+
+        for unit in range(len(self.unit_keys)):
+            spikes = np.sort(times[neurons == unit])
+            if len(spikes) > 3:
+                timestamps = f"{spikes[0]:.3f}  {spikes[1]:.3f}  …  {spikes[-1]:.3f}"
+            else:
+                timestamps = "  ".join(f"{time:.3f}" for time in spikes)
+
+            rows.append((len(spikes), timestamps))
+
+        preview = pd.DataFrame(
+            rows,
+            index=pd.Index(self.unit_keys, name="unit ↓"),
+            columns=["n", "time →"],
         )
-        divider = "-" * REPR_WIDTH
+        stack = _format_trial_stack(preview, self.trial_ids)
+
         size = self.spikes.nbytes + self.trial_index.nbytes + self.neuron_index.nbytes
 
         return (
-            f"{divider}\n"
-            f"{axes}\n\n"
+            f"{stack}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}\n"
             f"unbinned, shape: {self.shape} (trial, unit), "
-            f"size: {_format_bytes(size)}\n"
-            f"{divider}"
+            f"{len(self.spikes)} spikes, size: {_format_bytes(size)}"
         )
 
     def __getitem__(self, key):
@@ -933,38 +1054,47 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         return self.shape[0]
 
     def __repr__(self) -> str:
-        """Return a compact trial and feature summary."""
+        """Return a stacked data preview and tensor summary."""
+        if len(self):
+            values = self.values[0]
+            if values.ndim == 1:
+                values = values[:, None]
+                columns = ["value"]
+            else:
+                columns = self.feature_names
+
+            preview = pd.DataFrame(
+                values,
+                index=pd.Index(
+                    [f"{time:.6g}" for time in self.t],
+                    name="time ↓",
+                ),
+                columns=columns,
+            )
+            preview.columns.name = (
+                "unit →" if self.data_kind == "count" else "feature →"
+            )
+        else:
+            preview = pd.DataFrame()
+
+        stack = _format_trial_stack(preview, self.trial_ids)
         sampling_label = (
             "bin_size" if self.data_kind == "count" else "sampling interval"
         )
-
-        if self.feature_names is None:
-            feature_count = "scalar"
-            feature_columns = []
-        else:
-            feature_count = len(self.feature_names)
-            feature_columns = self.feature_metadata.columns
-
-        axes = _format_axes(
-            "Trials",
-            self.shape[0],
-            self.trials.metadata_columns,
-            "Features",
-            feature_count,
-            feature_columns,
+        axes = (
+            "(trial, time, unit)"
+            if self.ndim == 3 and self.data_kind == "count"
+            else self._shape_axes()
         )
-        divider = "-" * REPR_WIDTH
 
         return (
-            f"{divider}\n"
-            f"{axes}\n\n"
+            f"{stack}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}, "
             f"{sampling_label}: {self._sample_size_summary()}\n"
             f"dtype: {self.values.dtype}, "
-            f"shape: {self.shape} {self._shape_axes()}, "
-            f"size: {_format_bytes(self.values.nbytes)}\n"
-            f"{divider}\n"
+            f"shape: {self.shape} {axes}, "
+            f"size: {_format_bytes(self.values.nbytes)}"
         )
 
     def _sample_size_summary(self) -> str:

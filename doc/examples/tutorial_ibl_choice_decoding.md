@@ -13,11 +13,11 @@ kernelspec:
 
 # Trial-aligned decoding with International Brain Lab data
 
-This example works through a basic pipeline for decoding the mouse's choice from spiking activity in the International Brain Lab's decision task, including loading the data from DANDI, processing and trial-aligning the neural activity, and fitting a logistic regression with cross-validation using scikit-learn.
+This example works through a basic pipeline for decoding the mouse's choice from spiking activity in the International Brain Lab's decision task.
+It includes loading the data from DANDI, processing and trial-aligning the neural activity using Pynapple's [`TsTrials`](pynapple.core.TsTrials) object, and fitting a logistic regression with cross-validation using the [scikit-learn library](https://scikit-learn.org/stable/).
 
-The International Brain Lab's Brain Wide Map dataset is available at [Dandiset 00409](https://dandiarchive.org/dandiset/000409/). The International Brain Lab's [BWM website](https://www.internationalbrainlab.com/brainwide-map) includes links to [their preprint](https://www.biorxiv.org/content/10.1101/2023.07.04.547681) and additional documentation. The IBL also has an excellent decoding demonstration in the [COSYNE section of their events webpage](https://www.internationalbrainlab.com/events) under "Tutorial 2: Advanced analysis", along with many other relevant demos.
-
-For a more detailed tutorial on data loading with DANDI, see the "Streaming data from DANDI" example!
+The International Brain Lab's Brain Wide Map dataset is available at [Dandiset 00409](https://dandiarchive.org/dandiset/000409/). The International Brain Lab's [BWM website](https://www.internationalbrainlab.com/brainwide-map) includes links to [their preprint](https://www.biorxiv.org/content/10.1101/2023.07.04.547681) and additional documentation.
+The IBL also has an excellent decoding demonstration in the [COSYNE section of their events webpage](https://www.internationalbrainlab.com/events) under "Tutorial 2: Advanced analysis", along with many other relevant demos.
 
 **Caveats**: This example is meant to provide a simple starting point for working with trial-aligned data and data from the IBL, and so it does not faithfully replicate the IBL's quality control and filtering criteria; the decoding here is also simpler than the analyses carried out in those works.
 
@@ -100,10 +100,14 @@ trial_data = nap.TsTrials(source=units, trials=trials)
 trial_data
 ```
 
-## Subselecting trials based on metadata
-We can now easily discard trials where a choice was not made (a more complete analysis may include more criteria): 
+## Subselecting trials and units based on metadata
+We can now easily discard trials where a choice was not made (a more complete analysis may include more criteria).
+We can also subset the units to only include those that kilosort labelled as good:
 ```{code-cell} ipython3
-trial_data = trial_data[trial_data.trials["mouse_wheel_choice"] != "none"]
+trial_data = trial_data[
+    trial_data.trials["mouse_wheel_choice"] != "none",
+    trial_data.unit_metadata["kilosort2_label"] == "good"
+]
 trial_data
 ```
 
@@ -111,7 +115,7 @@ trial_data
 
 We can select an example unit and visualize its trial-aligned spikes:
 ```{code-cell} ipython3
-example_unit = 420
+example_unit = 22
 plt.plot(
     trial_data[:, example_unit].to_tsdframe()["trial"],
     marker="|",
@@ -171,14 +175,14 @@ plt.show()
 ## Binning
 We can then bin and count the spikes as follows, this yields a `TsdTrials` object:
 ```{code-cell} ipython3
-bin_size = 0.05
+bin_size = 0.02
 binned = trial_data.count(bin_size)
 binned
 ```
 
 Which we can again visualize, but now as a heatmap for all units and an example trial:
 ```{code-cell} ipython3
-example_trial = 420
+example_trial = 42
 plt.imshow(
     binned[example_trial].values.T,
     aspect="auto",
