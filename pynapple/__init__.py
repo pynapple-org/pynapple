@@ -7,8 +7,10 @@ from .core import (
     Tsd,
     TsdFrame,
     TsdTensor,
+    TsdTrials,
     TsGroup,
     TsIndex,
+    TsTrials,
     nap_config,
 )
 from .io import *
