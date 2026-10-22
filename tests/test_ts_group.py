@@ -1759,3 +1759,95 @@ def test_data_view_repr():
     lines = repr(large.data).splitlines()
     assert len(lines) == 12
     assert lines[6] == "  ..."
+
+
+class TestMergedSortOrder:
+    """Every builder of the merged arrays sorts by time, then by key for
+    equal times, as ``TsGroup(dict)`` does. Two groups with the same spikes
+    then have the same arrays and compare equal."""
+
+    ep = nap.IntervalSet(0, 10)
+
+    def expected(self, units):
+        return nap.TsGroup(
+            {k: nap.Ts(t=t) for k, t in units.items()}, time_support=self.ep
+        )
+
+    @pytest.mark.parametrize("reset_index", [False, True])
+    def test_merge_group(self, reset_index):
+        a = nap.TsGroup({5: nap.Ts([1.0, 2.0])}, time_support=self.ep)
+        b = nap.TsGroup({0: nap.Ts([1.0, 3.0])}, time_support=self.ep)
+        merged = nap.TsGroup.merge_group(
+            a, b, reset_index=reset_index, ignore_metadata=True
+        )
+        if reset_index:
+            ref = self.expected({0: [1.0, 2.0], 1: [1.0, 3.0]})
+        else:
+            ref = self.expected({5: [1.0, 2.0], 0: [1.0, 3.0]})
+        np.testing.assert_array_equal(merged._times, ref._times)
+        np.testing.assert_array_equal(merged._clusters, ref._clusters)
+
+    def test_merge_group_values_follow(self):
+        a = nap.TsGroup({5: nap.Tsd(t=[1.0, 2.0], d=[50.0, 51.0])}, time_support=self.ep)
+        b = nap.TsGroup({0: nap.Tsd(t=[1.0, 3.0], d=[0.0, 1.0])}, time_support=self.ep)
+        merged = nap.TsGroup.merge_group(a, b, ignore_metadata=True)
+        np.testing.assert_array_equal(merged._clusters, [0, 5, 5, 0])
+        np.testing.assert_array_equal(merged._data, [0.0, 50.0, 51.0, 1.0])
+
+    def test_npz_reader(self):
+        file = {
+            "t": np.array([1.0, 1.0, 2.0, 3.0]),
+            "index": np.array([5, 0, 5, 0]),
+            "start": self.ep.start,
+            "end": self.ep.end,
+        }
+        group = nap.TsGroup._from_npz_reader(file)
+        ref = self.expected({5: [1.0, 2.0], 0: [1.0, 3.0]})
+        np.testing.assert_array_equal(group._times, ref._times)
+        np.testing.assert_array_equal(group._clusters, ref._clusters)
+
+    def test_from_sorted_arrays(self):
+        group = nap.TsGroup.from_sorted_arrays([1.0, 1.0, 2.0, 3.0], [5, 0, 5, 0])
+        np.testing.assert_array_equal(group._clusters, [0, 5, 5, 0])
+
+    def test_from_ragged_arrays(self):
+        group = nap.TsGroup.from_ragged_arrays(
+            [1.0, 2.0, 1.0, 3.0], [2, 4], keys=[5, 0]
+        )
+        np.testing.assert_array_equal(group._clusters, [0, 5, 5, 0])
+
+    @pytest.mark.parametrize(
+        "func, kwargs",
+        [
+            (nap.shift_timestamps, {"min_shift": 0.5, "max_shift": 0.5}),
+            (nap.jitter_timestamps, {"max_jitter": 0.0, "keep_tsupport": True}),
+        ],
+    )
+    def test_randomize(self, func, kwargs):
+        # the same shift for each unit keeps the equal times
+        group = self.expected({5: [1.0, 2.0], 0: [1.0, 3.0]})
+        out = func(group, **kwargs)
+        np.testing.assert_array_equal(out._clusters, [0, 5, 5, 0])
+
+
+class TestSortMerged:
+    def test_sort(self):
+        from pynapple.core._core_functions import _sort_merged
+
+        times = np.array([2.0, 1.0, 1.0, 1.0])
+        clusters = np.array([0, 5, 0, 0])
+        values = np.array([10.0, 11.0, 12.0, 13.0])
+        t, c, v, none = _sort_merged(times, clusters, values, None)
+        np.testing.assert_array_equal(t, [1.0, 1.0, 1.0, 2.0])
+        np.testing.assert_array_equal(c, [0, 0, 5, 0])
+        # equal time and cluster: the input order is kept
+        np.testing.assert_array_equal(v, [12.0, 13.0, 11.0, 10.0])
+        assert none is None
+
+    def test_sorted_input_is_not_copied(self):
+        from pynapple.core._core_functions import _sort_merged
+
+        times = np.array([1.0, 1.0, 2.0])
+        clusters = np.array([0, 5, 0])
+        t, c = _sort_merged(times, clusters)
+        assert t is times and c is clusters

@@ -2770,6 +2770,7 @@ def test_no_conflict_between_class_and_metadatamixin(nap_class):
     )
 
 
+@pytest.mark.unbuilt_tsgroup
 @pytest.mark.parametrize("cls", [nap.TsGroup, nap.IntervalSet, nap.TsdFrame])
 def test_getattr_before_init(cls):
     """An object that is not fully built has no metadata. A read of a missing

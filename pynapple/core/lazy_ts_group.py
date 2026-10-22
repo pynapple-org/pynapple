@@ -24,10 +24,9 @@ from numbers import Number
 
 import numpy as np
 
-from ._core_functions import _restrict_arrays
+from ._core_functions import _restrict_arrays, _sort_merged
 from ._jitted_functions import jitunion_isets
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .ts_group import TsGroup
 
@@ -263,9 +262,7 @@ class _RaggedArraySource:
                 stacklevel=4,
             )
 
-        # Sort by time, then by key for equal times (as TsGroup does).
-        order = np.lexsort((clusters, times))
-        return times[order], clusters[order]
+        return _sort_merged(times, clusters)
 
     def read(self, keys=None, start=-np.inf, end=np.inf):
         """Read the spike times of the units ``keys`` in the time windows.
@@ -521,10 +518,7 @@ class _SortedArraySource:
                 "memory instead.",
                 stacklevel=4,
             )
-        elif not np.any((dt == 0) & (clusters[1:] < clusters[:-1])):
-            return times, clusters
-        order = np.lexsort((clusters, times))
-        return times[order], clusters[order]
+        return _sort_merged(times, clusters)
 
     #################################
     # Reads for _LazyTsGroup
@@ -760,6 +754,9 @@ class _LazyTsGroup(TsGroup):
     RuntimeError.
     """
 
+    # The source replaces the merged arrays `_times` and `_clusters`.
+    _STATE_ATTRS = ("_source", "_data", "_is_tsd", "_columns")
+
     def __init__(self, source, metadata=None):
         """
         Parameters
@@ -769,19 +766,16 @@ class _LazyTsGroup(TsGroup):
         metadata : dict, optional
             The metadata columns, in the order of ``source.keys``.
         """
-        self.__dict__["_initialized"] = False
-
-        self.index = source.keys
-        _MetadataMixin.__init__(self)
-        self.time_support = source.time_support
-
-        self._source = source
         # The group holds spike times only: no values and no column names.
-        self._data = None
-        self._is_tsd = np.zeros(len(source.keys), dtype=bool)
-        self._columns = None
-
-        self._finalize(metadata)
+        self._init_state(
+            source.keys,
+            source.time_support,
+            metadata,
+            _source=source,
+            _data=None,
+            _is_tsd=np.zeros(len(source.keys), dtype=bool),
+            _columns=None,
+        )
 
     def _unit_counts(self):
         # The source gives the counts. Thus the rates need no spike read.

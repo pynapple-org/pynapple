@@ -10,7 +10,7 @@ from typing import Optional, Union
 import numpy as np
 
 from .. import core as nap
-from ..core._core_functions import _restrict_arrays
+from ..core._core_functions import _restrict_arrays, _sort_merged
 
 
 def shift_timestamps(
@@ -157,8 +157,6 @@ def shift_timestamps(
         unit_sizes = np.diff(offsets)
         # one shift per unit, in key order, as for a loop over the units
         shifts = np.random.uniform(min_shift, max_shift, len(data.index))
-        # the spikes of each unit one after the other, so that a stable sort
-        # keeps the key order for equal times, as TsGroup(dict) does
         shifted = data._times[order] + np.repeat(shifts, unit_sizes)
 
     if mode == "wrap":
@@ -170,10 +168,9 @@ def shift_timestamps(
         # the timestamps out of the time support are dropped
         return nap.Ts(t=np.sort(shifted), time_support=time_support)
 
-    clusters = np.repeat(data.index, unit_sizes)
-    order = np.argsort(shifted, kind="stable")
+    times, clusters = _sort_merged(shifted, np.repeat(data.index, unit_sizes))
     times, clusters = _restrict_arrays(
-        shifted[order], time_support.start, time_support.end, clusters[order]
+        times, time_support.start, time_support.end, clusters
     )
     return nap.TsGroup._from_arrays(
         times,
@@ -285,12 +282,10 @@ def shuffle_ts_intervals(
     if isinstance(ts, nap.Ts):
         return nap.Ts(t=times, time_support=time_support)
 
-    # a stable sort keeps the key order for equal times, as TsGroup(dict) does
-    clusters = np.repeat(ts.index, np.diff(offsets))
-    order = np.argsort(times, kind="stable")
+    times, clusters = _sort_merged(times, np.repeat(ts.index, np.diff(offsets)))
     return nap.TsGroup._from_arrays(
-        times[order],
-        clusters[order],
+        times,
+        clusters,
         None,
         np.zeros(len(ts.index), dtype=bool),
         ts.index,
@@ -388,8 +383,7 @@ def jitter_timestamps(
     times = tsgroup._times + np.random.uniform(
         -max_jitter, max_jitter, len(tsgroup._times)
     )
-    order = np.argsort(times, kind="stable")
-    times, clusters = times[order], tsgroup._clusters[order]
+    times, clusters = _sort_merged(times, tsgroup._clusters)
     if keep_tsupport:
         # from_sorted_arrays computes a support from the spans of the units,
         # which fails if no unit has two spikes: build on the input support
@@ -483,10 +477,10 @@ def resample_timestamps(
         return nap.Ts(t=np.sort(times), time_support=time_support)
 
     # each draw replaces one spike, so each unit keeps its number of spikes
-    order = np.argsort(times, kind="stable")
+    times, clusters = _sort_merged(times, ts._clusters)
     return nap.TsGroup._from_arrays(
-        times[order],
-        ts._clusters[order],
+        times,
+        clusters,
         None,
         np.zeros(len(ts.index), dtype=bool),
         ts.index,

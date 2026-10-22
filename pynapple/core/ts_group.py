@@ -25,6 +25,7 @@ from ._core_functions import (
     _group_by_unit,
     _is_dense_index,
     _restrict_arrays,
+    _sort_merged,
     _time_diff_grouped,
     _value_from,
 )
@@ -135,8 +136,9 @@ def _build_sorted_arrays(data):
     Returns
     -------
     times : ndarray[float64]
-        Every unit's timestamps merged into one sorted array. Ties keep the
-        dict order (stable sort), and each unit keeps its own timestamp order.
+        Every unit's timestamps merged into one sorted array. Equal times are
+        sorted by key (see ``_sort_merged``), and each unit keeps its own
+        timestamp order.
     clusters : ndarray[int64]
         The key of the unit each timestamp belongs to.
     values : ndarray or None
@@ -168,12 +170,7 @@ def _build_sorted_arrays(data):
         [m.values if v else None for m, v in zip(data.values(), is_tsd)], lengths
     )
 
-    if len(times) > 1 and np.any(times[1:] < times[:-1]):
-        order = np.argsort(times, kind="stable")
-        times = times[order]
-        clusters = clusters[order]
-        if values is not None:
-            values = values[order]
+    times, clusters, values = _sort_merged(times, clusters, values)
 
     return times, clusters, values, is_tsd
 
@@ -416,12 +413,16 @@ class TsGroup(_MetadataMixin):
     nap_class: str
     """The pynapple class name"""
 
-    # merged sorted arrays backing the group (see `_set_arrays`)
+    # merged sorted arrays backing the group (see `_init_state`)
     _times: np.ndarray
     _clusters: np.ndarray
     _data: Optional[np.ndarray]
     _is_tsd: np.ndarray
     _columns: Optional[np.ndarray]
+
+    # the attributes that `_init_state` takes as keywords. A subclass that
+    # stores its spikes in a different way (e.g. `_LazyTsGroup`) changes them.
+    _STATE_ATTRS = ("_times", "_clusters", "_data", "_is_tsd", "_columns")
 
     def __init__(
         self,
@@ -443,9 +444,8 @@ class TsGroup(_MetadataMixin):
             else:
                 passed_time_support = False
 
-        # set directly in __dict__ to avoid infinite recursion in __setattr__
-        self.__dict__["_initialized"] = False
-
+        # The checks below write nothing to `self`: `_init_state` at the end
+        # sets all the state (see `_init_state`).
         if not isinstance(data, dict):
             data = dict(enumerate(data))
 
@@ -468,7 +468,7 @@ class TsGroup(_MetadataMixin):
         # Re-key data with the integer keys, ordered the same as the index
         order = np.argsort(keys)
         values = list(data.values())
-        self.index = np.asarray(keys)[order]
+        index = np.asarray(keys, dtype=np.int64)[order]
         data = {keys[i]: values[i] for i in order}
 
         # Also sort metadata if more than one key
@@ -494,13 +494,8 @@ class TsGroup(_MetadataMixin):
                     key: np.array(value)[order] for key, value in metadata.items()
                 }
 
-        # initialize metadata
-        _MetadataMixin.__init__(self)
-        # to test compatibility with pandas
-        # self._metadata = pd.DataFrame(index=self.metadata_index)
-
         # Transform elements to Ts/Tsd objects
-        for k in self.index:
+        for k in index:
             if not isinstance(data[k], _Base):
                 if isinstance(data[k], list) or is_array_like(data[k]):
                     warnings.warn(
@@ -516,7 +511,7 @@ class TsGroup(_MetadataMixin):
                     )
 
         # before the union of time supports, which reads `.time_support`
-        for k in self.index:
+        for k in index:
             if not isinstance(data[k], _Base):
                 raise TypeError(
                     f"Element {k} of TsGroup should be a Ts, Tsd, TsdFrame or "
@@ -525,12 +520,11 @@ class TsGroup(_MetadataMixin):
 
         if not passed_time_support:
             # Do the union of all time supports
-            time_support = _union_intervals([data[k].time_support for k in self.index])
+            time_support = _union_intervals([data[k].time_support for k in index])
             if len(time_support) == 0:
                 raise RuntimeError(
                     "Union of time supports is empty. Consider passing a time support as argument."
                 )
-        self.time_support = time_support
 
         # Every unit is merged into one sorted array, restricted once to the
         # time support (instead of once per unit).
@@ -538,33 +532,73 @@ class TsGroup(_MetadataMixin):
         times, clusters, values = _restrict_arrays(
             times, time_support.start, time_support.end, clusters, values
         )
-        self._set_arrays(
-            times, clusters, values, is_tsd, _shared_columns(data.values())
+        self._init_state(
+            index,
+            time_support,
+            metadata,
+            _times=times,
+            _clusters=clusters,
+            _data=values,
+            _is_tsd=is_tsd,
+            _columns=_shared_columns(data.values()),
         )
 
-        self._finalize(metadata)
-
-    def _set_arrays(
+    def _init_state(
         self,
-        times: np.ndarray,
-        clusters: np.ndarray,
-        values: Optional[np.ndarray],
-        is_tsd: np.ndarray,
-        columns: Optional[np.ndarray] = None,
+        index: np.ndarray,
+        time_support: IntervalSet,
+        metadata: Optional[Any] = None,
+        **state_attrs: Any,
     ) -> None:
-        """Set the merged sorted arrays backing the group.
+        """Set all the state of the group.
 
-        ``_times`` holds every unit's timestamps in one sorted array,
-        ``_clusters`` the cluster of each timestamp (the key of its unit), ``_data`` the
-        matching values (None when no member holds values), ``_is_tsd`` which
-        units hold values and ``_columns`` the column names of 2-dimensional
-        members (None for the default ones).
+        This is the only code that sets the attributes of a new group.
+        ``__init__``, ``_from_arrays`` and ``_LazyTsGroup.__init__`` call it,
+        so that all the groups get the same attributes. ``__setstate__``
+        restores a saved state instead.
+
+        Parameters
+        ----------
+        index : array_like
+            The keys, sorted.
+        time_support : IntervalSet
+            The time support.
+        metadata : dict or pandas.DataFrame, optional
+            The metadata, with rows in the order of ``index``.
+        **state_attrs
+            The attributes named by ``_STATE_ATTRS``, no more and no less.
+            For a TsGroup: ``_times`` holds every unit's timestamps in one
+            sorted array, ``_clusters`` the key of the unit of each
+            timestamp, ``_data`` the matching values (None when no member
+            holds values), ``_is_tsd`` which units hold values and
+            ``_columns`` the column names of 2-dimensional members (None for
+            the default ones).
+
+        Raises
+        ------
+        TypeError
+            If ``state_attrs`` does not have exactly the names of
+            ``_STATE_ATTRS``.
         """
-        self._times = times
-        self._clusters = clusters
-        self._data = values
-        self._is_tsd = np.asarray(is_tsd, dtype=bool)
-        self._columns = columns
+        expected = set(type(self)._STATE_ATTRS)
+        if set(state_attrs) != expected:
+            missing = sorted(expected - set(state_attrs))
+            extra = sorted(set(state_attrs) - expected)
+            raise TypeError(
+                f"{type(self).__name__}._init_state needs the attributes "
+                f"{list(type(self)._STATE_ATTRS)}. Missing: {missing}. "
+                f"Not expected: {extra}."
+            )
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
+        self.index = np.asarray(index, dtype=np.int64)
+        _MetadataMixin.__init__(self)
+        self.time_support = time_support
+        if "_is_tsd" in state_attrs:
+            state_attrs["_is_tsd"] = np.asarray(state_attrs["_is_tsd"], dtype=bool)
+        for name, value in state_attrs.items():
+            setattr(self, name, value)
+        self._finalize(metadata)
 
     def _finalize(self, metadata: Optional[Any] = None) -> None:
         """Compute rates, freeze the object and set metadata."""
@@ -650,12 +684,16 @@ class TsGroup(_MetadataMixin):
         names the columns of 2-dimensional members.
         """
         obj = cls.__new__(cls)
-        obj.__dict__["_initialized"] = False
-        obj.index = np.asarray(index, dtype=np.int64)
-        _MetadataMixin.__init__(obj)
-        obj.time_support = time_support
-        obj._set_arrays(times, clusters, values, is_tsd, columns)
-        obj._finalize(metadata)
+        obj._init_state(
+            index,
+            time_support,
+            metadata,
+            _times=times,
+            _clusters=clusters,
+            _data=values,
+            _is_tsd=is_tsd,
+            _columns=columns,
+        )
         return obj
 
     @cached_property
@@ -2715,11 +2753,7 @@ class TsGroup(_MetadataMixin):
             [tsg._data for tsg in tsgroups], [len(tsg._times) for tsg in tsgroups]
         )
 
-        order = np.argsort(times, kind="stable")
-        times = times[order]
-        clusters = clusters[order]
-        if values is not None:
-            values = values[order]
+        times, clusters, values = _sort_merged(times, clusters, values)
 
         times, clusters, values = _restrict_arrays(
             times, time_support.start, time_support.end, clusters, values
@@ -3032,12 +3066,7 @@ class TsGroup(_MetadataMixin):
         times = np.asarray(times, dtype=np.float64)
         index = np.asarray(index, dtype=np.int64)
         values = data if has_data else None
-        if len(times) > 1 and np.any(times[1:] < times[:-1]):
-            order = np.argsort(times, kind="stable")
-            times = times[order]
-            index = index[order]
-            if has_data:
-                values = values[order]
+        times, index, values = _sort_merged(times, index, values)
 
         tsgroup = cls._from_arrays(
             times,

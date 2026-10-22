@@ -67,6 +67,35 @@ def _restrict_ranges(time_array, starts, ends, *arrays):
     )
 
 
+def _sort_merged(times, clusters, *arrays):
+    """Sort merged spikes by time, then by cluster for equal times.
+
+    This is the order of the merged arrays of a TsGroup. Every code that
+    builds these arrays must use this function, so that two groups with the
+    same spikes have the same arrays. For equal times and equal clusters, the
+    input order is kept.
+
+    Each of ``arrays`` is aligned with ``times`` (the values of a TsGroup,
+    ...). None entries stay None. If the spikes are already in this order,
+    the inputs are returned without a copy.
+
+    Returns
+    -------
+    tuple
+        ``(times, clusters, *arrays)``, sorted.
+    """
+    if len(times) > 1:
+        dt = np.diff(times)
+        if np.any(dt < 0) or np.any((dt == 0) & (clusters[1:] < clusters[:-1])):
+            order = np.lexsort((clusters, times))
+            return (
+                times[order],
+                clusters[order],
+                *(None if a is None else a[order] for a in arrays),
+            )
+    return (times, clusters, *arrays)
+
+
 def _restrict_arrays(time_array, starts, ends, *arrays, use_ranges=None):
     """Restrict ``time_array`` to intervals, and ``arrays`` with the same selection.
 
