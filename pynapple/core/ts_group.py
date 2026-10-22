@@ -7,6 +7,7 @@ The class `TsGroup` helps group objects with different timestamps
 
 from __future__ import annotations
 
+import typing
 import warnings
 from collections.abc import Callable, Hashable, Iterable, Iterator, Mapping
 from functools import cached_property
@@ -40,7 +41,15 @@ from .metadata_class import (
     add_or_convert_metadata,
 )
 from .time_index import TsIndex, trusted_construction
-from .time_series import Ts, Tsd, TsdFrame, TsdTensor, _BaseTsd, is_array_like
+from .time_series import (
+    Ts,
+    Tsd,
+    TsdFrame,
+    TsdTensor,
+    _BaseTsd,
+    _get_class,
+    is_array_like,
+)
 from .utils import (
     _convert_iter_to_str,
     _get_terminal_size,
@@ -88,8 +97,9 @@ def _concat_values(parts, lengths):
     Parameters
     ----------
     parts : list of array-like or None
-        Values of each part (a member, or a whole group); None for parts
-        without values.
+        Values of each part (a member, or a whole group). A part is None
+        when it has no values: a ``Ts`` member, or a group of only ``Ts``
+        members (its ``_data`` is None).
     lengths : list of int
         Number of timestamps of each part.
 
@@ -200,19 +210,21 @@ _Member = Union[Ts, Tsd, TsdFrame, TsdTensor]
 _TimeUnits = Literal["s", "ms", "us"]
 
 
-class _TsGroupDictView(Mapping):
+# `typing.Mapping`, not `collections.abc.Mapping`: Python 3.8 cannot
+# subscript the second one.
+class _TsGroupDictView(typing.Mapping[int, _Member]):
     """Read-only ``key -> Ts/Tsd`` view of a TsGroup.
 
     Stands in for the dict ``TsGroup.data`` used to be: members are built from
     the group's merged arrays on access, never stored.
     """
 
-    def __init__(self, group):
+    def __init__(self, group: TsGroup):
         self._group = group
 
     def __getitem__(self, key):
         if key not in self._group:
-            raise KeyError(key)
+            raise KeyError(f"Key {key} not in group index.")
         return self._group._get_member(key)
 
     def __iter__(self):
@@ -235,7 +247,7 @@ class _TsGroupDictView(Mapping):
         if group._data is None:
             kinds = ["Ts"] * len(group.index)
         else:
-            kind = {1: "Tsd", 2: "TsdFrame"}.get(group._data.ndim, "TsdTensor")
+            kind = _get_class(group._data).__name__
             kinds = [kind if is_tsd else "Ts" for is_tsd in group._is_tsd]
         rows = [
             f"  {key}: {kind}, {n} timestamp{'' if n == 1 else 's'}"
@@ -311,7 +323,7 @@ class TsGroup(_MetadataMixin):
     timestamp, and the value of each timestamp for Tsd, TsdFrame and
     TsdTensor elements. Operations on the whole group (e.g. ``count``,
     ``restrict``, ``value_from``) thus go through this array one time, not
-    one time for each element. This has these results:
+    one time for each element. This has these consequences:
 
     - ``tsgroup[key]``, ``values()``, ``items()`` and iteration make a new
       Ts, Tsd, TsdFrame or TsdTensor for each call.
@@ -749,13 +761,8 @@ class TsGroup(_MetadataMixin):
             if self._data is None or not self._is_tsd[i]:
                 return Ts(t=t, time_support=self.time_support)
             d = self._data[idx]
-            if d.ndim == 1:
-                return Tsd(t=t, d=d, time_support=self.time_support)
-            if d.ndim == 2:
-                return TsdFrame(
-                    t=t, d=d, time_support=self.time_support, columns=self._columns
-                )
-            return TsdTensor(t=t, d=d, time_support=self.time_support)
+            kwargs = {"columns": self._columns} if d.ndim == 2 else {}
+            return _get_class(d)(t=t, d=d, time_support=self.time_support, **kwargs)
 
     def _members(self) -> list[_Member]:
         """All members, in index order."""

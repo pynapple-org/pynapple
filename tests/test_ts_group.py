@@ -1761,6 +1761,12 @@ def test_data_view_repr():
     assert lines[6] == "  ..."
 
 
+def test_data_view_key_error():
+    tsgroup = nap.TsGroup({0: nap.Ts(t=np.arange(10.0))})
+    with pytest.raises(KeyError, match="Key 3 not in group index."):
+        tsgroup.data[3]
+
+
 class TestMergedSortOrder:
     """Every builder of the merged arrays sorts by time, then by key for
     equal times, as ``TsGroup(dict)`` does. Two groups with the same spikes
@@ -1788,7 +1794,9 @@ class TestMergedSortOrder:
         np.testing.assert_array_equal(merged._clusters, ref._clusters)
 
     def test_merge_group_values_follow(self):
-        a = nap.TsGroup({5: nap.Tsd(t=[1.0, 2.0], d=[50.0, 51.0])}, time_support=self.ep)
+        a = nap.TsGroup(
+            {5: nap.Tsd(t=[1.0, 2.0], d=[50.0, 51.0])}, time_support=self.ep
+        )
         b = nap.TsGroup({0: nap.Tsd(t=[1.0, 3.0], d=[0.0, 1.0])}, time_support=self.ep)
         merged = nap.TsGroup.merge_group(a, b, ignore_metadata=True)
         np.testing.assert_array_equal(merged._clusters, [0, 5, 5, 0])
