@@ -756,6 +756,9 @@ class _LazyTsGroup(TsGroup):
 
     # The source replaces the merged arrays `_times` and `_clusters`.
     _STATE_ATTRS = ("_source", "_data", "_is_tsd", "_columns")
+    # The class is private: for the users and for the metadata rules (e.g.
+    # `rate` is read-only), the group is a TsGroup.
+    _NAP_CLASS = "TsGroup"
 
     def __init__(self, source, metadata=None):
         """

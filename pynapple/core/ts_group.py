@@ -436,6 +436,9 @@ class TsGroup(_MetadataMixin):
     # stores its spikes in a different way (e.g. `_LazyTsGroup`) changes them.
     _STATE_ATTRS = ("_times", "_clusters", "_data", "_is_tsd", "_columns")
 
+    # the value of `nap_class`. None gives the name of the class.
+    _NAP_CLASS: Optional[str] = None
+
     def __init__(
         self,
         data: Union[Mapping[Any, Any], Iterable[Any]],
@@ -615,7 +618,7 @@ class TsGroup(_MetadataMixin):
     def _finalize(self, metadata: Optional[Any] = None) -> None:
         """Compute rates, freeze the object and set metadata."""
         self._metadata["rate"] = self._compute_rates()
-        self.nap_class = self.__class__.__name__
+        self.nap_class = self._NAP_CLASS or self.__class__.__name__
         # grab current attributes before adding metadata
         self._class_attributes = self.__dir__()
         self._class_attributes.append("_class_attributes")  # add this property

@@ -5,7 +5,11 @@ spikes, with each source and each storage (numpy, h5py, zarr). It must read
 only the spikes that an operation needs, and it must not keep them.
 """
 
+import functools
+import inspect
+import os
 import pickle
+import tempfile
 import warnings
 
 import h5py
@@ -218,6 +222,13 @@ def other_group(g):
     return nap.TsGroup({100: nap.Ts(t=[1.0, 2.0])}, time_support=g.time_support)
 
 
+def save_and_load(g):
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, "group.npz")
+        g.save(path)
+        return nap.load_file(path)
+
+
 OPERATIONS = {
     # metadata only
     "index": lambda g: g.index,
@@ -227,8 +238,22 @@ OPERATIONS = {
     "rates": lambda g: g.rates,
     "time_support": lambda g: g.time_support.values,
     "metadata": lambda g: g.quality.values,
+    "metadata(table)": lambda g: g.metadata,
+    "nap_class": lambda g: g.nap_class,
+    "set_info(rate)": lambda g: g.set_info(rate=np.zeros(len(g))),
+    "drop_info(rate)": lambda g: g.drop_info("rate"),
+    "set_info, drop_info": lambda g: (
+        g.set_info(label=np.arange(len(g))),
+        g.drop_info("quality"),
+        g.metadata,
+    ),
+    "restrict_info": lambda g: (g.restrict_info("quality"), g.metadata),
+    "groupby": lambda g: g.groupby("quality"),
+    "groupby_apply": lambda g: g.groupby_apply("quality", len),
     "repr": lambda g: repr(g),
+    "str": lambda g: str(g),
     "repr(data)": lambda g: repr(g.data),
+    "==": lambda g: (g == make_eager(SPIKES), g == make_eager(SPIKES)[[2, 4]]),
     # selection of units
     "g[k]": lambda g: g[7],
     "g[empty unit]": lambda g: g[9],
@@ -237,6 +262,8 @@ OPERATIONS = {
     "g[missing key]": lambda g: g[[2, 8]],
     "getby_threshold": lambda g: g.getby_threshold("rate", 5),
     "getby_category": lambda g: g.getby_category("quality"),
+    "getby_intervals": lambda g: g.getby_intervals("rate", [0, 5, 50]),
+    "iter": lambda g: list(g),
     "values": lambda g: g.values(),
     "items": lambda g: g.items(),
     "dict(data)": lambda g: dict(g.data),
@@ -263,6 +290,7 @@ OPERATIONS = {
     "subsample": lambda g: g.subsample(0.5, seed=1),
     "copy": lambda g: g.copy(),
     "pickle": lambda g: pickle.loads(pickle.dumps(g)),
+    "save": save_and_load,
     "merge": lambda g: g.merge(other_group(g), ignore_metadata=True),
     "merge_group": lambda g: nap.TsGroup.merge_group(
         g, other_group(g), ignore_metadata=True
@@ -297,6 +325,86 @@ def test_equal_to_eager(make_lazy):
     assert lazy == eager
     assert eager == lazy
     assert lazy != eager[[2, 4]]
+
+
+# Members of TsGroup that OPERATIONS does not call, with the reason.
+NOT_IN_OPERATIONS = {
+    "from_ragged_arrays": "a constructor: see test_from_ragged_arrays",
+    "from_sorted_arrays": "a constructor: see test_from_sorted_arrays",
+}
+# The special methods that users call, e.g. with `g[k]` or `len(g)`.
+SPECIAL_METHODS = (
+    "__contains__",
+    "__eq__",
+    "__getitem__",
+    "__iter__",
+    "__len__",
+    "__repr__",
+    "__str__",
+)
+
+
+def tsgroup_members():
+    public = {name for name in dir(nap.TsGroup) if not name.startswith("_")}
+    return public | set(SPECIAL_METHODS)
+
+
+def test_operations_cover_tsgroup(monkeypatch):
+    """Each member of TsGroup must be called directly on a lazy group by one
+    operation of OPERATIONS. Then `test_same_as_eager` compares its result
+    with the result of a regular TsGroup. A new member of TsGroup fails this
+    test until it gets an operation, or an entry in NOT_IN_OPERATIONS."""
+    called = set()
+    depth = [0]
+
+    def record(name, func):
+        # Record only the calls of the operation, not the calls inside other
+        # members (e.g. `getby_threshold` calls `__getitem__`).
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if depth[0] == 0 and any(isinstance(a, _LazyTsGroup) for a in args):
+                called.add(name)
+            depth[0] += 1
+            try:
+                return func(*args, **kwargs)
+            finally:
+                depth[0] -= 1
+
+        return wrapper
+
+    for name in tsgroup_members():
+        member = inspect.getattr_static(_LazyTsGroup, name)
+        if isinstance(member, classmethod):
+            continue
+        if isinstance(member, staticmethod):
+            # called as `TsGroup.name(...)`, not through the lazy class
+            monkeypatch.setattr(
+                nap.TsGroup, name, staticmethod(record(name, member.__func__))
+            )
+        elif isinstance(member, property):
+            monkeypatch.setattr(_LazyTsGroup, name, property(record(name, member.fget)))
+        else:
+            monkeypatch.setattr(_LazyTsGroup, name, record(name, member))
+
+    # One storage is enough: the test checks which members the operations
+    # call, not their results.
+    def make_lazy():
+        source = ragged_source(SPIKES, lambda name, array: np.asarray(array))
+        metadata = {"quality": [QUALITY[k] for k in source.keys]}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return _LazyTsGroup(source, metadata=metadata)
+
+    for operation in OPERATIONS.values():
+        run(operation, make_lazy())
+
+    assert set(NOT_IN_OPERATIONS) <= tsgroup_members()
+    missing = tsgroup_members() - called - set(NOT_IN_OPERATIONS)
+    assert not missing, (
+        f"No operation of OPERATIONS calls these TsGroup members on a lazy "
+        f"group: {sorted(missing)}. Add an operation for each one, so that "
+        "test_same_as_eager compares the lazy and the regular result."
+    )
 
 
 def test_get_closest(make_lazy):
