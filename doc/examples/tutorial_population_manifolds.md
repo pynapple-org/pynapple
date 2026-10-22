@@ -13,9 +13,9 @@ kernelspec:
 
 # Trial-aligned population manifolds
 
-This example works through a basic pipeline for computing trial-aligned manifolds, as in the CITE
+This example works through a basic pipeline for computing trial-aligned population manifolds, as in the [Churchland et al. (2012)](https://www.nature.com/articles/nature11129) paper.
 It includes loading the data from DANDI, processing and trial-aligning the neural activity using Pynapple's [`TsTrials`](pynapple.core.TsTrials) object, 
-and using the [scikit-learn library](https://scikit-learn.org/stable/) to apply principal component analsysis (PCA).
+and using the [scikit-learn library](https://scikit-learn.org/stable/) to apply principal component analysis (PCA).
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -23,6 +23,7 @@ and using the [scikit-learn library](https://scikit-learn.org/stable/) to apply 
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import scipy.stats
 import seaborn as sns
@@ -39,7 +40,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ## Loading data
 
 See also the [tutorial on streaming data from DANDI](/examples/tutorial_pynapple_dandi.md),
-which includes more detail on this part
+which includes more detail on this part.
 
 ```{code-cell} ipython3
 # These modules are used for data loading
@@ -49,6 +50,9 @@ from fsspec.implementations.cached import CachingFileSystem
 import h5py
 from pynwb import NWBHDF5IO
 ```
+
+We will stream data from [dandiset 00688](https://dandiarchive.org/dandiset/000688?search=reaching+monkey&pos=4),
+which contains recordings from primary the motor cortex of three macaques performing a center-out reaching task:
 
 ```{code-cell} ipython3
 dandiset_id = "000688"
@@ -65,30 +69,28 @@ io = NWBHDF5IO(file=h5py.File(fs.open(s3_url, "rb")), load_namespaces=True)
 nwb = nap.NWBFile(io.read())
 ```
 
-This NWB file, loaded into a Pynapple object, contains neural activity, behavioral data, and trial information.
-They're all lazily loaded, so only what we use will be downloaded.
+The NWB file, loaded into a Pynapple object, contains neural activity, behavioral data, and trial information.
+They are all lazily loaded, so only what we use will be downloaded.
 
 ```{code-cell} ipython3
 nwb
 ```
 
-The only fields we'll use here are the neural activity ('units') and the trial information ('trials'):
+We will only use the neural activity (`units`) and the trial information (`trials`):
 
 ```{code-cell} ipython3
 units = nwb['units']
 trials = nwb['trials']
 ```
-
 ```{code-cell} ipython3
 units
 ```
-
 ```{code-cell} ipython3
 trials
 ```
 
 ## Trial alignment
-We will wrap both in a `TsTrials` object, which facilitates working with trial structure:
+We will wrap both in a [`TsTrials`](pynapple.core.TsTrials) object, which facilitates working with trial structure:
 ```{code-cell} ipython3
 trial_data = nap.TsTrials(source=units, trials=trials)
 trial_data
@@ -105,7 +107,7 @@ trial_data
 
 We can select an example unit and visualize its trial-aligned spikes:
 ```{code-cell} ipython3
-example_unit = 22
+example_unit = 42
 plt.plot(
     trial_data[:, example_unit].to_tsdframe()["trial"],
     marker="|",
@@ -133,7 +135,7 @@ plt.plot(
 )
 plt.axvline(0.0, color="red")
 plt.ylabel("trial")
-plt.xlabel("time from stimulus (s)")
+plt.xlabel("time from go cue (s)")
 plt.title(f"unit {example_unit}")
 plt.show()
 ```
@@ -157,13 +159,13 @@ plt.plot(
 )
 plt.axvline(0.0, color="red")
 plt.ylabel("trial")
-plt.xlabel("time from stimulus (s)")
+plt.xlabel("time go cue (s)")
 plt.title(f"unit {example_unit}")
 plt.show()
 ```
 
 ## Binning
-We can then bin and count the spikes as follows, this yields a `TsdTrials` object:
+We can then bin and count the spikes as follows, this yields a [`TsdTrials`](pynapple.core.TsdTrials) object:
 ```{code-cell} ipython3
 bin_size = 0.02
 binned = trial_data.count(bin_size)
@@ -186,26 +188,29 @@ plt.imshow(
 )
 plt.axvline(0, color='red')
 plt.ylabel('unit')
-plt.xlabel('time from stimulus (s)');
+plt.xlabel('time from go cue (s)');
 plt.title(f"trial {example_trial}")
 plt.show()
 ```
 
 ## Principal components manifold
+Now, we can use PCA, to reduce the neuron dimension into the first three principal components.
+
+We will first smooth the data with a Gaussian filter, and then normalize the data to zero mean and unit variance:
+```{code-cell} ipython3
+smooth_sigma = 0.06
+smoothed = binned.smooth(smooth_sigma)
+normalized = smoothed.normalize()
+```
+
+Next, extract the design matrix `X` and flatten the trial dimension:
 
 ```{code-cell} ipython3
-n_trials, n_time, n_units = binned.shape
-X = binned.values
-X = gaussian_filter1d(
-    X / bin_size,
-    sigma=0.04 / bin_size,
-    axis=1,
-)
-X = X.reshape(-1, n_units)
-unit_mean = X.mean(axis=0)
-unit_std = X.std(axis=0)
-X = (X - unit_mean) / np.maximum(unit_std, 1e-6)
+n_trials, n_time, n_units = normalized.shape
+X = normalized.values.reshape(n_trials*n_time, n_units)
 ```
+
+We can pass that to scikit-learn's [`PCA`](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html):
 
 ```{code-cell} ipython3
 from sklearn.decomposition import PCA
@@ -214,6 +219,25 @@ pca = PCA(n_components=3)
 trajectories = pca.fit_transform(X).reshape(n_trials, n_time, 3)
 ```
 
+Finally, we can visualize the mean trajectory per target location:
+```{code-cell} ipython3
+targets = np.asarray(normalized.trials["target_id"])
+categories = np.unique(targets)
+colors = plt.get_cmap("viridis")(np.linspace(0, 1, len(categories)))
+
+fig = plt.figure(figsize=(8, 9))
+ax = fig.add_subplot(projection="3d")
+for target, color in zip(categories, colors, strict=True):
+    mean = np.nanmean(trajectories[targets == target], axis=0)
+    ax.plot(*mean.T, color=color, label=str(int(target)))
+    ax.scatter(*mean[0], color="black", s=30)
+    ax.scatter(*mean[-1], color="gray", s=30)
+ax.set_xlabel("PC 1", labelpad=15)
+ax.set_ylabel("PC 2", labelpad=15)
+ax.set_zlabel("PC 3", labelpad=15)
+ax.legend(title="target", loc="upper left", bbox_to_anchor=(1.12, 0.7), frameon=False)
+plt.show()
+```
 
 :::{card}
 Authors

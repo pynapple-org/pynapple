@@ -214,6 +214,31 @@ Trial-align spiking activity from the IBL decision task and decode the animal's 
 :::::
 ::::::
 
+::::::{card} Trial-aligned population manifolds
+:link: examples/tutorial_population_manifolds
+:link-type: doc
+
+:::::{grid} 1 1 2 2
+:gutter: 2
+
+::::{grid-item}
+:columns: 12 12 6 6
+
+Trial-align spiking activity from a monkey reach task and compute a population manifold using principal component analysis.
+::::
+
+::::{grid-item}
+:columns: 12 12 6 6
+
+:::{image} _static/example_thumbs/tutorial_population_manifolds.png
+:alt: Computing population manifolds
+:class: example-thumb dark-light
+:::
+::::
+
+:::::
+::::::
+
 ::::::{card} Detecting sharp-wave ripples
 :link: examples/tutorial_ripple_detection
 :link-type: doc

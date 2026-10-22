@@ -135,11 +135,13 @@ def _format_trial_stack(
     )
     height = len(table) + 2
     offset = 2 * (len(labels) - 1)
-    canvas = [[" "] * (inner_width + 2 + offset) for _ in range(height + offset)]
+    canvas = [
+        [" "] * (inner_width + 2 + offset) for _ in range(height + len(labels) - 1)
+    ]
 
     for depth in reversed(range(len(labels))):
         x = 2 * depth
-        y = 2 * (len(labels) - depth - 1)
+        y = len(labels) - depth - 1
         title = f"─ {labels[depth]} "
         top = f"┌{title.ljust(inner_width, '─')}┐"
         bottom = f"└{'─' * inner_width}┘"
@@ -154,7 +156,7 @@ def _format_trial_stack(
             canvas[row][x : x + len(line)] = line
 
     label = "trial ↗ "
-    front_row = 2 * (len(labels) - 1)
+    front_row = len(labels) - 1
     return "\n".join(
         (label if row == front_row else " " * len(label)) + "".join(line).rstrip()
         for row, line in enumerate(canvas)
@@ -1405,3 +1407,154 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             data_kind=self.data_kind,
             alignment=self.alignment,
         )
+
+    def normalize(
+        self,
+        axes: int | tuple[int, ...] | None = (0, 1),
+    ) -> TsdTrials:
+        """
+        Standardize values to zero mean and unit variance.
+
+        Parameters
+        ----------
+        axes : int, tuple of int, or None, optional
+            Axes over which to compute the mean and standard deviation:
+            0 for trials, 1 for time, and 2 for units or features when
+            present. The default, (0, 1), standardises each unit or feature
+            across trials and time. Use None to standardise all values
+            together.
+
+        Returns
+        -------
+        TsdTrials
+            Standardized data with the original axes and metadata.
+            The original object is unchanged.
+
+        Notes
+        -----
+        Invalid bins and NaNs are excluded from the statistics and remain
+        NaN in the result. Constant groups become zero. The standard
+        deviation is calculated with ddof=0.
+
+        Examples
+        --------
+        Standardize each unit across trials and time:
+
+        >>> normalized = counts.normalize()
+
+        Standardize each trial and unit independently across time:
+
+        >>> normalized = counts.normalize(axes=1)
+        """
+        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        values = np.where(valid, self.values, np.nan)
+
+        mean = np.nanmean(values, axis=axes, keepdims=True)
+        std = np.nanstd(values, axis=axes, keepdims=True)
+        std = np.where(std == 0, 1.0, std)
+
+        return self._new(values=(values - mean) / std)
+
+    def smooth(
+        self,
+        std: float,
+        windowsize: float | None = None,
+        time_units: str = "s",
+        size_factor: int = 100,
+        norm: bool = True,
+    ) -> TsdTrials:
+        """
+        Smooth each trial independently with a Gaussian kernel.
+
+        Parameters
+        ----------
+        std : float
+            Standard deviation of the Gaussian kernel in units of time.
+        windowsize : float or None, optional
+            Duration of the kernel. If None, its length is determined by
+            std and size_factor. The kernel length is rounded up to an
+            odd number of samples.
+        time_units : str, optional
+            Units of std and windowsize: 's', 'ms', or 'us'.
+        size_factor : int, optional
+            Kernel length as a multiple of the standard deviation in
+            samples. Default is 100. Ignored when windowsize is provided.
+        norm : bool, optional
+            Whether to normalise the kernel to sum to one. Default is True.
+
+        Returns
+        -------
+        TsdTrials
+            Smoothed data with the original time axis, validity mask,
+            and metadata. The original object is unchanged.
+
+        Notes
+        -----
+        Smoothing requires a uniformly sampled time axis. Each unit or
+        feature is smoothed separately within each trial.
+
+        Invalid bins and samples outside each trial are treated as zero
+        during convolution. Invalid bins remain NaN in the result.
+        No edge correction is applied, so values near trial boundaries
+        may be attenuated. NaNs within valid bins propagate locally.
+
+        Examples
+        --------
+        Smooth each trial with a Gaussian standard deviation of 50 ms:
+
+        >>> smoothed = counts.smooth(std=50, time_units="ms")
+
+        Specify a kernel duration of 500 ms:
+
+        >>> smoothed = counts.smooth(
+        ...     std=50, windowsize=500, time_units="ms"
+        ... )
+        """
+        from scipy import signal
+
+        if not np.isfinite(std) or std <= 0:
+            raise ValueError("std must be finite and positive.")
+        if windowsize is not None and (not np.isfinite(windowsize) or windowsize <= 0):
+            raise ValueError("windowsize must be finite and positive.")
+        if not isinstance(size_factor, int) or size_factor <= 0:
+            raise ValueError("size_factor must be a positive integer.")
+
+        period = self.sample_period
+        if (
+            period is None
+            or period <= 0
+            or not np.allclose(np.diff(self.t), period, rtol=1e-6, atol=1e-12)
+        ):
+            raise ValueError("Smoothing requires a uniformly sampled time axis.")
+
+        std_seconds = TsIndex.format_timestamps(np.array([std]), time_units)[0]
+        std_samples = std_seconds / period
+
+        if windowsize is None:
+            length = int(std_samples * size_factor)
+        else:
+            window_seconds = TsIndex.format_timestamps(
+                np.array([windowsize]), time_units
+            )[0]
+            length = int(window_seconds / period)
+
+        if length % 2 == 0:
+            length += 1
+
+        kernel = signal.windows.gaussian(length, std=std_samples)
+        if norm:
+            kernel /= kernel.sum()
+
+        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        values = np.where(valid, self.values, 0.0)
+
+        if values.size:
+            kernel_shape = (1, length) + (1,) * (self.ndim - 2)
+            values = signal.convolve(
+                values,
+                kernel.reshape(kernel_shape),
+                mode="same",
+                method="direct",
+            )
+
+        return self._new(values=np.where(valid, values, np.nan))
