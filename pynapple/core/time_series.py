@@ -30,6 +30,7 @@ from ._core_functions import (
     _count,
     _dropna,
     _restrict,
+    _sort_merged,
     _threshold,
 )
 from .base_class import _Base
@@ -3647,16 +3648,20 @@ class Tsd(_BaseTsd):
 
         """
         ts_group = importlib.import_module(".ts_group", "pynapple.core")
-        t = self.index.values
-        d = self.values.astype("int")
-        idx = np.unique(d)
-
-        group = {}
-        for k in idx:
-            group[k] = Ts(t=t[d == k], time_support=self.time_support)
-
-        return ts_group.TsGroup(
-            group, time_support=self.time_support, bypass_check=True
+        # The timestamps of a Tsd are sorted and in its time support. Thus
+        # they are already the merged arrays of the group, with the values as
+        # keys. Only equal times can need a sort by key.
+        times, clusters = _sort_merged(
+            self.index.values, np.asarray(self.values).astype(np.int64)
+        )
+        keys = np.unique(clusters)
+        return ts_group.TsGroup._from_arrays(
+            times,
+            clusters,
+            None,
+            np.zeros(len(keys), dtype=bool),
+            keys,
+            self.time_support,
         )
 
     def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):

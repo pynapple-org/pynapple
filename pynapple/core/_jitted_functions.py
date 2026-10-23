@@ -93,110 +93,221 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     return ix[0:x], count
 
 
-# Within one epoch, matching `n` timestamps against `d` targets costs ~n*log2(d)
-# cache-missing jumps by binary search, versus ~n+d sequential steps by merge scan,
-# so binary search only pays when the input is far sparser than the target.
-#
-# The measured crossover is not a fixed ratio: it is d/n ~ 64 at d=1e4 and doubles
-# per decade (128, 256, 512 at 1e5, 1e6, 1e7), because a probe gets more expensive
-# as the target outgrows each cache level. A constant is used anyway -- it costs at
-# most 1.23x versus always picking the better kernel, and 1.7% on average over that
-# grid, whereas fitting the growth (4*d**0.3 tracks it almost exactly) would bake
-# one machine's cache hierarchy into the source. The textbook n*log2(d) < n+d test
-# is much worse than either, at 1.27x average and 3.6x worst case.
-VALUE_FROM_BSEARCH_RATIO = 128
+@jit(nopython=True, cache=True)
+def jitcount_epochs(time_array, unit_pos, starts, ends, n_units, dtype=np.int64):
+    """Count timestamps per epoch and per unit.
 
-# The helpers below are called once per timestamp from the innermost loops, so they
-# are declared inline="always". That makes numba paste their body into the caller
+    ``time_array`` is sorted and may merge the timestamps of several units,
+    with ``unit_pos`` the column ``0..n_units-1`` of each timestamp. Returns a
+    ``(n_epochs, n_units)`` count matrix. Epoch ends are inclusive, as in
+    :func:`jitrestrict_with_count`. For a single series, pass ``n_units=1``
+    and ``unit_pos=np.broadcast_to(np.int64(0), len(time_array))``.
+    """
+    n = len(time_array)
+    m = len(starts)
+    count = np.zeros((m, n_units), dtype=dtype)
+
+    if n == 0 or m == 0:
+        return count
+
+    k = 0
+    t = 0
+
+    while k < m and ends[k] < time_array[t]:
+        k += 1
+
+    while k < m:
+        # Outside
+        while t < n:
+            if time_array[t] >= starts[k]:
+                break
+            t += 1
+
+        # Inside
+        while t < n:
+            if time_array[t] > ends[k]:
+                k += 1
+                break
+            else:
+                count[k, unit_pos[t]] += 1
+            t += 1
+
+        if k == m:
+            break
+        if t == n:
+            break
+
+    return count
+
+
+@jit(nopython=True, cache=True)
+def jitcount(time_array, unit_pos, starts, ends, bin_size, n_units, dtype):
+    """Count timestamps per bin of ``bin_size`` within each epoch, per unit.
+
+    ``time_array`` is sorted and may merge the timestamps of several units,
+    with ``unit_pos`` the column ``0..n_units-1`` of each timestamp. Returns
+    the bin centers and a ``(n_bins, n_units)`` count matrix. For a single
+    series, pass ``n_units=1`` and
+    ``unit_pos=np.broadcast_to(np.int64(0), len(time_array))``.
+
+    The kernel walks the timestamps and the bins together in one sweep. It
+    does not restrict the timestamps first. It rounds the bin edges to 9
+    decimals. Each bin includes its left edge and excludes its right edge,
+    like ``np.histogram``. The kernel keeps a bin only if its center is at or
+    before the epoch end.
+    """
+    n = time_array.shape[0]
+    m = starts.shape[0]
+
+    nb_bins = np.zeros(m, dtype=np.int32)
+    for k in range(m):
+        if (ends[k] - starts[k]) > bin_size:
+            nb_bins[k] = int(np.ceil((ends[k] + bin_size - starts[k]) / bin_size))
+        else:
+            nb_bins[k] = 1
+
+    nb = np.sum(nb_bins)
+    bins = np.zeros(nb, dtype=np.float64)
+    cnt = np.zeros((nb, n_units), dtype=dtype)
+
+    t = 0
+    b = 0
+
+    for k in range(m):
+        # Outside
+        while t < n and time_array[t] < starts[k]:
+            t += 1
+
+        maxb = b + nb_bins[k]
+        lbound = starts[k]
+
+        while b < maxb:
+            xpos = lbound + bin_size / 2
+            if xpos > ends[k]:
+                break
+            else:
+                bins[b] = xpos
+                rbound = np.round(lbound + bin_size, 9)
+                # similar to numpy histogram
+                while t < n and time_array[t] < rbound and time_array[t] <= ends[k]:
+                    cnt[b, unit_pos[t]] += 1
+                    t += 1
+
+                lbound += bin_size
+                lbound = np.round(lbound, 9)
+                b += 1
+
+        # Inside the epoch but past its last kept bin
+        while t < n and time_array[t] <= ends[k]:
+            t += 1
+
+    return (bins[0:b], cnt[0:b])
+
+
+@jit(nopython=True, cache=True)
+def jittimediff_grouped(time_array, unit_pos, starts, ends, n_units, alpha):
+    """Differences between subsequent timestamps of each unit, within epochs.
+
+    Forward sweeps over the merged, globally sorted ``time_array``, keeping the
+    last timestamp seen per unit (and the epoch it was seen in): a difference is
+    emitted whenever a unit is seen again within the same epoch. A first sweep
+    only counts the differences of each unit, so that the second one writes
+    each unit's differences into its own contiguous block, in time order --
+    splitting the output by unit then needs no sort and no gather.
+
+    Returns
+    -------
+    (new_t, new_d, offsets)
+        ``new_t = last + alpha * diff`` and ``new_d = diff``, where
+        ``[offsets[i]:offsets[i + 1]]`` is the block of unit ``i``.
+    """
+    n = len(time_array)
+    m = len(starts)
+    last_time = np.zeros(n_units, dtype=np.float64)
+    last_epoch = np.full(n_units, -1, dtype=np.int64)
+    offsets = np.zeros(n_units + 1, dtype=np.int64)
+
+    for sweep in range(2):
+        if sweep == 1:
+            for u in range(n_units):
+                offsets[u + 1] += offsets[u]
+            fill = offsets[:-1].copy()
+            new_t = np.empty(offsets[n_units], dtype=np.float64)
+            new_d = np.empty(offsets[n_units], dtype=np.float64)
+            last_epoch[:] = -1
+
+        t = 0
+        k = 0
+        while k < m and t < n:
+            while t < n and time_array[t] < starts[k]:
+                t += 1
+            while t < n and time_array[t] <= ends[k]:
+                u = unit_pos[t]
+                if last_epoch[u] == k:
+                    if sweep == 0:
+                        offsets[u + 1] += 1
+                    else:
+                        diff = time_array[t] - last_time[u]
+                        new_d[fill[u]] = diff
+                        new_t[fill[u]] = last_time[u] + alpha * diff
+                        fill[u] += 1
+                last_time[u] = time_array[t]
+                last_epoch[u] = k
+                t += 1
+            k += 1
+
+    return new_t, new_d, offsets
+
+
+@jit(nopython=True, cache=True)
+def jitgroup_by_unit(unit_pos, n_units):
+    """Stable counting sort of dense unit positions.
+
+    Returns ``(order, offsets)`` such that ``order[offsets[i]:offsets[i + 1]]``
+    are the positions holding unit ``i``, in their original order. O(n), unlike
+    a comparison-based stable argsort.
+    """
+    n = unit_pos.shape[0]
+    offsets = np.zeros(n_units + 1, dtype=np.int64)
+    for i in range(n):
+        offsets[unit_pos[i] + 1] += 1
+    for u in range(n_units):
+        offsets[u + 1] += offsets[u]
+    fill = offsets[:-1].copy()
+    order = np.empty(n, dtype=np.int64)
+    for i in range(n):
+        u = unit_pos[i]
+        order[fill[u]] = i
+        fill[u] += 1
+    return order, offsets
+
+
+@jit(nopython=True, cache=True)
+def jitcount_clusters(clusters, lo, span):
+    """Number of timestamps of each cluster key, in one pass.
+
+    ``counts[k - lo]`` is the number of entries of ``clusters`` equal to ``k``,
+    for ``lo <= k < lo + span``. Assumes dense keys: memory is O(span).
+    """
+    counts = np.zeros(span, dtype=np.int64)
+    for i in range(clusters.shape[0]):
+        counts[clusters[i] - lo] += 1
+    return counts
+
+
+# The helper below is called once per timestamp from the innermost loop, so it
+# is declared inline="always". That makes numba paste its body into the caller
 # instead of emitting a call. Consequences are that: there is no longer a
 # function call per element, and because `mode` is the same on every iteration,
 # the compiler can test it once before the loop rather than on every timestamp.
 
 
 @jit(nopython=True, cache=True, inline="always")
-def use_bsearch_match(n_in, n_tg):
-    """Whether to match this epoch by binary search rather than a merge scan.
-
-    Exposed (and jitted so the kernel can call it) so the threshold can be tested
-    directly: the branch itself is inside compiled code and cannot be spied on, and
-    picking the wrong one costs speed without changing any result.
-
-    Parameters
-    ----------
-    n_in : int
-        Input timestamps in the epoch.
-    n_tg : int
-        Targets in the epoch.
-
-    Returns
-    -------
-    bool
-        True to binary search, False to merge scan.
-    """
-    return n_in * VALUE_FROM_BSEARCH_RATIO < n_tg
-
-
-@jit(nopython=True, cache=True, inline="always")
-def _vf_first_of_run(time_target_array, index, start):
-    """First index of the run of targets sharing ``time_target_array[index]``.
-
-    pynapple accepts duplicate timestamps: they are neither rejected nor
-    deduplicated on construction, and a unit conversion can create them (e.g.
-    ``Ts(t=[1000.0, 1000.0], time_units="ms")``). So a run of identical target
-    timestamps is reachable, and which member of it a mode resolves to is
-    user-visible behaviour that must be preserved.
-
-    Parameters
-    ----------
-    time_target_array : ndarray
-        Full, sorted target time array.
-    index : int
-        Index somewhere inside the run.
-    start : int
-        First index of the epoch's target slice; the walk stops there.
-
-    Returns
-    -------
-    int
-        Lowest index ``>= start`` holding the same timestamp as ``index``.
-    """
-    while index > start and time_target_array[index - 1] == time_target_array[index]:
-        index -= 1
-    return index
-
-
-@jit(nopython=True, cache=True, inline="always")
-def _vf_last_of_run(time_target_array, index, stop):
-    """Last index of the run of targets sharing ``time_target_array[index]``.
-
-    See :func:`_vf_first_of_run` on why runs of equal timestamps are reachable.
-
-    Parameters
-    ----------
-    time_target_array : ndarray
-        Full, sorted target time array.
-    index : int
-        Index somewhere inside the run.
-    stop : int
-        One past the last index of the epoch's target slice; the walk stops there.
-
-    Returns
-    -------
-    int
-        Highest index ``< stop`` holding the same timestamp as ``index``.
-    """
-    while index + 1 < stop and time_target_array[index + 1] == time_target_array[index]:
-        index += 1
-    return index
-
-
-@jit(nopython=True, cache=True, inline="always")
-def _vf_match(time_target_array, timestamp, first_after, start, stop, mode):
+def _valuefrom_match(time_target_array, timestamp, first_after, start, stop, mode):
     """Pick the target matching one timestamp, within one epoch's target slice.
 
     All three modes are derived from a single pivot, so the caller only has to
-    locate that pivot once (by binary search or by a merge scan, whichever is
-    cheaper) and this decides what it means.
+    locate that pivot once (with a merge scan) and this decides what it means.
 
     Parameters
     ----------
@@ -227,34 +338,41 @@ def _vf_match(time_target_array, timestamp, first_after, start, stop, mode):
       the *first* of the run while ``closest`` resolves to the *last*;
     - when the two neighbours are exactly equidistant, ``closest`` resolves to the
       *later* one.
+
+    Runs of identical target timestamps are reachable: pynapple neither rejects
+    nor deduplicates duplicate timestamps, and a unit conversion can create them
+    (e.g. ``Ts(t=[1000.0, 1000.0], time_units="ms")``).
     """
     last_at_or_before = first_after - 1
 
-    if mode == 0:  # before: last target <= timestamp
+    if mode != 1:
+        # before and after: an exact hit resolves to the first target of its run
         if (
             last_at_or_before >= start
             and time_target_array[last_at_or_before] == timestamp
         ):
-            return _vf_first_of_run(time_target_array, last_at_or_before, start)
-        return last_at_or_before if last_at_or_before >= start else -1
-
-    if mode == 2:  # after: first target >= timestamp
-        if (
-            last_at_or_before >= start
-            and time_target_array[last_at_or_before] == timestamp
-        ):
-            return _vf_first_of_run(time_target_array, last_at_or_before, start)
+            index = last_at_or_before
+            while (
+                index > start
+                and time_target_array[index - 1] == time_target_array[index]
+            ):
+                index -= 1
+            return index
+        if mode == 0:  # before: last target <= timestamp
+            return last_at_or_before if last_at_or_before >= start else -1
+        # after: first target >= timestamp
         return first_after if first_after < stop else -1
 
     # closest: whichever neighbour is nearer
-    if last_at_or_before < start:  # nothing at or below: only the upper neighbour
-        if first_after >= stop:
-            return -1
-        return _vf_last_of_run(time_target_array, first_after, stop)
     if first_after >= stop:  # nothing above: only the lower neighbour
-        return last_at_or_before
+        return last_at_or_before if last_at_or_before >= start else -1
 
-    upper = _vf_last_of_run(time_target_array, first_after, stop)
+    # the upper neighbour is the last target of its run
+    upper = first_after
+    while upper + 1 < stop and time_target_array[upper + 1] == time_target_array[upper]:
+        upper += 1
+    if last_at_or_before < start:  # nothing at or below: only the upper neighbour
+        return upper
     # `<=`, not `<`: on an exact distance tie the reference kernel keeps walking
     # forward (its break test is `new_interval > interval`), landing on the later
     # target. A strict `<` here silently disagrees on every equidistant match.
@@ -266,36 +384,37 @@ def _vf_match(time_target_array, timestamp, first_after, start, stop, mode):
 
 
 @jit(nopython=True, cache=True)
-def jitvaluefrom_ranges(
+def jitvaluefrom(
     time_array, time_target_array, starts_in, ends_in, starts_tg, ends_tg, mode
 ):
-    """Compute value_from indices from per-epoch slice boundaries.
+    """Match each input timestamp to a target timestamp, in each epoch.
 
-    Unlike the pre-rewrite kernel, this takes the *full* time arrays plus the
-    half-open slice boundaries of each epoch, so neither array has to be restricted
-    and gathered beforehand, and per-epoch offsets are accumulated rather than
-    recomputed with an O(n_epochs^2) prefix sum.
+    The function does one merge scan in each epoch. The input timestamps are
+    sorted, so the pivot (the first target after the timestamp) only moves
+    forward, and an epoch costs ``n_in + n_tg`` steps.
+
+    The function reads the full arrays through the bounds of each epoch, so
+    the caller does not have to restrict the arrays first.
 
     Parameters
     ----------
     time_array : ndarray
-        Full, sorted input time array.
+        The sorted input timestamps.
     time_target_array : ndarray
-        Full, sorted target time array.
+        The sorted target timestamps.
     starts_in, ends_in : ndarray[int64]
-        Half-open [start, end) boundaries of each epoch within ``time_array``.
+        The bounds ``[start, end)`` of each epoch in ``time_array``.
     starts_tg, ends_tg : ndarray[int64]
-        Half-open [start, end) boundaries of each epoch within
-        ``time_target_array``.
+        The bounds ``[start, end)`` of each epoch in ``time_target_array``.
     mode : int
         0 before, 1 closest, 2 after.
 
     Returns
     -------
     ndarray[int64]
-        For each in-epoch input timestamp, the index into ``time_target_array`` of
-        the matching target, or -1 when none qualifies. Length is the total number
-        of in-epoch input timestamps, epochs concatenated in order.
+        For each input timestamp in the epochs, the index in
+        ``time_target_array`` of its target, or -1 if no target matches. The
+        epochs are in order.
     """
     n_epochs = starts_in.shape[0]
 
@@ -309,105 +428,29 @@ def jitvaluefrom_ranges(
     for k in range(n_epochs):
         in_start = starts_in[k]
         n_in = ends_in[k] - in_start
-        tg_start = starts_tg[k]
-        tg_stop = ends_tg[k]
-        n_tg = tg_stop - tg_start
-        if n_tg == 0:  # no target in this epoch: every timestamp stays unmatched
-            out_offset += n_in
-            continue
-
-        if use_bsearch_match(n_in, n_tg):
-            # input far sparser than the target: binary search each timestamp.
-            # The search spans the whole epoch every time on purpose -- narrowing
-            # the lower bound from the previous result measures ~2.8x slower, as
-            # it breaks the otherwise predictable access pattern.
+        target_start = starts_tg[k]
+        target_stop = ends_tg[k]
+        if target_stop > target_start:  # with no target in the epoch, nothing matches
+            first_after = target_start
             for i in range(n_in):
                 timestamp = time_array[in_start + i]
-                left = tg_start
-                right = tg_stop
-                while left < right:  # upper bound: first target > timestamp
-                    # equivalent to floor(left + right / 2)
-                    # shifting binary numbers by one position gives
-                    # the half (10 in binary is 1010 shifted is 0101, which is 5)
-                    mid = (left + right) >> 1
-                    if time_target_array[mid] <= timestamp:
-                        left = mid + 1
-                    else:
-                        right = mid
-                idx[out_offset + i] = _vf_match(
-                    time_target_array, timestamp, left, tg_start, tg_stop, mode
-                )
-        else:
-            # comparable sizes: one sequential merge pass. `first_after` never
-            # rewinds, because the input timestamps are non-decreasing, so the whole
-            # epoch costs n_in + n_tg steps rather than n_in binary searches.
-            first_after = tg_start
-            for i in range(n_in):
-                timestamp = time_array[in_start + i]
+                # move the pivot forward, to the first target after timestamp
                 while (
-                    first_after < tg_stop
+                    first_after < target_stop
                     and time_target_array[first_after] <= timestamp
                 ):
                     first_after += 1
-                idx[out_offset + i] = _vf_match(
-                    time_target_array, timestamp, first_after, tg_start, tg_stop, mode
+                idx[out_offset + i] = _valuefrom_match(
+                    time_target_array,
+                    timestamp,
+                    first_after,
+                    target_start,
+                    target_stop,
+                    mode,
                 )
         out_offset += n_in
 
     return idx
-
-
-@jit(nopython=True, cache=True)
-def jitcount(time_array, starts, ends, bin_size, dtype):
-    idx, countin = jitrestrict_with_count(time_array, starts, ends)
-    time_array = time_array[idx]
-
-    m = starts.shape[0]
-
-    nb_bins = np.zeros(m, dtype=np.int32)
-    for k in range(m):
-        if (ends[k] - starts[k]) > bin_size:
-            nb_bins[k] = int(np.ceil((ends[k] + bin_size - starts[k]) / bin_size))
-        else:
-            nb_bins[k] = 1
-
-    nb = np.sum(nb_bins)
-    bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=dtype)
-
-    k = 0
-    t = 0
-    b = 0
-
-    while k < m:
-        maxb = b + nb_bins[k]
-        maxt = t + countin[k]
-        lbound = starts[k]
-
-        while b < maxb:
-            xpos = lbound + bin_size / 2
-            if xpos > ends[k]:
-                break
-            else:
-                bins[b] = xpos
-                rbound = np.round(lbound + bin_size, 9)
-                while t < maxt:
-                    if time_array[t] < rbound:  # similar to numpy hisrogram
-                        cnt[b] += 1
-                        t += 1
-                    else:
-                        break
-
-                lbound += bin_size
-                lbound = np.round(lbound, 9)
-                b += 1
-        t = maxt
-        k += 1
-
-    new_time_array = bins[0:b]
-    new_data_array = cnt[0:b]
-
-    return (new_time_array, new_data_array)
 
 
 @jit(nopython=True, cache=True)

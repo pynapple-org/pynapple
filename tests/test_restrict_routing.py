@@ -1,6 +1,6 @@
 """Tests that ``restrict`` dispatches to the intended implementation.
 
-``_Base.restrict`` chooses between:
+``_Base.restrict`` decides the path, and ``_restrict_arrays`` dispatches to:
   - ``_restrict_ranges`` (searchsorted boundaries + contiguous copy) for few
     intervals over numpy data, and
   - ``_restrict`` (the numba merge scan) for many intervals or non-numpy data.
@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 
 import pynapple as nap
+import pynapple.core._core_functions as core_functions
 import pynapple.core.base_class as base_class
 from pynapple.core._core_functions import _use_searchsorted_restrict
 
@@ -33,11 +34,13 @@ def _tiled_intervals(n, m):
 
 
 def _spy():
-    """Patch both restrict implementations in the base_class namespace, keeping
-    their real behavior (wraps=...) so the operation still runs correctly."""
+    """Patch both restrict implementations where ``_restrict_arrays`` looks them
+    up, keeping their real behavior (wraps=...) so the operation still runs."""
     return (
-        patch.object(base_class, "_restrict_ranges", wraps=base_class._restrict_ranges),
-        patch.object(base_class, "_restrict", wraps=base_class._restrict),
+        patch.object(
+            core_functions, "_restrict_ranges", wraps=core_functions._restrict_ranges
+        ),
+        patch.object(core_functions, "_restrict", wraps=core_functions._restrict),
     )
 
 

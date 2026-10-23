@@ -1,10 +1,9 @@
 """Tests for the ``value_from`` matching kernel.
 
-:func:`jitvaluefrom_ranges` locates, for every input timestamp, the target that
+:func:`jitvaluefrom` locates, for every input timestamp, the target that
 ``before`` / ``closest`` / ``after`` should pick, working from per-epoch slice
-boundaries. It picks between a binary search and a merge scan per epoch, so both
-branches are exercised here, and its tie-breaking is checked against an
-independent brute-force oracle rather than against a copy of itself.
+boundaries, with one merge scan per epoch. Its tie-breaking is checked against
+an independent brute-force oracle rather than against a copy of itself.
 
 The tie-breaking rules are not arbitrary: they are the behaviour pynapple has
 always had, and they are reachable from user code because duplicate timestamps
@@ -18,12 +17,8 @@ from numba import jit
 
 import pynapple as nap
 from pynapple.core._core_functions import _concat_ranges
-from pynapple.core._jitted_functions import (
-    VALUE_FROM_BSEARCH_RATIO,
-    jitrestrict_with_count,
-    jitvaluefrom_ranges,
-    use_bsearch_match,
-)
+from pynapple.core._jitted_functions import jitrestrict_with_count, jitvaluefrom
+from pynapple.process.tuning_curves import _match_and_count_spikes
 
 MODES = {"before": 0, "closest": 1, "after": 2}
 
@@ -37,7 +32,8 @@ MODES = {"before": 0, "closest": 1, "after": 2}
 def legacy_jitvaluefrom(
     time_array, time_target_array, count, count_target, starts, mode
 ):
-    """The ``jitvaluefrom`` that pynapple shipped before ``jitvaluefrom_ranges``.
+    """The ``jitvaluefrom`` that pynapple shipped before the rewrite, with an
+    older signature.
 
     Copied here verbatim when it was removed from the library, so the rewrite can
     keep being checked against the behaviour that actually shipped rather than only
@@ -175,7 +171,7 @@ def oracle(time_array, time_target_array, starts, ends, mode):
 
 def run_kernel(time_array, time_target_array, starts, ends, mode):
     """Drive the kernel the way ``_value_from`` does."""
-    return jitvaluefrom_ranges(
+    return jitvaluefrom(
         time_array,
         time_target_array,
         np.searchsorted(time_array, starts, side="left"),
@@ -301,49 +297,14 @@ def test_matches_oracle_and_legacy_kernel(mode, kind):
 
 
 # --------------------------------------------------------------------------
-# both dispatch branches
+# sparse and dense inputs
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "n_in, n_tg, expected_branch",
-    [
-        (1, VALUE_FROM_BSEARCH_RATIO, "merge"),  # exactly at the threshold
-        (1, VALUE_FROM_BSEARCH_RATIO + 1, "bsearch"),  # one past it
-        (1, VALUE_FROM_BSEARCH_RATIO - 1, "merge"),
-        (0, 1000, "bsearch"),  # degenerate, must not divide by anything
-        (1000, 0, "merge"),
-        (1000, 1000, "merge"),
-    ],
-)
-def test_bsearch_threshold(n_in, n_tg, expected_branch):
-    """Pin the dispatch predicate itself.
-
-    Nothing else can: both branches return identical results by construction, so a
-    flipped predicate is invisible to every correctness test in this file.
-    """
-    assert use_bsearch_match(n_in, n_tg) == (expected_branch == "bsearch")
-
-
 @pytest.mark.parametrize("mode", list(MODES))
-@pytest.mark.parametrize(
-    "n_in, n_tg, expected_branch",
-    [
-        (1, 4 * VALUE_FROM_BSEARCH_RATIO, "bsearch"),
-        (4, 8 * VALUE_FROM_BSEARCH_RATIO, "bsearch"),
-        (200, 200, "merge"),
-        (VALUE_FROM_BSEARCH_RATIO, VALUE_FROM_BSEARCH_RATIO, "merge"),
-    ],
-)
-def test_both_dispatch_branches_agree_with_oracle(mode, n_in, n_tg, expected_branch):
-    """The per-epoch switch must not change results, only speed.
-
-    The branch taken inside the compiled kernel cannot be observed, so the sizes are
-    chosen to sit unambiguously on each side of the threshold, confirmed here
-    against the same predicate the kernel calls.
-    """
-    assert use_bsearch_match(n_in, n_tg) == (expected_branch == "bsearch")
-
+@pytest.mark.parametrize("n_in, n_tg", [(1, 512), (4, 1024), (200, 200), (512, 4)])
+def test_sizes_agree_with_oracle(mode, n_in, n_tg):
+    """Sparse and dense inputs give the oracle result."""
     rng = np.random.default_rng(0)
     horizon = 100.0
     time_array = np.sort(rng.uniform(0, horizon, n_in))
@@ -358,16 +319,16 @@ def test_both_dispatch_branches_agree_with_oracle(mode, n_in, n_tg, expected_bra
 
 @pytest.mark.parametrize("mode", list(MODES))
 def test_mixed_density_epochs(mode):
-    """One IntervalSet where the switch resolves differently per epoch."""
+    """One IntervalSet with a sparse epoch and a dense epoch."""
     rng = np.random.default_rng(3)
-    # epoch 0: sparse input over a dense target -> binary search
-    # epoch 1: comparable sizes -> merge scan
+    # epoch 0: sparse input over a dense target
+    # epoch 1: comparable sizes
     sparse_in = np.sort(rng.uniform(0, 10, 2))
     dense_in = np.sort(rng.uniform(20, 30, 300))
     time_array = np.concatenate([sparse_in, dense_in])
     time_target_array = np.concatenate(
         [
-            np.sort(rng.uniform(0, 10, 4 * VALUE_FROM_BSEARCH_RATIO)),
+            np.sort(rng.uniform(0, 10, 512)),
             np.sort(rng.uniform(20, 30, 300)),
         ]
     )
@@ -419,6 +380,66 @@ def test_epoch_with_input_but_no_target(mode):
     )
     assert (got[2:] == -1).all(), "epoch without any target must be all unmatched"
     assert (got[:2] >= 0).all(), "epoch with bracketing targets must all match"
+
+
+# --------------------------------------------------------------------------
+# _match_and_count_spikes: the matching above, then a count per unit and bin
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("n_in, n_tg", [(4, 1024), (300, 300), (0, 50), (50, 0)])
+def test_match_and_count_spikes_agrees_with_oracle(n_in, n_tg):
+    """``_match_and_count_spikes`` counts exactly the ``closest`` matches that
+    the oracle picks, and the spikes of each unit in the epochs."""
+    rng = np.random.default_rng(4)
+    n_units, n_bins = 3, 5
+    # two epochs, plus input and target outside both, which must be ignored
+    starts, ends = np.array([0.0, 60.0]), np.array([40.0, 100.0])
+    time_target_array = rng.uniform(-10, 110, n_tg)
+    # duplicated targets and inputs sitting exactly on a target exercise the
+    # tie-breaking `_valuefrom_match` pins; random floats alone never tie
+    quarter = n_tg // 4
+    time_target_array[quarter : 2 * quarter] = time_target_array[:quarter]
+    time_target_array = np.sort(time_target_array)
+    time_array = rng.uniform(-10, 110, n_in)
+    if n_tg:
+        time_array[: n_in // 2] = rng.choice(time_target_array, n_in // 2)
+    time_array = np.sort(time_array)
+    unit_pos = rng.integers(0, n_units, n_in)
+
+    group = nap.TsGroup(
+        {u: nap.Ts(time_array[unit_pos == u]) for u in range(n_units)},
+        time_support=nap.IntervalSet(-10, 110),
+    )
+    # the flat bin of each target, with one outlier bin on each side
+    bin_edges = [np.arange(n_bins + 1, dtype=np.float64)]
+    n_flat = n_bins + 2
+    feature_bins = rng.integers(0, n_flat, n_tg)
+    features = nap.Tsd(t=time_target_array, d=np.zeros(n_tg))
+    epochs = nap.IntervalSet(starts, ends)
+
+    counts, rates = _match_and_count_spikes(
+        group, features, feature_bins, n_flat, bin_edges, epochs
+    )
+
+    # the group sorts the spikes again, so the oracle uses its own arrays
+    times = group._times
+    units = group._cluster_positions
+    matched = oracle(times, time_target_array, starts, ends, "closest")
+    in_start = np.searchsorted(times, starts, side="left")
+    in_stop = np.searchsorted(times, ends, side="right")
+    kept_units = _concat_ranges(units, in_start, in_stop, copy=True)
+    expected = np.zeros((n_units, n_flat))
+    np.add.at(
+        expected,
+        (kept_units[matched >= 0], feature_bins[matched[matched >= 0]]),
+        1,
+    )
+    assert counts.dtype == np.float64
+    np.testing.assert_array_equal(counts, expected[:, 1:-1])
+    np.testing.assert_allclose(
+        rates, np.bincount(kept_units, minlength=n_units) / np.sum(ends - starts)
+    )
 
 
 # --------------------------------------------------------------------------

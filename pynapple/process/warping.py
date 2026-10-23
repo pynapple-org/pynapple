@@ -2,11 +2,15 @@
 Functions to create trial-based tensors and warp times
 """
 
+from __future__ import annotations
+
 import inspect
 from functools import wraps
 from numbers import Number
+from typing import Optional, Union
 
 import numpy as np
+from numba import jit, prange
 
 from .. import core as nap
 
@@ -42,47 +46,68 @@ def _validate_warping_inputs(func):
 
 @_validate_warping_inputs
 def build_tensor(
-    input, epochs, bin_size=None, align="start", padding_value=np.nan, time_unit="s"
-):
+    input: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup],
+    epochs: nap.IntervalSet,
+    bin_size: Optional[Number] = None,
+    align: str = "start",
+    padding_value: Number = np.nan,
+    time_unit: str = "s",
+) -> np.ndarray:
     """
-    Return trial-based tensor from an IntervalSet object.
-    This is equivalent to calling `input.to_trial_tensor` for Tsd, TsdFrame, and TsdTensor objects,
-    or is equivalent to calling `input.trial_count` for Ts and TsGroup objects.
+    Make a tensor with one row for each trial.
 
-    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group elements, number of trials, number of time bins). The `bin_size` parameter determines the number of time bins.
+    Each epoch of ``epochs`` is one trial. The function puts the data of each
+    trial in one row of the tensor:
 
-    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trials, number of  time points).
+    - For a Ts or a TsGroup, it counts the timestamps in bins of ``bin_size``.
+      This is the same as ``input.trial_count``.
+    - For a Tsd, a TsdFrame or a TsdTensor, it takes the values in the trial.
+      This is the same as ``input.to_trial_tensor``.
 
-    The `align` parameter controls how the time series are aligned. If `align="start"`, the time
-    series are aligned to the start of each trial. If `align="end"`, the time series are aligned
-    to the end of each trial.
-
-    If trials have uneven durations, the returned array is padded. The parameter `padding_value`
-    determine which value is used to pad the array. Default is NaN.
+    The trials can have different lengths. The row of a short trial then
+    gets ``padding_value`` in the bins or the time points that it does not
+    have. ``align`` sets the side of the row that holds the data.
 
     Parameters
     ----------
     input : Ts, Tsd, TsdFrame, TsdTensor or TsGroup
-        Input to slice and align to the trials within the `ep` parameter.
+        The data to put in the tensor.
     epochs : IntervalSet
-        Epochs holding the trials. Each interval can be of unequal size.
+        The trials. The trials can have different lengths.
     bin_size : Number, optional
-        Size of the time bins for TsGroup and Ts objects.
-    align: str, optional
-        How to align the time series ('start' [default], 'end')
-    padding_value: Number, optional
-        How to pad the array if unequal intervals. Default is np.nan.
+        The size of the bins. Necessary for a Ts or a TsGroup, not used for
+        the other types.
+    align : str, optional
+        - ``'start'`` (default): the data of each trial starts at the first
+          bin or time point of its row.
+        - ``'end'``: the data of each trial ends at the last bin or time point
+          of its row.
+    padding_value : Number, optional
+        The value of the bins or time points that a trial does not have. The
+        default is NaN.
     time_unit : str, optional
-        Time units of the bin_size parameter ('s' [default], 'ms', 'us').
+        The unit of ``bin_size``: ``'s'`` (default), ``'ms'`` or ``'us'``.
 
     Returns
     -------
     numpy.ndarray
+        The tensor. The trials are on the second-last axis, and the bins or
+        time points are on the last axis:
+
+        - Ts: ``(n_trials, n_bins)``.
+        - TsGroup: ``(n_units, n_trials, n_bins)``.
+        - Tsd: ``(n_trials, n_time_points)``.
+        - TsdFrame or TsdTensor: ``(*input.shape[1:], n_trials,
+          n_time_points)``.
 
     Raises
     ------
+    TypeError
+        If an argument does not have the correct type.
     RuntimeError
-        If `time_unit` not in ["s", "ms", "us"]
+        - If ``time_unit`` is not ``'s'``, ``'ms'`` or ``'us'``.
+        - If ``align`` is not ``'start'`` or ``'end'``.
+        - If ``input`` is a Ts or a TsGroup and ``bin_size`` is not given.
 
     Examples
     --------
@@ -98,7 +123,7 @@ def build_tensor(
           3       80     88
     shape: (4, 2), time unit: sec.
 
-    Create a trial-based tensor by counting events within 1 second bin for each interval of `epochs`.
+    Count the timestamps in bins of 1 second, for each trial of ``epochs``:
 
     >>> tensor = nap.build_tensor(group, epochs, bin_size=1)
     >>> tensor
@@ -107,7 +132,8 @@ def build_tensor(
             [ 1.,  1.,  1.,  1.,  1.,  1., nan, nan],
             [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
 
-    By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
+    By default, the data of each trial starts at the first bin of its row.
+    With ``align="end"``, the data ends at the last bin of its row:
 
     >>> tensor = nap.build_tensor(group, epochs, bin_size=1, align="end")
     >>> tensor
@@ -116,7 +142,7 @@ def build_tensor(
             [nan, nan,  1.,  1.,  1.,  1.,  1.,  1.],
             [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
 
-    This function works for any time series.
+    For a TsdFrame, the function takes the values in each trial:
 
     >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.arange(200).reshape(2,100).T)
     >>> tensor = nap.build_tensor(tsdframe, epochs)
@@ -147,20 +173,66 @@ def build_tensor(
         return input.to_trial_tensor(epochs, align, padding_value)
 
 
-def _warp_tensor_from_tsgroup(input, epochs, num_bins):
-    if isinstance(input, nap.Ts):
-        output = np.zeros(shape=(1, len(epochs), num_bins))
-    else:
-        output = np.zeros(shape=(len(input), len(epochs), num_bins))
+@jit(nopython=True, cache=True, parallel=True)
+def _jitwarp_count(times, unit_positions, starts, ends, num_bins, n_units):
+    """
+    Count the timestamps of each unit in ``num_bins`` bins of each trial.
 
-    bin_sizes = (epochs.end - epochs.start) / num_bins
+    The bins of a trial have the size ``(end - start) / num_bins``. They follow
+    the rules of ``jitcount``, so that the counts are the same as
+    ``count(bin_size, trial)`` for each trial:
 
-    for i in range(len(epochs)):
-        tmp = input.count(bin_sizes[i], epochs[i])
-        output[:, i, :] = np.transpose(tmp.values)
+    - The bin edges are rounded to 9 decimals.
+    - A bin includes its left edge and excludes its right edge.
+    - A bin is kept only if its center is at or before the trial end.
+    - A timestamp after the trial end is not counted.
 
-    if isinstance(input, nap.Ts):  # Removing first axis if Ts.
-        output = output[0]
+    Parameters
+    ----------
+    times : ndarray
+        The timestamps, sorted.
+    unit_positions : ndarray
+        The unit of each timestamp, from 0 to ``n_units - 1``.
+    starts, ends : ndarray
+        The start and the end of each trial.
+    num_bins : int
+        The number of bins of each trial.
+    n_units : int
+        The number of units.
+
+    Returns
+    -------
+    ndarray
+        The counts, with the shape ``(n_units, n_trials, num_bins)``.
+    """
+    n_times = len(times)
+    n_trials = len(starts)
+    output = np.zeros((n_units, n_trials, num_bins))
+    # first timestamp of each trial
+    first = np.searchsorted(times, starts, side="left")
+
+    # each trial writes only output[:, trial, :], so the trials run in parallel
+    for trial in prange(n_trials):
+        start = starts[trial]
+        end = ends[trial]
+        bin_size = (end - start) / num_bins
+        # number of bins that jitcount allocates for the trial
+        if end - start > bin_size:
+            max_bins = int(np.ceil((end + bin_size - start) / bin_size))
+        else:
+            max_bins = 1
+        max_bins = min(max_bins, num_bins)
+
+        t = first[trial]
+        left_edge = start
+        for b in range(max_bins):
+            if left_edge + bin_size / 2 > end:
+                break
+            right_edge = np.round(left_edge + bin_size, 9)
+            while t < n_times and times[t] < right_edge and times[t] <= end:
+                output[unit_positions[t], trial, b] += 1
+                t += 1
+            left_edge = np.round(left_edge + bin_size, 9)
 
     return output
 
@@ -191,25 +263,62 @@ def _warp_tensor_from_tsd(input, epochs, num_bins):
 
 
 @_validate_warping_inputs
-def warp_tensor(input, epochs, num_bins):
+def warp_tensor(
+    input: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup],
+    epochs: nap.IntervalSet,
+    num_bins: int,
+) -> np.ndarray:
     """
-    Return linearly time-warped trial-based tensor from an IntervalSet object.
+    Make a tensor with one row of ``num_bins`` bins for each trial.
 
-    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group element, number of trial, `num_bins`).
+    Each epoch of ``epochs`` is one trial. The function divides each trial
+    into ``num_bins`` bins of equal size. The bins of a long trial are
+    larger than the bins of a short trial. Thus all the trials get the same
+    number of bins, and the time in each trial is linearly warped.
 
-    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trial, `num_bins`).
+    - For a Ts or a TsGroup, the function counts the timestamps in each
+      bin. A bin includes its left edge and excludes its right edge. A
+      timestamp at the end of a trial is not counted.
+    - For a Tsd, a TsdFrame or a TsdTensor, the function changes the number
+      of time points of each trial to ``num_bins``:
+
+      * If the trial has more time points, it averages the values in each
+        bin (``bin_average``).
+      * If the trial has fewer time points, it interpolates the values at
+        ``num_bins`` times from the start to the end of the trial
+        (``interpolate``).
+      * If the trial has no time point, its row is NaN.
 
     Parameters
     ----------
-    input : Ts , Tsd, TsdFrame, TsdTensor or TsGroup
-        Input object
+    input : Ts, Tsd, TsdFrame, TsdTensor or TsGroup
+        The data to put in the tensor.
     epochs : IntervalSet
-        Epochs holding the trials. Each interval can be of unequal size.
+        The trials. The trials can have different lengths.
     num_bins : int
+        The number of bins of each trial.
 
     Returns
     -------
     numpy.ndarray
+        The tensor. The trials are on the second-last axis, and the bins are
+        on the last axis:
+
+        - Ts or Tsd: ``(n_trials, num_bins)``.
+        - TsGroup: ``(n_units, n_trials, num_bins)``.
+        - TsdFrame or TsdTensor: ``(*input.shape[1:], n_trials, num_bins)``.
+
+    Raises
+    ------
+    TypeError
+        If an argument does not have the correct type.
+    RuntimeError
+        If ``num_bins`` is not positive.
+
+    Notes
+    -----
+    For a lazy TsGroup (e.g. the units of an NWB file), the function reads
+    only the timestamps in the trials.
 
     Examples
     --------
@@ -225,7 +334,7 @@ def warp_tensor(input, epochs, num_bins):
           3       80     88
     shape: (4, 2), time unit: sec.
 
-    Create a trial-based tensor by counting events within 10 bins between start and end of each interval of `epochs`.
+    Count the timestamps in 10 bins for each trial of ``epochs``:
 
     >>> tensor = nap.warp_tensor(group, epochs, num_bins=10)
     >>> tensor
@@ -234,7 +343,8 @@ def warp_tensor(input, epochs, num_bins):
             [1., 1., 0., 1., 0., 1., 1., 0., 1., 0.],
             [1., 1., 1., 1., 0., 1., 1., 1., 1., 0.]]])
 
-    This function works for any time series. Under the hood, the time series is either bin-averaged or interpolated depending on the number of bins.
+    For a Tsd, the function averages or interpolates the values of each trial
+    to get 3 bins:
 
     >>> tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     >>> tensor = nap.warp_tensor(tsd, epochs, num_bins=3)
@@ -247,7 +357,26 @@ def warp_tensor(input, epochs, num_bins):
     if num_bins <= 0:
         raise RuntimeError("num_bins should be positive integer.")
 
-    if isinstance(input, (nap.TsGroup, nap.Ts)):
-        return _warp_tensor_from_tsgroup(input, epochs, num_bins)
-    else:
-        return _warp_tensor_from_tsd(input, epochs, num_bins)
+    if isinstance(input, nap.TsGroup):
+        # a lazy group reads only the spikes in the trials
+        input = input._load_in_memory(epochs)
+        return _jitwarp_count(
+            input._times,
+            input._cluster_positions,
+            epochs.start,
+            epochs.end,
+            num_bins,
+            len(input.index),
+        )
+    if isinstance(input, nap.Ts):
+        # a Ts counts as a group of one unit, without the unit axis
+        times = input.t
+        return _jitwarp_count(
+            times,
+            np.zeros(len(times), dtype=np.int64),
+            epochs.start,
+            epochs.end,
+            num_bins,
+            1,
+        )[0]
+    return _warp_tensor_from_tsd(input, epochs, num_bins)
