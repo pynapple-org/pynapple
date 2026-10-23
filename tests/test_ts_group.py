@@ -1859,3 +1859,108 @@ class TestSortMerged:
         clusters = np.array([0, 5, 0])
         t, c = _sort_merged(times, clusters)
         assert t is times and c is clusters
+
+
+class TestMemberColumns:
+    """Each TsdFrame member keeps its own column names, as in a dict of
+    members. The members must only have the same number of columns."""
+
+    t = np.arange(5.0)
+
+    def frame(self, columns=None, shift=0.0):
+        return nap.TsdFrame(t=self.t + shift, d=np.ones((5, 2)), columns=columns)
+
+    def make(self):
+        return nap.TsGroup(
+            {
+                0: self.frame(["ch3", "ch4"]),
+                1: self.frame(["ch10", "ch11"], 0.5),
+                2: self.frame(None, 0.2),
+            },
+            time_support=nap.IntervalSet(0, 10),
+        )
+
+    def columns(self, group):
+        return {k: list(m.columns) for k, m in group.items()}
+
+    def test_different_names_are_kept(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            group = self.make()
+        assert self.columns(group) == {
+            0: ["ch3", "ch4"],
+            1: ["ch10", "ch11"],
+            2: [0, 1],
+        }
+        # the default names keep their integer dtype
+        assert group[2].columns.dtype == np.int64
+
+    def test_ts_and_tsdframe_members(self):
+        group = nap.TsGroup(
+            {0: nap.Ts(t=self.t), 1: self.frame(["x", "y"])},
+            time_support=nap.IntervalSet(0, 10),
+        )
+        assert type(group[0]) is nap.Ts
+        assert list(group[1].columns) == ["x", "y"]
+
+    @pytest.mark.parametrize(
+        "derive",
+        [
+            lambda g: g.restrict(nap.IntervalSet(0, 3)),
+            lambda g: g.get(0, 3),
+            lambda g: g.subsample(0.5, seed=1),
+            lambda g: pickle.loads(pickle.dumps(g)),
+        ],
+        ids=["restrict", "get", "subsample", "pickle"],
+    )
+    def test_kept_by_derived_groups(self, derive):
+        group = self.make()
+        assert self.columns(derive(group)) == self.columns(group)
+
+    def test_key_subset(self):
+        assert self.columns(self.make()[[2, 1]]) == {1: ["ch10", "ch11"], 2: [0, 1]}
+
+    @pytest.mark.parametrize("reset_index", [False, True])
+    def test_merge_group(self, reset_index):
+        group = self.make()
+        other = nap.TsGroup(
+            {-1: self.frame(["a", "b"])}, time_support=group.time_support
+        )
+        merged = nap.TsGroup.merge_group(
+            group, other, reset_index=reset_index, ignore_metadata=True
+        )
+        if reset_index:
+            expected = {
+                0: ["ch3", "ch4"],
+                1: ["ch10", "ch11"],
+                2: [0, 1],
+                3: ["a", "b"],
+            }
+        else:
+            expected = {
+                -1: ["a", "b"],
+                0: ["ch3", "ch4"],
+                1: ["ch10", "ch11"],
+                2: [0, 1],
+            }
+        assert self.columns(merged) == expected
+
+    def test_merge_group_with_ts_group(self):
+        group = self.make()
+        other = nap.TsGroup({7: nap.Ts(t=self.t)}, time_support=group.time_support)
+        merged = nap.TsGroup.merge_group(group, other, ignore_metadata=True)
+        assert type(merged[7]) is nap.Ts
+        assert list(merged[1].columns) == ["ch10", "ch11"]
+
+    def test_equality(self):
+        group = self.make()
+        assert group == self.make()
+        other = nap.TsGroup(
+            {
+                0: self.frame(["ch3", "ch4"]),
+                1: self.frame(["other", "names"], 0.5),
+                2: self.frame(None, 0.2),
+            },
+            time_support=group.time_support,
+        )
+        assert group != other

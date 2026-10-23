@@ -185,24 +185,33 @@ def _build_sorted_arrays(data):
     return times, clusters, values, is_tsd
 
 
-def _shared_columns(members):
-    """Column names shared by every TsdFrame among ``members``.
+def _member_columns(members):
+    """Column names of each member, for the ``_columns`` of a TsGroup.
 
-    The merged layout stores one set of column names for the whole group. None
-    when there is no TsdFrame, or (with a warning) when their columns differ.
+    Each TsdFrame keeps its own column names: the members can have different
+    names (e.g. the channels near each unit), but they have the same number
+    of columns.
+
+    Returns
+    -------
+    tuple or None
+        One ``pandas.Index`` for each TsdFrame member, and None for each other
+        member, in the order of ``members``. None when no member is a TsdFrame.
     """
-    frames = [m for m in members if isinstance(m, TsdFrame)]
-    if not frames:
+    columns = tuple(m.columns if isinstance(m, TsdFrame) else None for m in members)
+    if all(c is None for c in columns):
         return None
-    columns = frames[0].columns
-    if all(np.array_equal(f.columns, columns) for f in frames[1:]):
-        return columns
-    warnings.warn(
-        "TsdFrame objects in a TsGroup have different columns: "
-        "columns are reset to default.",
-        stacklevel=3,
+    return columns
+
+
+def _columns_equal(a, b):
+    """Whether two ``_columns`` of TsGroups have the same names for each unit."""
+    if a is None or b is None:
+        return a is b
+    return len(a) == len(b) and all(
+        x is y or (x is not None and y is not None and x.equals(y))
+        for x, y in zip(a, b)
     )
-    return None
 
 
 # A member of a TsGroup, as returned by `tsgroup[key]`
@@ -430,7 +439,7 @@ class TsGroup(_MetadataMixin):
     _clusters: np.ndarray
     _data: Optional[np.ndarray]
     _is_tsd: np.ndarray
-    _columns: Optional[np.ndarray]
+    _columns: Optional[tuple]
 
     # the attributes that `_init_state` takes as keywords. A subclass that
     # stores its spikes in a different way (e.g. `_LazyTsGroup`) changes them.
@@ -555,7 +564,7 @@ class TsGroup(_MetadataMixin):
             _clusters=clusters,
             _data=values,
             _is_tsd=is_tsd,
-            _columns=_shared_columns(data.values()),
+            _columns=_member_columns(data.values()),
         )
 
     def _init_state(
@@ -586,8 +595,8 @@ class TsGroup(_MetadataMixin):
             sorted array, ``_clusters`` the key of the unit of each
             timestamp, ``_data`` the matching values (None when no member
             holds values), ``_is_tsd`` which units hold values and
-            ``_columns`` the column names of 2-dimensional members (None for
-            the default ones).
+            ``_columns`` the column names of each unit (see
+            ``_member_columns``).
 
         Raises
         ------
@@ -686,7 +695,7 @@ class TsGroup(_MetadataMixin):
         index: np.ndarray,
         time_support: IntervalSet,
         metadata: Optional[Any] = None,
-        columns: Optional[np.ndarray] = None,
+        columns: Optional[tuple] = None,
     ) -> TsGroup:
         """Build a TsGroup directly from its merged arrays, without validation.
 
@@ -696,7 +705,8 @@ class TsGroup(_MetadataMixin):
 
         ``times`` must be sorted, ``clusters`` hold keys of ``index``, and
         ``index`` be sorted; ``metadata`` rows must follow ``index``. ``columns``
-        names the columns of 2-dimensional members.
+        holds the column names of each unit, in the order of ``index`` (see
+        ``_member_columns``).
         """
         obj = cls.__new__(cls)
         obj._init_state(
@@ -736,7 +746,8 @@ class TsGroup(_MetadataMixin):
 
         - ``Ts`` if the unit holds no values (``_is_tsd`` is False),
         - ``Tsd``, ``TsdFrame`` or ``TsdTensor`` if ``_data`` is 1-, 2- or
-          N-dimensional. A ``TsdFrame`` gets the shared ``_columns``.
+          N-dimensional. A ``TsdFrame`` gets the column names of the unit in
+          ``_columns``, or the default names if there are none.
 
         The object is built on each call (nothing is cached) and shares the
         group's ``time_support``.
@@ -764,7 +775,9 @@ class TsGroup(_MetadataMixin):
             if self._data is None or not self._is_tsd[i]:
                 return Ts(t=t, time_support=self.time_support)
             d = self._data[idx]
-            kwargs = {"columns": self._columns} if d.ndim == 2 else {}
+            kwargs = {}
+            if d.ndim == 2 and self._columns is not None:
+                kwargs["columns"] = self._columns[i]
             return _get_class(d)(t=t, d=d, time_support=self.time_support, **kwargs)
 
     def _members(self) -> list[_Member]:
@@ -798,7 +811,9 @@ class TsGroup(_MetadataMixin):
             keys,
             self.time_support,
             metadata=self._metadata.loc[keys].copy().drop("rate"),
-            columns=self._columns,
+            columns=(
+                None if self._columns is None else tuple(self._columns[i] for i in sel)
+            ),
         )
 
     @property
@@ -847,7 +862,7 @@ class TsGroup(_MetadataMixin):
                 _clusters=clusters,
                 _data=values,
                 _is_tsd=is_tsd,
-                _columns=_shared_columns(members.values()),
+                _columns=_member_columns(members.values()),
             )
         # unpickled arrays are writable: make the metadata read-only again
         metadata = self.__dict__.get("_metadata")
@@ -954,9 +969,7 @@ class TsGroup(_MetadataMixin):
             self._data, other._data, equal_nan=self._data.dtype.kind in "fc"
         ):
             return False
-        if (self._columns is None) != (other._columns is None):
-            return False
-        return self._columns is None or np.array_equal(self._columns, other._columns)
+        return _columns_equal(self._columns, other._columns)
 
     # Equal groups compare by content, which a hash could not follow: unhashable.
     __hash__ = None
@@ -2782,15 +2795,14 @@ class TsGroup(_MetadataMixin):
             metadata.drop("rate")
             metadata = metadata.loc[index]
 
-        columns = tsgroups[0]._columns
-        if any(
-            tsg._columns is None
-            or columns is None
-            or not np.array_equal(tsg._columns, columns)
-            for tsg in tsgroups[1:]
-            if tsg._data is not None
-        ):
+        # the column names of each unit, in the order of `index` before its sort
+        columns = [
+            c for tsg in tsgroups for c in (tsg._columns or (None,) * len(tsg.index))
+        ]
+        if all(c is None for c in columns):
             columns = None
+        else:
+            columns = tuple(columns[i] for i in sort_index)
 
         return TsGroup._from_arrays(
             times,
