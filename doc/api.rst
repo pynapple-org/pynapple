@@ -54,6 +54,18 @@ Core objects
 
     TsGroup
 
+.. rubric:: Trials
+
+.. currentmodule:: pynapple
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+    :recursive:
+
+    TsTrials
+    TsdTrials
+
 
 Input-Ouput
 -----------
