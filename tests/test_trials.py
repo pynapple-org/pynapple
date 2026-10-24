@@ -209,17 +209,28 @@ class TestTsTrials:
 
         assert isinstance(result, nap.TsTrials)
         assert result.shape == (len(positions), 2)
+
         np.testing.assert_array_equal(
-            result.trial_ids,
-            ts_trials.trial_ids[positions],
+            result.trials.start,
+            ts_trials.trials.start[positions],
         )
         np.testing.assert_array_equal(
-            result.trials["condition"],
-            ts_trials.trials["condition"][positions],
+            result.trials.end,
+            ts_trials.trials.end[positions],
+        )
+        np.testing.assert_array_equal(
+            result.durations,
+            ts_trials.durations[positions],
         )
 
+        for column in ts_trials.trials.metadata_columns:
+            np.testing.assert_array_equal(
+                result.trials[column],
+                np.asarray(ts_trials.trials[column])[positions],
+            )
+
         for new_trial, old_trial in enumerate(positions):
-            for unit in range(2):
+            for unit in range(ts_trials.shape[1]):
                 np.testing.assert_allclose(
                     result[new_trial, unit].t,
                     ts_trials[old_trial, unit].t,

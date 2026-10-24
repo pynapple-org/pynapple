@@ -674,9 +674,13 @@ class TsTrials(_TrialMetadataMixin):
 
     def to_tsdframe(self) -> TsdFrame:
         """Return all aligned spikes as a two-column event table."""
-        trial_labels = self.trial_ids[self.trial_index]
-        unit_labels = self.unit_keys[self.neuron_index]
-        values = np.column_stack([trial_labels, unit_labels])
+        order = np.argsort(self.spikes, kind="stable")
+        values = np.column_stack(
+            [
+                self.trial_ids[self.trial_index[order]],
+                self.unit_keys[self.neuron_index[order]],
+            ]
+        )
 
         if len(self.durations):
             support = IntervalSet(
@@ -687,7 +691,7 @@ class TsTrials(_TrialMetadataMixin):
             support = IntervalSet([], [])
 
         return TsdFrame(
-            t=self.spikes.copy(),
+            t=self.spikes[order],
             d=values,
             columns=["trial", "unit"],
             time_support=support,
