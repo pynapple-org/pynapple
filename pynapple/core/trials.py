@@ -369,17 +369,10 @@ class TsTrials(_TrialMetadataMixin):
         unit_keys: np.ndarray,
         unit_metadata,
         alignment: str,
-        sort: bool = False,
     ) -> TsTrials:
         spikes = np.asarray(spikes)
         trial_index = np.asarray(trial_index, dtype=np.int64)
         neuron_index = np.asarray(neuron_index, dtype=np.int64)
-
-        if sort and len(spikes):
-            order = np.argsort(spikes, kind="stable")
-            spikes = spikes[order]
-            trial_index = trial_index[order]
-            neuron_index = neuron_index[order]
 
         obj = cls.__new__(cls)
         obj.spikes = spikes
@@ -614,7 +607,6 @@ class TsTrials(_TrialMetadataMixin):
             unit_keys=unit_keys,
             unit_metadata=unit_metadata,
             alignment=self.alignment,
-            sort=True,
         )
 
     def _select_trial_positions(
@@ -669,7 +661,6 @@ class TsTrials(_TrialMetadataMixin):
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=column,
-            sort=True,
         )
 
     def to_tsdframe(self) -> TsdFrame:
