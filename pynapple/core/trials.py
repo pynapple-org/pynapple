@@ -1433,13 +1433,22 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         Examples
         --------
-        Standardize each unit across trials and time:
+        Create two trials from a sampled signal:
 
-        >>> normalized = counts.normalize()
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> source = nap.Tsd(t=np.arange(20) / 10, d=np.arange(20))
+        >>> trials = nap.IntervalSet(start=[0.0, 1.0], end=[0.9, 1.9])
+        >>> data = nap.TsdTrials(source=source, trials=trials)
 
-        Standardize each trial and unit independently across time:
+        Standardize across trials and time:
 
-        >>> normalized = counts.normalize(axes=1)
+        >>> normalized = data.normalize()
+
+        Standardize each trial independently across time:
+
+        >>> normalized = data.normalize(axes=1)
+
         """
         valid = self.valid[..., None] if self.ndim == 3 else self.valid
         values = np.where(valid, self.values, np.nan)
@@ -1495,15 +1504,18 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         Examples
         --------
-        Smooth each trial with a Gaussian standard deviation of 50 ms:
+        Create two trials from a sampled signal:
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> source = nap.Tsd(t=np.arange(200) / 100, d=np.sin(np.arange(200)))
+        >>> trials = nap.IntervalSet(start=[0.0, 1.0], end=[0.9, 1.9])
+        >>> data = nap.TsdTrials(source=source, trials=trials)
 
-        >>> smoothed = counts.smooth(std=50, time_units="ms")
+        Smooth with a Gaussian standard deviation of 50 ms:
+        >>> smoothed = data.smooth(std=50, time_units="ms")
 
         Specify a kernel duration of 500 ms:
-
-        >>> smoothed = counts.smooth(
-        ...     std=50, windowsize=500, time_units="ms"
-        ... )
+        >>> smoothed = data.smooth(std=50, windowsize=500, time_units="ms")
         """
         from scipy import signal
 
