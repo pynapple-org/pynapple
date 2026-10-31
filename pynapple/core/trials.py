@@ -98,9 +98,7 @@ def _format_preview(
     widths = [max(len(row[column]) for row in rows) for column in range(len(headers))]
 
     return [
-        "  ".join(
-            value.ljust(width) for value, width in zip(row, widths, strict=True)
-        ).rstrip()
+        "  ".join(value.ljust(width) for value, width in zip(row, widths)).rstrip()
         for row in rows
     ]
 
@@ -552,11 +550,7 @@ class TsTrials(_TrialMetadataMixin):
 
         data = {
             key: self._get_spike_train(trial, unit)
-            for unit, key in zip(
-                unit_positions,
-                selected_keys,
-                strict=True,
-            )
+            for unit, key in zip(unit_positions, selected_keys)
         }
 
         metadata = self.unit_metadata.loc[pd.Index(selected_keys)]

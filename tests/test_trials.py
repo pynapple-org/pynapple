@@ -1,5 +1,7 @@
 """Tests for trial-aligned timestamps and sampled data."""
 
+from __future__ import annotations
+
 from typing import Any
 
 import numpy as np
