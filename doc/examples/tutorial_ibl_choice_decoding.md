@@ -14,7 +14,7 @@ kernelspec:
 # Trial-aligned decoding with International Brain Lab data
 
 This example works through a basic pipeline for decoding the mouse's choice from spiking activity in the International Brain Lab's decision task.
-It includes loading the data from DANDI, processing and trial-aligning the neural activity using Pynapple's [`TsTrials`](pynapple.core.TsTrials) object, and fitting a logistic regression with cross-validation using the [scikit-learn library](https://scikit-learn.org/stable/).
+It includes loading the data from DANDI, processing and trial-aligning the neural activity using Pynapple's [`TsTrials`](pynapple.TsTrials) object, and fitting a logistic regression with cross-validation using the [scikit-learn library](https://scikit-learn.org/stable/).
 
 The International Brain Lab's Brain Wide Map dataset is available at [Dandiset 00409](https://dandiarchive.org/dandiset/000409/). The International Brain Lab's [BWM website](https://www.internationalbrainlab.com/brainwide-map) includes links to [their preprint](https://www.biorxiv.org/content/10.1101/2023.07.04.547681) and additional documentation.
 The IBL also has an excellent decoding demonstration in the [COSYNE section of their events webpage](https://www.internationalbrainlab.com/events) under "Tutorial 2: Advanced analysis", along with many other relevant demos.
