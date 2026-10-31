@@ -151,7 +151,7 @@ trials
 Spike times are initially expressed on the recording's time axis. 
 To compare repeated movements, we need to organize those spikes into trials.
 
-A [`TsTrials`](pynapple.core.TsTrials) object combines the spike trains with the trial intervals and metadata. 
+A [`TsTrials`](pynapple.TsTrials) object combines the spike trains with the trial intervals and metadata. 
 This gives us a trial-based view of the recording while keeping the behavioral information associated with each trial.
 
 ```{code-cell} ipython3
@@ -256,7 +256,7 @@ PCA requires a matrix of numerical observations, so we first count the spikes in
 
 With a bin size of 0.02 seconds, each value is the number of spikes produced by one neuron during one 20 ms interval.
 
-The resulting [`TsdTrials`](pynapple.core.TsdTrials) object has three dimensions:
+The resulting [`TsdTrials`](pynapple.TsdTrials) object has three dimensions:
 ```{code-cell} ipython3
 bin_size = 0.02
 binned = trial_data.count(bin_size)

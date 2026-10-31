@@ -94,7 +94,7 @@ trials
 ```
 
 ## Trial alignment
-We will wrap both in a `TsTrials` object, which facilitates working with trial structure:
+We will wrap both in a [`TsTrials`](pynapple.TsTrials) object, which facilitates working with trial structure:
 ```{code-cell} ipython3
 trial_data = nap.TsTrials(source=units, trials=trials)
 trial_data
@@ -173,7 +173,7 @@ plt.show()
 ```
 
 ## Binning
-We can then bin and count the spikes as follows, this yields a `TsdTrials` object:
+We can then bin and count the spikes as follows, this yields a [`TsdTrials`](pynapple.TsdTrials) object:
 ```{code-cell} ipython3
 bin_size = 0.02
 binned = trial_data.count(bin_size)
