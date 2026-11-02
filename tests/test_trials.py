@@ -9,6 +9,7 @@ import pytest
 from scipy import signal
 
 import pynapple as nap
+from pynapple.core.trials import _count_spikes
 
 
 @pytest.fixture
@@ -888,3 +889,130 @@ def test_repr(
         assert "align: 'start'" in representation
         assert f"shape: {trials.shape}" in representation
         assert "size:" in representation
+
+
+from pynapple.core.trials import _format_axes
+
+
+@pytest.mark.parametrize(
+    "left_columns, right_columns, left_names, right_names",
+    [
+        ([], [], "none", "none"),
+        (["condition"], ["region"], "condition", "region"),
+        ([10, 20], [30], "10, 20", "30"),
+    ],
+)
+def test_format_axes(
+    left_columns: list[str | int],
+    right_columns: list[str | int],
+    left_names: str,
+    right_names: str,
+) -> None:
+    result = _format_axes(
+        "Trials",
+        3,
+        left_columns,
+        "Units",
+        "2",
+        right_columns,
+        width=40,
+    )
+
+    assert result.splitlines() == [
+        f"{'':10}{'Trials':14}  Units",
+        f"{'':10}{'count: 3':14}  count: 2",
+        f"metadata: {left_names:14}  {right_names}",
+    ]
+
+
+@pytest.mark.parametrize("wrap_left", [True, False])
+def test_format_axes_wrapping(wrap_left: bool) -> None:
+    columns = ["first_column", "second_column", "third_column"]
+    left_columns = columns if wrap_left else ["region"]
+    right_columns = ["region"] if wrap_left else columns
+
+    result = _format_axes(
+        "Trials",
+        3,
+        left_columns,
+        "Units",
+        2,
+        right_columns,
+        width=40,
+    )
+
+    expected_rows = [
+        ("first_column,", "region"),
+        ("second_column,", ""),
+        ("third_column", ""),
+    ]
+    if not wrap_left:
+        expected_rows = [(right, left) for left, right in expected_rows]
+
+    expected = [
+        f"{'':10}{'Trials':14}  Units",
+        f"{'':10}{'count: 3':14}  count: 2",
+    ]
+    for index, (left, right) in enumerate(expected_rows):
+        label = "metadata: " if index == 0 else " " * 10
+        expected.append(f"{label}{left:14}  {right}".rstrip())
+
+    assert result.splitlines() == expected
+
+
+@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
+def test_count_spikes(compiled: bool) -> None:
+    count_spikes = _count_spikes if compiled else _count_spikes.py_func
+    valid = np.array([[True, False, True], [True, True, False]])
+
+    result = count_spikes(
+        spike_times_ns=np.array(
+            [-11, -10, -1, 0, 10, 19, 20, -10, 0, 9, 10],
+            dtype=np.int64,
+        ),
+        trial_index=np.array([0] * 7 + [1] * 4, dtype=np.int64),
+        neuron_index=np.array(
+            [0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1],
+            dtype=np.int64,
+        ),
+        first_edge_ns=-10,
+        bin_size_ns=10,
+        valid=valid,
+        n_units=2,
+    )
+
+    expected = np.array(
+        [
+            [[2, 0], [0, 0], [0, 2]],
+            [[0, 1], [1, 1], [0, 0]],
+        ],
+        dtype=np.int64,
+    )
+
+    assert result.dtype == np.int64
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
+@pytest.mark.parametrize("shape", [(2, 3), (0, 3), (2, 0)])
+def test_count_spikes_without_events(
+    compiled: bool,
+    shape: tuple[int, int],
+) -> None:
+    count_spikes = _count_spikes if compiled else _count_spikes.py_func
+    empty = np.array([], dtype=np.int64)
+
+    result = count_spikes(
+        spike_times_ns=empty,
+        trial_index=empty,
+        neuron_index=empty,
+        first_edge_ns=0,
+        bin_size_ns=10,
+        valid=np.ones(shape, dtype=bool),
+        n_units=2,
+    )
+
+    np.testing.assert_array_equal(
+        result,
+        np.zeros((*shape, 2), dtype=np.int64),
+    )
