@@ -59,14 +59,11 @@ jax = [
     "pynajax; python_version >= '3.11'"
 ]
 dev = [
-    "black>=24.2.0",                # Code formatter
-    "isort",                        # Import sorter
-    "pip-tools",                    # Dependency management
-    "pytest",                       # Testing framework
-    "flake8",                       # Code linter
-    "Flake8-pyproject",             # So that flake8 can be configured in this file
-    "coverage",                     # Test coverage measurement
-    "matplotlib",
+    "ruff",         # Formatting, linting, ...
+    "pip-tools",    # Dependency management
+    "pytest",       # Testing framework
+    "coverage",     # Test coverage measurement
+    "matplotlib",   # Plots
 ]
 doc = [
     "matplotlib",
@@ -109,37 +106,6 @@ dandi = [
     "aiohttp",
 ]
 
-
-
-[tool.black]
-target-version = ['py36', 'py37', 'py38', 'py39']
-skip-string-normalization = false
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.md
-    | \.toml
-    | \.cfg
-    | \.txt
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | examples
-  )/
-)
-'''
-
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-
 [tool.coverage.run]
 omit = [    
     "pynapple/io/cnmfe.py",
@@ -148,11 +114,6 @@ omit = [
     "pynapple/io/suite2p.py",
     "pynapple/core/_jitted_functions.py" # coverage doesn't work with numba
 ]
-
-[tool.flake8]
-ignore = ["E203", "E501", "W293", "E231", "W503", "C901", "W291", "E266"]
-max-complexity = 10
-exclude = ["doc", "__init__.py", "tests"]
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file
@@ -164,3 +125,42 @@ ignore-regex = '^\s*"image/\S+": ".*'
 # countin: variable name in _jitted_functions.py meaning "count in"
 # nin: numpy ufunc attribute (ufunc.nin = number of inputs)
 ignore-words-list = 'adn,countin,nin'
+
+[tool.ruff]
+line-length = 88
+extend-exclude = [
+    ".eggs",
+    ".hg",
+    ".tox",
+    "_build",
+    "buck-out",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C90"]
+ignore = [
+    "E203",
+    "E231",
+    "E266",
+    "E501",
+    "W291",
+    "W293",
+    "C901",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"doc/**" = ["E", "F", "W", "C90"]
+"docs/**" = ["E", "F", "W", "C90"]
+"**/__init__.py" = ["E", "F", "W", "C90"]
+"tests/**" = ["E", "F", "W", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = true
+
+[tool.ruff.format]
+quote-style = "double"
+skip-magic-trailing-comma = false
+exclude = ["examples/**"]

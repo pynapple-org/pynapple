@@ -10,7 +10,6 @@ from collections import UserDict
 from collections.abc import Hashable
 from numbers import Number
 
-import numpy
 import numpy as np
 import pandas as pd
 from tabulate import tabulate

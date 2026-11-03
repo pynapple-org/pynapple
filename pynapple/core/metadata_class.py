@@ -266,7 +266,6 @@ class _MetadataMixin:
 
         if len(kwargs):
             for k, v in kwargs.items():
-
                 if hasattr(v, "keys") and hasattr(v, "index"):
                     # pandas.Series
                     if np.all(self.metadata_index == v.index):
