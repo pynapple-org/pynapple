@@ -707,6 +707,180 @@ class TestTsdTrials:
         with pytest.raises(ValueError, match=message):
             tsd_trials.smooth(**kwargs)
 
+    @pytest.mark.parametrize("as_list", [False, True])
+    def test_replace_data(
+        self,
+        tsd_trials: nap.TsdTrials,
+        as_list: bool,
+    ) -> None:
+        trials = tsd_trials.get(0.25, 2.5)
+        original = trials.d.copy()
+        values = np.arange(np.prod(trials.shape)).reshape(trials.shape)
+        replacement = values.tolist() if as_list else values.copy()
+
+        result = trials.with_data(replacement)
+
+        assert isinstance(result, nap.TsdTrials)
+        assert result is not trials
+        assert result.shape == trials.shape
+        assert result._windowed == trials._windowed
+        np.testing.assert_array_equal(result.d[result.valid], values[result.valid])
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(trials.d, original)
+        np.testing.assert_array_equal(replacement, values)
+        assert_same_axes(result, trials)
+
+    def test_preserve_valid_nan(self, tsd_trials: nap.TsdTrials) -> None:
+        values = np.ones(tsd_trials.shape)
+        values[0, 0] = np.nan
+
+        result = tsd_trials.with_data(values)
+
+        assert np.isnan(result.d[0, 0]).all()
+        assert np.isnan(result.d[~result.valid]).all()
+        assert_same_axes(result, tsd_trials)
+
+    @pytest.mark.parametrize("n_features", [None, 1, 2, 3])
+    def test_feature_dimensions(
+        self,
+        tsd_trials: nap.TsdTrials,
+        n_features: int | None,
+    ) -> None:
+        shape = tsd_trials.shape[:2]
+        if n_features is not None:
+            shape += (n_features,)
+        values = np.ones(shape)
+
+        result = tsd_trials.with_data(values)
+
+        assert result.shape == shape
+        np.testing.assert_array_equal(result.d[result.valid], 1.0)
+        assert np.isnan(result.d[~result.valid]).all()
+
+        actual_axes = result if result.ndim == 2 else result[:, :, 0]
+        expected_axes = tsd_trials if tsd_trials.ndim == 2 else tsd_trials[:, :, 0]
+        assert_same_axes(actual_axes, expected_axes)
+
+        if n_features is None:
+            assert result.feature_names is None
+            assert result.feature_metadata is None
+        elif tsd_trials.feature_names is not None and n_features == len(
+            tsd_trials.columns
+        ):
+            assert_same_axes(result, tsd_trials)
+            assert result.feature_names is not tsd_trials.feature_names
+            assert result.feature_metadata is not tsd_trials.feature_metadata
+            np.testing.assert_array_equal(
+                result.feature_metadata.columns,
+                tsd_trials.feature_metadata.columns,
+            )
+        else:
+            pd.testing.assert_index_equal(
+                result.columns,
+                pd.RangeIndex(n_features),
+            )
+            pd.testing.assert_frame_equal(
+                result.feature_metadata,
+                pd.DataFrame(index=result.columns),
+            )
+
+    @pytest.mark.parametrize("as_index", [False, True])
+    def test_explicit_columns(
+        self,
+        tsd_trials: nap.TsdTrials,
+        as_index: bool,
+    ) -> None:
+        columns = ["first", "second"]
+        if as_index:
+            columns = pd.Index(columns, name="feature")
+
+        original_names = tsd_trials.feature_names
+        original_metadata = (
+            None
+            if tsd_trials.feature_metadata is None
+            else tsd_trials.feature_metadata.copy()
+        )
+        values = np.ones((*tsd_trials.shape[:2], 2))
+
+        result = tsd_trials.with_data(values, columns=columns)
+
+        pd.testing.assert_index_equal(result.columns, pd.Index(columns))
+        pd.testing.assert_frame_equal(
+            result.feature_metadata,
+            pd.DataFrame(index=pd.Index(columns)),
+        )
+        assert tsd_trials.feature_names is original_names
+
+        if original_metadata is not None:
+            np.testing.assert_array_equal(
+                tsd_trials.feature_metadata.columns,
+                original_metadata.columns,
+            )
+            for column in original_metadata.columns:
+                np.testing.assert_array_equal(
+                    tsd_trials.feature_metadata[column],
+                    original_metadata[column],
+                )
+
+    @pytest.mark.parametrize(
+        "shape",
+        [
+            (3,),
+            (3, 12, 1, 1),
+            (2, 12),
+            (3, 11),
+            (2, 12, 2),
+            (3, 11, 2),
+        ],
+    )
+    def test_invalid_shape(
+        self,
+        tsd_trials: nap.TsdTrials,
+        shape: tuple[int, ...],
+    ) -> None:
+        with pytest.raises(ValueError, match="matching trial and time dimensions"):
+            tsd_trials.with_data(np.ones(shape))
+
+    def test_columns_without_feature_axis(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        values = np.ones(tsd_trials.shape[:2])
+
+        with pytest.raises(ValueError, match="no feature axis"):
+            tsd_trials.with_data(values, columns=["value"])
+
+    @pytest.mark.parametrize("columns", [[], ["one"], ["one", "two", "three"]])
+    def test_column_count_mismatch(
+        self,
+        tsd_trials: nap.TsdTrials,
+        columns: list[str],
+    ) -> None:
+        values = np.ones((*tsd_trials.shape[:2], 2))
+
+        with pytest.raises(ValueError, match="columns must match"):
+            tsd_trials.with_data(values, columns=columns)
+
+    def test_data_kind_override(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials.with_data(tsd_trials.d, data_kind="transformed")
+
+        assert result.data_kind == "transformed"
+        assert tsd_trials.data_kind == "continuous"
+        np.testing.assert_array_equal(result.d, tsd_trials.d)
+
+    def test_count_data(self, ts_trials: nap.TsTrials) -> None:
+        counts = ts_trials.realign_to("cue").count(0.5).get(-0.5, 1.5)
+        original = counts.d.copy()
+        values = np.full(counts.shape, 7)
+
+        result = counts.with_data(values)
+
+        np.testing.assert_array_equal(result.d[result.valid], 7)
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(counts.d, original)
+        assert result._windowed == counts._windowed
+        assert_same_axes(result, counts)
+
 
 @pytest.mark.parametrize("kind", ["timestamps", "sampled", "counts"])
 def test_groupby(
