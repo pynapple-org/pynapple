@@ -26,13 +26,13 @@ import pynapple as nap
 import numpy as np
 
 # Changed the backend from 'numba' to 'jax'
-nap.nap_config.set_backend("jax") 
+nap.nap_config.set_backend("jax")
 
 # This will convert the numpy array to a jax Array.
-tsd = nap.Tsd(t=np.arange(100), d=np.random.randn(100)) 
+tsd = nap.Tsd(t=np.arange(100), d=np.random.randn(100))
 
 # This will run on GPU or CPU depending on the jax installation
-tsd.convolve(np.ones(11)) 
+tsd.convolve(np.ones(11))
 ```
 
 This [documentation page](https://pynapple-org.github.io/pynajax/generated/gallery/) keeps tracks of the list of pynapple functions that can be jax-accelerated as well as their performances compared to pure numba.
@@ -50,6 +50,7 @@ To check if jax is using the GPU, you can run the following python commands :
 
 	```python
 	import jax
+
 	print(jax.devices())
 	[CpuDevice(id=0)]
 	```
@@ -58,6 +59,7 @@ To check if jax is using the GPU, you can run the following python commands :
 
 	```python
 	import jax
+
 	print(jax.devices())
 	[cuda(id=0)]
 	```
