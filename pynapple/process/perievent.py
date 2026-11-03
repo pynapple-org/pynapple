@@ -557,8 +557,7 @@ def _align_regular(data, events, window, new_time_support, tolerance=1e-6):
     # get new time index and snap edge bins to windows edges to avoid floating point errors.
     idx1 = -np.arange(n_before, 0, -1) * bin_size
     idx2 = np.arange(1, n_after + 1) * bin_size
-    print(f"idx1: {idx1}, idx2: {idx2}, window: {window}, bin_size: {bin_size}")
-    print(f"len idx1: {len(idx1)}, len idx2: {len(idx2)}")
+
     if len(idx1) > 0:
         if np.isclose(idx1[0], -window[0], rtol=tolerance, atol=0):
             idx1[0] = -window[0]
