@@ -28,12 +28,12 @@ def get_error_text(path):
     border = "".join(["@"] * width)
 
     txt1 = """
-    No NWB file were found in {}. 
+    No NWB file were found in {}.
 
     The Graphical User Interface (GUI) helper to create a NWB file has been removed from pynapple. The GUI can still be found in the nwbmatic package (https://github.com/pynapple-org/nwbmatic). To install it :
 
         $ pip install nwbmatic
-    
+
     The equivalent code is (for example for data processed with "phy")
 
         >>> import nwbmatic as ntm

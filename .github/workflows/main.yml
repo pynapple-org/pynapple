@@ -80,7 +80,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev,doc]
       - name: Build documentation
-        run: |          
+        run: |
           cd doc
           make html
       # Only on a manual run with debug_tmate enabled: on pull_request this
@@ -102,11 +102,11 @@ jobs:
         with:
           directory: "doc/_build/html"
           # The directory to scan
-          arguments: 
-            --checks Links,Scripts 
-            --ignore-urls "https://fonts.gstatic.com,/scikit-learn\.org/,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786" 
-            --assume-extension 
-            --check-external-hash 
+          arguments:
+            --checks Links,Scripts
+            --ignore-urls "https://fonts.gstatic.com,/scikit-learn\.org/,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786"
+            --assume-extension
+            --check-external-hash
             --ignore-status-codes 403,0,429,503
             --ignore-files "/.+\/html\/_static\/.+/"
           # The arguments to pass to HTMLProofer

@@ -107,7 +107,7 @@ dandi = [
 ]
 
 [tool.coverage.run]
-omit = [    
+omit = [
     "pynapple/io/cnmfe.py",
     "pynapple/io/neurosuite.py",
     "pynapple/io/phy.py",

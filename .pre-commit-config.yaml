@@ -8,6 +8,7 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-yaml
+        args: [--unsafe]
       - id: debug-statements
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
