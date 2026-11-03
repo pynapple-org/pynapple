@@ -193,14 +193,14 @@ Select trials using their metadata:
 left_signals = signal_trials[signal_trials.trials["target"] == "left"]
 left_signals
 ```
-This returns a [`TsdTrials`](pynapple.TsTrials) object, but with a subset of the trials.
+This returns a [`TsdTrials`](pynapple.TsdTrials) object, but with a subset of the trials.
 
 Use the second index to select a signal across trials:
 ```{code-cell} ipython3
-first_signal = signal_trials[:, 0]
+first_signal = signal_trials[:, :, 0]
 first_signal
 ```
-This returns a [`TsdTrials`](pynapple.TsTrials) object, but with a subset of the signals.
+This returns a [`TsdTrials`](pynapple.TsdTrials) object, but with a subset of the signals.
 
 ### Extracting a time window
 Time is expressed relative to each trial's start. 
@@ -234,6 +234,7 @@ plt.legend(["signal_1", "signal_2"])
 plt.show()
 ```
 
+
 ### Smoothing
 
 Sampled trial data can be smoothed with a Gaussian kernel. The smoothing
@@ -243,6 +244,24 @@ standard deviation is expressed in seconds:
 smoothed = windowed_signals.smooth(0.03)
 smoothed
 ```
+
+### Convolving
+
+Use `convolve` to apply a custom one-dimensional kernel along time.
+For example, a five-sample moving average:
+
+```{code-cell} ipython3
+kernel = np.ones(5) / 5
+filtered = windowed_signals.convolve(kernel)
+filtered
+```
+
+Each trial and signal is processed independently. The output keeps the
+original time axis and metadata.
+
+Both `convolve` and `smooth` zero-pad outside each trial's valid samples.
+No edge correction is applied, so values near trial boundaries may be
+attenuated. Invalid samples remain `NaN`.
 
 ### Normalizing
 Use `normalize` to normalize each signal across trials and time. 
@@ -255,3 +274,93 @@ normalized
 ```
 Each signal is normalized independently because the signal axis (`2`) is
 not included.
+
+### Using NumPy
+
+Elementwise operations preserve the trial structure and metadata:
+
+```{code-cell} ipython3
+scaled = signal_trials * 2
+scaled
+```
+
+```{code-cell} ipython3
+absolute = np.abs(signal_trials)
+absolute
+```
+
+Supported NumPy reductions return an object appropriate for the remaining
+dimensions. Averaging across trials leaves time and signals, so the result
+is a [`TsdFrame`](pynapple.TsdFrame):
+
+```{code-cell} ipython3
+mean_signal = np.nanmean(signal_trials, axis=0)
+mean_signal
+```
+
+Averaging across signals leaves trials and time, so the result is a
+[`TsdTrials`](pynapple.TsdTrials):
+
+```{code-cell} ipython3
+population_signal = np.nanmean(signal_trials, axis=2)
+population_signal
+```
+
+Reducing time returns a NumPy array because there is no longer a time axis:
+
+```{code-cell} ipython3
+trial_means = np.nanmean(signal_trials, axis=1)
+trial_means
+```
+
+Other supported reductions include `sum`, `std`, `var`, `min`, `max`,
+`median`, and `prod`, together with their NaN-aware variants, plus `all`
+and `any`.
+
+Trials with different durations contain `NaN` padding. Use NaN-aware
+reductions, such as `np.nanmean`, to exclude that padding.
+Ordinary reductions such as `np.mean` propagate NaNs.
+
+To use a NumPy function without preserving the trial structure, convert
+the object explicitly:
+
+```{code-cell} ipython3
+array = np.asarray(signal_trials)
+array.shape
+```
+
+## Grouping trials
+
+Both trial classes support grouping by a trial metadata column.
+`groupby` returns a dictionary containing a trial object for each group:
+
+```{code-cell} ipython3
+groups = signal_trials.groupby("target")
+groups["left"]
+```
+
+The selected trials retain their time coordinates, values, and metadata.
+The same operation works for timestamps:
+
+```{code-cell} ipython3
+spike_groups = spike_trials.groupby("target")
+spike_groups["left"]
+```
+
+### Applying a function to each group
+
+Use `groupby_apply` to apply a function separately to each group.
+For example, average the signals across trials with the same target:
+
+```{code-cell} ipython3
+target_means = signal_trials.groupby_apply(
+    "target",
+    np.nanmean,
+    axis=0,
+)
+target_means["left"]
+```
+
+The result is a dictionary with one entry per target. Each entry is a
+[`TsdFrame`](pynapple.TsdFrame), since averaging across trials leaves the
+time and signal dimensions.

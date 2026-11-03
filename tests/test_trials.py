@@ -9,7 +9,7 @@ import pytest
 from scipy import signal
 
 import pynapple as nap
-from pynapple.core.trials import _count_spikes
+from pynapple.core.trials import _count_spikes, _format_axes
 
 
 @pytest.fixture
@@ -885,13 +885,20 @@ def test_repr(
     for trials in (ts_trials, tsd_trials, ts_trials.count(0.5)):
         representation = repr(trials)
 
-        assert "trial" in representation
+        if isinstance(trials, nap.TsTrials):
+            names = ["trial", "unit"]
+        else:
+            names = ["trial", "time"]
+            if trials.ndim == 3:
+                names.append("unit" if trials.data_kind == "count" else "feature")
+
+        dimensions = ", ".join(
+            f"{name}: {size}" for name, size in zip(names, trials.shape)
+        )
+
+        assert f"shape: ({dimensions})" in representation
         assert "align: 'start'" in representation
-        assert f"shape: {trials.shape}" in representation
         assert "size:" in representation
-
-
-from pynapple.core.trials import _format_axes
 
 
 @pytest.mark.parametrize(
@@ -1016,3 +1023,217 @@ def test_count_spikes_without_events(
         result,
         np.zeros((*shape, 2), dtype=np.int64),
     )
+
+
+REDUCTIONS = [
+    np.mean,
+    np.nanmean,
+    np.sum,
+    np.nansum,
+    np.std,
+    np.nanstd,
+    np.var,
+    np.nanvar,
+    np.min,
+    np.nanmin,
+    np.max,
+    np.nanmax,
+    np.median,
+    np.nanmedian,
+    np.prod,
+    np.nanprod,
+    np.all,
+    np.any,
+]
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+class TestTsdTrialsReductions:
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    @pytest.mark.parametrize(
+        "axis",
+        [
+            None,
+            (),
+            0,
+            1,
+            2,
+            -1,
+            -2,
+            -3,
+            (0, 1),
+            (0, 2),
+            (1, 2),
+            (0, 1, 2),
+            (2, 0),
+        ],
+    )
+    @pytest.mark.parametrize("keepdims", [False, True])
+    def test_reduction(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool,
+    ) -> None:
+        axes = (
+            tuple(range(tsd_trials.ndim))
+            if axis is None
+            else axis
+            if isinstance(axis, tuple)
+            else (axis,)
+        )
+        if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
+            pytest.skip("Axis is not present in scalar trial data.")
+
+        axes = tuple(value % tsd_trials.ndim for value in axes)
+        original = tsd_trials.d.copy()
+        expected = reduction(original, axis=axis, keepdims=keepdims)
+        result = reduction(tsd_trials, axis=axis, keepdims=keepdims)
+
+        if axis is None or 1 in axes or (axes and keepdims):
+            assert not isinstance(result, (nap.TsdTrials, nap.Tsd, nap.TsdFrame))
+            assert np.shape(result) == np.shape(expected)
+            np.testing.assert_allclose(result, expected, equal_nan=True)
+
+        elif 0 in axes:
+            expected_type = (
+                nap.Tsd if tsd_trials.ndim == 2 or 2 in axes else nap.TsdFrame
+            )
+            assert isinstance(result, expected_type)
+
+            valid = tsd_trials.valid.any(axis=0)
+            np.testing.assert_array_equal(result.t, tsd_trials.t[valid])
+            np.testing.assert_allclose(
+                result.d,
+                expected[valid],
+                equal_nan=True,
+            )
+            np.testing.assert_allclose(
+                result.time_support.start,
+                [tsd_trials.window_starts.min()],
+            )
+            np.testing.assert_allclose(
+                result.time_support.end,
+                [tsd_trials.window_ends.max()],
+            )
+
+            if isinstance(result, nap.TsdFrame):
+                np.testing.assert_array_equal(
+                    result.columns,
+                    tsd_trials.columns,
+                )
+                for column in tsd_trials.feature_metadata.columns:
+                    np.testing.assert_array_equal(
+                        result[column],
+                        tsd_trials.feature_metadata[column],
+                    )
+
+        else:
+            assert isinstance(result, nap.TsdTrials)
+            np.testing.assert_allclose(result.d, expected, equal_nan=True)
+
+            expected_axes = tsd_trials[:, :, 0] if 2 in axes else tsd_trials
+            assert_same_axes(result, expected_axes)
+
+        np.testing.assert_array_equal(tsd_trials.d, original)
+
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    def test_positional_axis(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+    ) -> None:
+        result = reduction(tsd_trials, 0)
+        expected = reduction(tsd_trials.d, axis=0)
+
+        assert isinstance(result, (nap.Tsd, nap.TsdFrame))
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    def test_out(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+    ) -> None:
+        expected = reduction(tsd_trials.d, axis=0)
+        output = np.empty_like(expected)
+
+        result = reduction(tsd_trials, axis=0, out=output)
+
+        assert result is output
+        np.testing.assert_allclose(output, expected, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "reduction, kwargs",
+        [
+            (np.mean, {"dtype": np.float32}),
+            (np.nanmean, {"dtype": np.float32}),
+            (np.sum, {"initial": 5.0}),
+            (np.nansum, {"initial": 5.0}),
+            (np.std, {"ddof": 1}),
+            (np.nanstd, {"ddof": 1}),
+            (np.var, {"ddof": 1}),
+            (np.nanvar, {"ddof": 1}),
+            (np.min, {"initial": -100.0}),
+            (np.max, {"initial": 100.0}),
+        ],
+    )
+    def test_reduction_arguments(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+        kwargs: dict[str, Any],
+    ) -> None:
+        expected = reduction(tsd_trials.d, axis=0, **kwargs)
+        result = reduction(tsd_trials, axis=0, **kwargs)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        assert result.d.dtype == expected.dtype
+
+    def test_where(self, tsd_trials: nap.TsdTrials) -> None:
+        valid = (
+            tsd_trials.valid[..., None] if tsd_trials.ndim == 3 else tsd_trials.valid
+        )
+
+        expected = np.mean(tsd_trials.d, axis=0, where=valid)
+        result = np.mean(tsd_trials, axis=0, where=valid)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+
+    def test_mean_nan_behavior(self, tsd_trials: nap.TsdTrials) -> None:
+        ordinary = np.mean(tsd_trials, axis=0)
+        ignoring_nan = np.nanmean(tsd_trials, axis=0)
+        partially_valid = tsd_trials.valid.any(axis=0) & ~tsd_trials.valid.all(axis=0)
+
+        assert np.isnan(ordinary.d[partially_valid]).all()
+        assert np.isfinite(ignoring_nan.d[partially_valid]).all()
+
+    def test_omit_globally_invalid_times(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        trials = tsd_trials[:2]
+        result = np.nanmean(trials, axis=0)
+        valid = trials.valid.any(axis=0)
+
+        assert not valid.all()
+        np.testing.assert_array_equal(result.t, trials.t[valid])
+        np.testing.assert_allclose(
+            result.d,
+            np.nanmean(trials.d[:, valid], axis=0),
+            equal_nan=True,
+        )
+
+    @pytest.mark.parametrize("axis", [100, (0, 0)])
+    def test_invalid_axis(
+        self,
+        tsd_trials: nap.TsdTrials,
+        axis: int | tuple[int, ...],
+    ) -> None:
+        with pytest.raises((IndexError, ValueError)):
+            np.mean(tsd_trials, axis=axis)
+
+    def test_unsupported_function(self, tsd_trials: nap.TsdTrials) -> None:
+        with pytest.raises(TypeError):
+            np.transpose(tsd_trials)

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from inspect import signature
 from itertools import zip_longest
 from textwrap import wrap
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -225,6 +228,7 @@ class _TrialMetadataMixin:
     alignment: str
     window_starts: np.ndarray
     window_ends: np.ndarray
+    _windowed: bool = False
 
     @property
     def trial_ids(self) -> np.ndarray:
@@ -240,33 +244,37 @@ class _TrialMetadataMixin:
             for key, positions in self.trials.groupby(by).items()
         }
 
+    def groupby_apply(
+        self,
+        by: str,
+        func: Callable[..., Any],
+        **kwargs: Any,
+    ) -> dict[Any, Any]:
+        """Apply a function to each group of trials."""
+        return {key: func(group, **kwargs) for key, group in self.groupby(by).items()}
+
     def _select_trial_positions(self, positions: np.ndarray):
         """Select trials by position."""
         raise NotImplementedError
 
     def _window_summary(self) -> str:
-        """Return the trial duration or aligned window summary."""
+        """Return the trial duration or selected window summary."""
         if not len(self.durations):
             return "empty"
-
-        if self.alignment == "start":
+        if not self._windowed:
             if np.allclose(self.durations, self.durations[0]):
                 return f"{self.durations[0]:g} sec"
-
             minimum = float(np.min(self.durations))
             maximum = float(np.max(self.durations))
             return f"variable ({minimum:g}–{maximum:g} sec)"
-
         if np.allclose(self.window_starts, self.window_starts[0]) and np.allclose(
             self.window_ends, self.window_ends[0]
         ):
             return f"({self.window_starts[0]:g}, {self.window_ends[0]:g}) sec"
-
         start_min = float(np.min(self.window_starts))
         start_max = float(np.max(self.window_starts))
         end_min = float(np.min(self.window_ends))
         end_max = float(np.max(self.window_ends))
-
         return (
             f"variable (start: {start_min:g}–{start_max:g}, "
             f"end: {end_min:g}–{end_max:g}) sec"
@@ -274,7 +282,7 @@ class _TrialMetadataMixin:
 
     def _window_label(self) -> str:
         """Return the duration or window label."""
-        return "duration" if self.alignment == "start" else "window"
+        return "window" if self._windowed else "duration"
 
 
 @njit(cache=True)
@@ -367,6 +375,7 @@ class TsTrials(_TrialMetadataMixin):
         unit_keys: np.ndarray,
         unit_metadata,
         alignment: str,
+        windowed: bool = False,
     ) -> TsTrials:
         spikes = np.asarray(spikes)
         trial_index = np.asarray(trial_index, dtype=np.int64)
@@ -379,6 +388,7 @@ class TsTrials(_TrialMetadataMixin):
         obj.durations = np.asarray(durations, dtype=float)
         obj.window_starts = np.asarray(window_starts, dtype=float)
         obj.window_ends = np.asarray(window_ends, dtype=float)
+        obj._windowed = windowed
         obj.trials = trials
         obj.unit_keys = np.asarray(unit_keys)
         obj.unit_metadata = unit_metadata
@@ -474,7 +484,7 @@ class TsTrials(_TrialMetadataMixin):
             f"{stack}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}\n"
-            f"unbinned, shape: {self.shape} (trial, unit), "
+            f"unbinned, shape: (trial: {self.shape[0]}, unit: {self.shape[1]}), "
             f"{len(self.spikes)} spikes, size: {_format_bytes(size)}"
         )
 
@@ -597,6 +607,7 @@ class TsTrials(_TrialMetadataMixin):
             durations=self.durations[trial_positions],
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
+            windowed=self._windowed,
             trials=trials,
             unit_keys=unit_keys,
             unit_metadata=unit_metadata,
@@ -642,7 +653,13 @@ class TsTrials(_TrialMetadataMixin):
                 f"Alignment timestamps must lie within their trials: {trial_ids}"
             )
 
-        shifts = alignment - trial_starts
+        target_offset = alignment - trial_starts
+        current_offset = (
+            np.zeros_like(trial_starts)
+            if self.alignment == "start"
+            else np.asarray(self.trials[self.alignment], dtype=float) - trial_starts
+        )
+        shifts = target_offset - current_offset
 
         return self._from_events(
             spikes=self.spikes - shifts[self.trial_index],
@@ -651,6 +668,7 @@ class TsTrials(_TrialMetadataMixin):
             durations=self.durations.copy(),
             window_starts=self.window_starts - shifts,
             window_ends=self.window_ends - shifts,
+            windowed=self._windowed,
             trials=self.trials,
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
@@ -714,6 +732,7 @@ class TsTrials(_TrialMetadataMixin):
             durations=window_ends - window_starts,
             window_starts=window_starts,
             window_ends=window_ends,
+            windowed=True,
             trials=self.trials,
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
@@ -756,6 +775,7 @@ class TsTrials(_TrialMetadataMixin):
                 durations=np.array([], dtype=float),
                 window_starts=np.array([], dtype=float),
                 window_ends=np.array([], dtype=float),
+                windowed=self._windowed,
                 trials=self.trials,
                 feature_names=pd.Index(self.unit_keys),
                 feature_metadata=self.unit_metadata,
@@ -824,6 +844,7 @@ class TsTrials(_TrialMetadataMixin):
             durations=self.durations.copy(),
             window_starts=self.window_starts.copy(),
             window_ends=self.window_ends.copy(),
+            windowed=self._windowed,
             trials=self.trials,
             feature_names=pd.Index(self.unit_keys),
             feature_metadata=self.unit_metadata.copy(),
@@ -929,6 +950,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         bin_size: float | None,
         data_kind: str,
         alignment: str = "start",
+        windowed: bool = False,
     ) -> TsdTrials:
         obj = cls.__new__(cls)
         obj.values = np.asarray(values)
@@ -937,6 +959,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         obj.durations = np.asarray(durations, dtype=float)
         obj.window_starts = np.asarray(window_starts, dtype=float)
         obj.window_ends = np.asarray(window_ends, dtype=float)
+        obj._windowed = windowed
         obj.trials = trials
         obj.feature_names = feature_names
         obj.feature_metadata = feature_metadata
@@ -945,6 +968,102 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         obj.data_kind = data_kind
         obj.alignment = alignment
         return obj
+
+    def __array_function__(
+        self,
+        func: Callable[..., object],
+        types: tuple[type, ...],
+        args: tuple[object, ...],
+        kwargs: dict[str, object],
+    ) -> object:
+        reductions = (
+            np.mean,
+            np.nanmean,
+            np.sum,
+            np.nansum,
+            np.std,
+            np.nanstd,
+            np.var,
+            np.nanvar,
+            np.min,
+            np.nanmin,
+            np.max,
+            np.nanmax,
+            np.median,
+            np.nanmedian,
+            np.prod,
+            np.nanprod,
+            np.all,
+            np.any,
+        )
+
+        if func not in reductions:
+            return NotImplemented
+        if not all(issubclass(cls, (TsdTrials, np.ndarray)) for cls in types):
+            return NotImplemented
+
+        arguments = signature(func).bind(*args, **kwargs)
+        arguments.apply_defaults()
+        parameters = arguments.arguments
+        parameters["a"] = np.asarray(parameters["a"])
+
+        result = func(**parameters)
+
+        if parameters.get("out") is not None:
+            return result
+
+        axis = parameters["axis"]
+        if axis is None:
+            return result
+
+        axes = axis if isinstance(axis, tuple) else (axis,)
+        axes = tuple(int(value) % self.ndim for value in axes)
+
+        keepdims = parameters.get("keepdims", False)
+        if keepdims is np._NoValue:
+            keepdims = False
+
+        if 1 in axes or (axes and keepdims):
+            return result
+
+        return self._wrap_reduction(result, axes)
+
+    def _wrap_reduction(
+        self,
+        values: np.ndarray,
+        axes: tuple[int, ...],
+    ) -> TsdTrials | Tsd | TsdFrame:
+        """Wrap a reduction that preserves time."""
+        if 0 not in axes:
+            result = self._new(values=values)
+            if 2 in axes:
+                result.feature_names = None
+                result.feature_metadata = None
+            return result
+
+        valid = self.valid.any(axis=0)
+        time = self.t[valid]
+        values = values[valid]
+
+        support = (
+            IntervalSet(
+                start=float(self.window_starts.min()),
+                end=float(self.window_ends.max()),
+            )
+            if len(self)
+            else IntervalSet([], [])
+        )
+
+        if values.ndim == 1:
+            return Tsd(t=time, d=values, time_support=support)
+
+        return TsdFrame(
+            t=time,
+            d=values,
+            time_support=support,
+            columns=self.feature_names,
+            metadata=self.feature_metadata,
+        )
 
     @staticmethod
     def _align_source(
@@ -1044,6 +1163,17 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     def __len__(self) -> int:
         return self.shape[0]
 
+    def _shape_axes(self) -> str:
+        """Return labeled tensor dimensions."""
+        names = ["trial", "time"]
+        if self.ndim == 3:
+            names.append("unit" if self.data_kind == "count" else "feature")
+        return (
+            "("
+            + ", ".join(f"{name}: {size}" for name, size in zip(names, self.shape))
+            + ")"
+        )
+
     def __repr__(self) -> str:
         """Return a stacked data preview and tensor summary."""
         if len(self):
@@ -1072,11 +1202,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         sampling_label = (
             "bin_size" if self.data_kind == "count" else "sampling interval"
         )
-        axes = (
-            "(trial, time, unit)"
-            if self.ndim == 3 and self.data_kind == "count"
-            else self._shape_axes()
-        )
 
         return (
             f"{stack}\n\n"
@@ -1084,7 +1209,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             f"{self._window_label()}: {self._window_summary()}, "
             f"{sampling_label}: {self._sample_size_summary()}\n"
             f"dtype: {self.values.dtype}, "
-            f"shape: {self.shape} {axes}, "
+            f"shape: {self._shape_axes()}, "
             f"size: {_format_bytes(self.values.nbytes)}"
         )
 
@@ -1092,12 +1217,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """Return the sampling interval or bin size."""
         size = self.bin_size if self.bin_size is not None else self.sample_period
         return f"{size:g} sec"
-
-    def _shape_axes(self) -> str:
-        """Return tensor axis labels."""
-        if self.ndim == 3:
-            return "(trial, time, feature)"
-        return "(trial, time)"
 
     def __array__(
         self,
@@ -1245,6 +1364,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             durations=self.durations[trial_positions],
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
+            windowed=self._windowed,
             trials=self.trials[trial_positions],
             feature_names=feature_names,
             feature_metadata=feature_metadata,
@@ -1321,6 +1441,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             durations=self.durations,
             window_starts=self.window_starts,
             window_ends=self.window_ends,
+            windowed=self._windowed,
             trials=self.trials,
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
@@ -1329,6 +1450,49 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             data_kind=self.data_kind,
             alignment=self.alignment,
         )
+
+    def with_data(
+        self,
+        values: np.ndarray,
+        *,
+        columns: pd.Index | list[str] | None = None,
+        data_kind: str | None = None,
+    ) -> TsdTrials:
+        """Replace data while preserving trial and time axes.
+        Explicit column names replace the existing feature metadata.
+        Invalid samples remain NaN.
+        """
+        values = np.asarray(values)
+        if values.ndim not in (2, 3) or values.shape[:2] != self.shape[:2]:
+            raise ValueError(
+                "values must have matching trial and time dimensions "
+                "and an optional feature dimension."
+            )
+        if values.ndim == 2:
+            if columns is not None:
+                raise ValueError("Two-dimensional values have no feature axis.")
+            names = None
+            metadata = None
+        elif columns is not None:
+            names = pd.Index(columns)
+            if len(names) != values.shape[2]:
+                raise ValueError("columns must match the feature dimension.")
+            metadata = pd.DataFrame(index=names)
+        elif self.feature_names is not None and (
+            len(self.feature_names) == values.shape[2]
+        ):
+            names = self.feature_names.copy()
+            metadata = self.feature_metadata.copy()
+        else:
+            names = pd.RangeIndex(values.shape[2])
+            metadata = pd.DataFrame(index=names)
+        valid = self.valid[..., None] if values.ndim == 3 else self.valid
+        result = self._new(values=np.where(valid, values, np.nan))
+        result.feature_names = names
+        result.feature_metadata = metadata
+        if data_kind is not None:
+            result.data_kind = data_kind
+        return result
 
     def get(self, start: float, end: float) -> TsdTrials:
         """Return data within an aligned time window."""
@@ -1388,6 +1552,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             durations=window_ends - window_starts,
             window_starts=window_starts,
             window_ends=window_ends,
+            windowed=True,
             trials=self.trials,
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
@@ -1453,6 +1618,76 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         return self._new(values=(values - mean) / std)
 
+    def convolve(
+        self,
+        array: np.ndarray,
+        trim: str = "both",
+    ) -> TsdTrials:
+        """Convolve each trial independently along time.
+
+        Parameters
+        ----------
+        array : array-like
+            Nonempty one-dimensional convolution kernel.
+        trim : {"both", "left", "right"}, optional
+            Side of the full convolution to trim to the original length.
+            Default is "both", which centers the kernel.
+
+        Returns
+        -------
+        TsdTrials
+            Convolved data with the original axes and metadata.
+
+        Notes
+        -----
+        Each trial is zero-padded outside its valid samples during
+        convolution. Invalid bins are restored to NaN afterward.
+        No edge correction or kernel normalization is applied.
+        Trials and features are convolved independently.
+        NaNs within valid bins propagate locally.
+
+        The time axis must be uniformly sampled.
+        """
+        from scipy import signal
+
+        kernel = np.asarray(array)
+        if kernel.ndim != 1 or not kernel.size:
+            raise ValueError("array must be a nonempty one-dimensional kernel.")
+        if trim not in ("both", "left", "right"):
+            raise ValueError("trim must be 'both', 'left', or 'right'.")
+
+        period = self.sample_period
+        if (
+            period is None
+            or period <= 0
+            or not np.allclose(np.diff(self.t), period, rtol=1e-6, atol=1e-12)
+        ):
+            raise ValueError("Convolution requires a uniformly sampled time axis.")
+
+        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        values = np.where(valid, self.values, 0.0)
+
+        if values.size:
+            length = len(kernel)
+            kernel_shape = (1, length) + (1,) * (self.ndim - 2)
+            values = signal.convolve(
+                values,
+                kernel.reshape(kernel_shape),
+                mode="full",
+                method="direct",
+            )
+
+            if trim == "left":
+                start = length - 1
+            elif trim == "right":
+                start = 0
+            else:
+                start = (length - 1) // 2
+
+            values = values[:, start : start + self.shape[1]]
+
+        return self._new(values=np.where(valid, values, np.nan))
+
     def smooth(
         self,
         std: float,
@@ -1491,10 +1726,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Smoothing requires a uniformly sampled time axis. Each unit or
         feature is smoothed separately within each trial.
 
-        Invalid bins and samples outside each trial are treated as zero
-        during convolution. Invalid bins remain NaN in the result.
+        Each trial is zero-padded outside its valid samples during
+        convolution. Invalid bins are restored to NaN afterward.
         No edge correction is applied, so values near trial boundaries
-        may be attenuated. NaNs within valid bins propagate locally.
+        may be attenuated. Trials are smoothed independently.
+        NaNs within valid bins propagate locally.
 
         Examples
         --------

@@ -102,6 +102,14 @@ pynapple: python neural analysis package
             :width: 100px
             :class: dark-light
 
+    .. grid-item-card:: Trials
+       :text-align: center
+       :link: ./user_guide/04_trials.html
+
+       .. image:: _static/example_thumbs/trials.svg
+          :width: 100px
+          :class: dark-light
+
 .. grid:: 1 1 6 6
    :gutter: 1
 

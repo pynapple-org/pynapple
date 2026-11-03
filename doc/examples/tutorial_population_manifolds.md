@@ -176,8 +176,9 @@ Before applying any transformations, let's inspect the spikes from one example n
 A raster plot shows individual spikes as short vertical marks:
 ```{code-cell} ipython3
 example_unit = 10
+trial_data_unit = trial_data[:, example_unit]
 plt.plot(
-    trial_data[:, example_unit].to_tsdframe()["trial"],
+    trial_data_unit.to_tsdframe()["trial"],
     marker="|",
     linestyle="none",
     markersize=1,
@@ -206,8 +207,9 @@ trial_data
 ```
 
 ```{code-cell} ipython3
+trial_data_unit = trial_data[:, example_unit]
 plt.plot(
-    trial_data[:, example_unit].to_tsdframe()["trial"],
+    trial_data_unit.to_tsdframe()["trial"],
     marker="|",
     linestyle="none",
     markersize=1,
@@ -223,7 +225,7 @@ Positive times occur after the go cue.
 The red line marks the go cue. 
 Comparing the two rasters can reveal whether activity is more consistently timed relative to trial start or to the go cue.
 
-## Restricting the window
+## Focussing on a window
 Trials can have different durations. 
 For our comparison, we will focus on a common window from 200 ms before to 500 ms after the go cue.
 
@@ -236,8 +238,9 @@ trial_data
 ```
 
 ```{code-cell} ipython3
+trial_data_unit = trial_data[:, example_unit]
 plt.plot(
-    trial_data[:, example_unit].to_tsdframe()["trial"],
+    trial_data_unit.to_tsdframe()["trial"],
     marker="|",
     linestyle="none",
     markersize=1,
@@ -273,8 +276,9 @@ Dividing by the bin duration in seconds would convert them to an average rate in
 ## Inspecting population activity
 ```{code-cell} ipython3
 example_trial = 100
+example_trial_values = binned[example_trial].values
 plt.imshow(
-    binned[example_trial].values.T,
+    example_trial_values.T,
     aspect="auto",
     interpolation="none",
     extent=(
@@ -307,6 +311,8 @@ This is wider than a single 20 ms bin, so neighboring bins contribute to the smo
 
 Smoothing reduces temporal detail as well as variability. 
 A wider smoothing kernel produces smoother trajectories, but it can blur sharp changes. 
+
+If you want to define your own smoothing kernel, you can use the [`convolve`](pynapple.TsdTrials.convolve) method.
 
 ```{code-cell} ipython3
 smooth_sigma = 0.06
@@ -362,28 +368,45 @@ We restore the trial and time dimensions, replacing the neuron dimension with th
 Each trial is now a trajectory through a three-dimensional space rather than through a space with one dimension per neuron.
 The components are weighted combinations of neurons, not individual neurons. 
 
+We can wrap the trajectories back in a [`TsdTrials`](pynapple.TsdTrials) object using the [`with_data`](pynapple.TsdTrials.with_data) method,
+which overwrites the data while keeping timepoints and metadata:
+```{code-cell} ipython3
+trajectories = normalized.with_data(
+    trajectories,
+    columns=["PC 1", "PC 2", "PC 3"],
+    data_kind="continuous",
+)
+trajectories
+```
+
 ## Comparing trajectories across reach targets
 
 Individual trials can be noisy.
-To summarize the activity associated with each reach target, we average the PCA trajectories across trials with the same target.
+To summarize the activity associated with each reach target, we average the PCA trajectories across trials with the same target:
+```{code-cell} ipython3
+means = trajectories.groupby_apply("target_id", np.nanmean, axis=0)
+```
 
 Each colored curve shows the mean population trajectory for one target:
 ```{code-cell} ipython3
-targets = np.asarray(normalized.trials["target_id"])
-categories = np.unique(targets)
-colors = plt.get_cmap("viridis")(np.linspace(0, 1, len(categories)))
+colors = plt.get_cmap("viridis")(np.linspace(0, 1, len(means)))
 
 fig = plt.figure(figsize=(8, 9))
 ax = fig.add_subplot(projection="3d")
-for target, color in zip(categories, colors, strict=True):
-    mean = np.nanmean(trajectories[targets == target], axis=0)
-    ax.plot(*mean.T, color=color, label=str(int(target)))
-    ax.scatter(*mean[0], color="black", s=30)
-    ax.scatter(*mean[-1], color="gray", s=30)
+for (target, mean), color in zip(means.items(), colors, strict=True):
+    ax.plot(*mean.values.T, color=color, label=str(int(target)))
+    ax.scatter(*mean.values[0], color="black", s=30)
+    ax.scatter(*mean.values[-1], color="gray", s=30)
+
 ax.set_xlabel("PC 1", labelpad=15)
 ax.set_ylabel("PC 2", labelpad=15)
 ax.set_zlabel("PC 3", labelpad=15)
-ax.legend(title="target", loc="upper left", bbox_to_anchor=(1.12, 0.7), frameon=False)
+ax.legend(
+    title="target",
+    loc="upper left",
+    bbox_to_anchor=(1.12, 0.7),
+    frameon=False,
+)
 plt.show()
 ```
 Position along a curve changes with time.
