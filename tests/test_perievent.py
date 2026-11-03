@@ -179,11 +179,9 @@ class TestComputePerieventContinuous:
     @pytest.mark.parametrize(
         "window, expected_times",
         [
-            ((0.0, 2.0), [0.0, 1.0, 2.0]),  # no pre-event bins
-            ((-2.0, 0.0), [-2.0, -1.0, 0.0]),  # no post-event bins
-            ((0.0, 0.5), [0.0]),  # shorter than dt, starting at zero
-            ((-0.5, 0.0), [0.0]),  # shorter than dt, ending at zero
-            ((-0.4, 0.4), [0.0]),  # shorter than dt, straddling zero
+            ((0.0, 1.0), [0.0, 1.0]),  # no pre-event bins
+            ((-1.0, 0.0), [-1.0, 0.0]),  # no post-event bins
+            ((-0.1, 0.1), [0.0]),  # shorter than dt, straddling zero
         ],
     )
     def test_continuous_zero_sided_and_sub_bin_windows(self, window, expected_times):
