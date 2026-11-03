@@ -176,6 +176,30 @@ class TestComputePerieventContinuous:
         ).T
         np.testing.assert_array_almost_equal(pe.values, expected)
 
+    @pytest.mark.parametrize(
+        "window, expected_times",
+        [
+            ((0.0, 1.0), [0.0, 1.0]),  # no pre-event bins
+            ((-1.0, 0.0), [-1.0, 0.0]),  # no post-event bins
+            ((-0.1, 0.1), [0.0]),  # shorter than dt, straddling zero
+        ],
+    )
+    def test_continuous_zero_sided_and_sub_bin_windows(self, window, expected_times):
+        """Zero-sided and sub-bin windows include the center sample without crashing."""
+        times = np.arange(100, dtype=float)  # dt = 1 second
+        data = nap.Tsd(t=times, d=times.copy())
+        events = nap.Ts(t=[20.0, 60.0])
+
+        result = nap.compute_perievent(data, events, window=window)
+
+        assert isinstance(result, nap.TsdFrame)
+        assert result.shape == (len(expected_times), len(events))
+        np.testing.assert_allclose(result.t, expected_times)
+        expected_values = np.array(
+            [np.asarray(expected_times) + event_time for event_time in events.t]
+        ).T
+        np.testing.assert_allclose(result.values, expected_values)
+
     def test_tsd_symmetric_window(self):
         tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
         events = nap.Ts(t=np.array([20, 60]))
@@ -284,6 +308,107 @@ class TestComputePerieventContinuous:
         tsd = nap.Tsd(t=np.array([0.0, 0.1, 0.3, 0.6, 1.0]), d=np.arange(5))
         with pytest.raises(RuntimeError, match="regularly sampled"):
             nap.compute_perievent(tsd, nap.Ts(t=[0.3]), window=0.2)
+
+    # Edge cases immediately inside and outside the 1e-6 tolerance used by _is_regularly_sampled
+    # and _align_regular. Update these cases if that tolerance is intentionally changed.
+    @pytest.mark.parametrize(
+        "relative_dt_error, expected_n_bins, edge_snap",
+        [
+            (-0.9e-6, 161, True),
+            (+0.9e-6, 161, True),  # in tolerance
+            (+1.1e-6, 159, False),  # should be outside tolerance thus 159 bins
+            (-1.1e-6, 161, False),  # should have 161 bins, but not trigger edge snap
+        ],
+    )
+    def test_bin_count_tolerance(
+        self,
+        relative_dt_error,
+        expected_n_bins,
+        edge_snap,
+    ):
+        nominal_dt = 0.05
+        dt = nominal_dt * (1 + relative_dt_error)
+
+        t = np.arange(0, 20, dt)
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        peth = nap.compute_perievent(
+            tsd,
+            nap.Ts(t=[10.0]),
+            window=(-4, 4),
+        )
+
+        assert len(peth.t) == expected_n_bins
+
+        if edge_snap:
+            assert peth.t[0] == -4.0
+            assert peth.t[-1] == 4.0
+        else:
+            assert peth.t[0] != -4.0
+            assert peth.t[-1] != 4.0
+
+    @pytest.mark.parametrize(
+        "relative_variation",
+        [
+            -1.1e-6,
+            +1.1e-6,
+        ],
+    )
+    def test_regular_sampling_tolerance_boundary(
+        self,
+        relative_variation,
+    ):
+        nominal_dt = 0.05
+        n_samples = 400
+
+        dts = np.full(
+            n_samples - 1,
+            nominal_dt * (1 + relative_variation),
+        )
+        dts[0] = nominal_dt
+
+        t = np.concatenate(([0.0], np.cumsum(dts)))
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        with pytest.raises(RuntimeError, match="regularly sampled"):
+            nap.compute_perievent(
+                tsd,
+                nap.Ts(t=[10.0]),
+                window=(-4, 4),
+            )
+
+    @pytest.mark.parametrize(
+        "relative_variation",
+        [
+            -0.9e-6,
+            +0.9e-6,
+        ],
+    )
+    def test_regular_sampling_variation_gives_consistent_bin_count(
+        self,
+        relative_variation,
+    ):
+        nominal_dt = 0.05
+        n_samples = 400
+
+        dts = np.full(
+            n_samples - 1,
+            nominal_dt * (1 + relative_variation),
+        )
+        dts[0] = nominal_dt
+
+        t = np.concatenate(([0.0], np.cumsum(dts)))
+        tsd = nap.Tsd(t=t, d=np.arange(len(t)))
+
+        peth = nap.compute_perievent(
+            tsd,
+            nap.Ts(t=[10.0]),
+            window=(-4, 4),
+        )
+
+        assert len(peth.t) == 161
+        assert peth.t[0] == -4.0
+        assert peth.t[-1] == 4.0
 
 
 # =============================================================================
