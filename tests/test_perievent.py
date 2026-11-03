@@ -176,6 +176,32 @@ class TestComputePerieventContinuous:
         ).T
         np.testing.assert_array_almost_equal(pe.values, expected)
 
+    @pytest.mark.parametrize(
+        "window, expected_times",
+        [
+            ((0.0, 2.0), [0.0, 1.0, 2.0]),  # no pre-event bins
+            ((-2.0, 0.0), [-2.0, -1.0, 0.0]),  # no post-event bins
+            ((0.0, 0.5), [0.0]),  # shorter than dt, starting at zero
+            ((-0.5, 0.0), [0.0]),  # shorter than dt, ending at zero
+            ((-0.4, 0.4), [0.0]),  # shorter than dt, straddling zero
+        ],
+    )
+    def test_continuous_zero_sided_and_sub_bin_windows(self, window, expected_times):
+        """Zero-sided and sub-bin windows include the center sample without crashing."""
+        times = np.arange(100, dtype=float)  # dt = 1 second
+        data = nap.Tsd(t=times, d=times.copy())
+        events = nap.Ts(t=[20.0, 60.0])
+
+        result = nap.compute_perievent(data, events, window=window)
+
+        assert isinstance(result, nap.TsdFrame)
+        assert result.shape == (len(expected_times), len(events))
+        np.testing.assert_allclose(result.t, expected_times)
+        expected_values = np.array(
+            [np.asarray(expected_times) + event_time for event_time in events.t]
+        ).T
+        np.testing.assert_allclose(result.values, expected_values)
+
     def test_tsd_symmetric_window(self):
         tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
         events = nap.Ts(t=np.array([20, 60]))
