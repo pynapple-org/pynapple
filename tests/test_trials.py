@@ -1079,9 +1079,7 @@ class TestTsdTrialsReductions:
         axes = (
             tuple(range(tsd_trials.ndim))
             if axis is None
-            else axis
-            if isinstance(axis, tuple)
-            else (axis,)
+            else axis if isinstance(axis, tuple) else (axis,)
         )
         if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
             pytest.skip("Axis is not present in scalar trial data.")
