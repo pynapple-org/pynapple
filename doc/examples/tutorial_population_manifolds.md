@@ -409,7 +409,6 @@ ax.legend(
 )
 plt.show()
 ```
-Position along a curve changes with time.
 The black marker indicates the first time bin.
 The gray marker indicates the last time bin.
 
@@ -417,6 +416,55 @@ Low-dimensional projections help us see how neurons act together as a population
 Instead of examining each neuron separately, we can follow a trajectory that summarizes how their collective activity changes over time.
 This connects to the idea of a neural manifold: a lower-dimensional structure within the space of possible population activity patterns.
 For an accessible introduction to neural manifolds, see [Matthew Perich's article in The Transmitter](https://www.thetransmitter.org/neural-dynamics/neural-population-based-approaches-have-opened-new-windows-into-neural-computations-and-behavior/).
+
+Nonetheless, low-dimensional trajectories do not replace examining individual neurons. 
+To connect the population-level view back to single-neuron activity,
+we can compare the mean activity for targets 1 and 6 (maximally different), with neurons sorted by their PC 3 loading.
+Using the same ordering in both panels allows to see how individual neurons contribute
+to the population patterns associated with each reach target.
+```{code-cell} ipython3
+target_a, target_b = 1,6
+activity_means = normalized.groupby_apply("target_id", np.nanmean, axis=0)
+unit_order = np.argsort(pca.components_[2])[::-1]
+activity = [
+    activity_means[target].values[:, unit_order].T
+    for target in (target_a, target_b)
+]
+color_limit = np.nanmax(np.abs(activity))
+
+fig, axes = plt.subplots(
+    1, 2, figsize=(12, 5), sharex=True, sharey=True, layout="constrained"
+)
+for ax, target, values in zip(
+    axes, (target_a, target_b), activity, strict=True
+):
+    image = ax.imshow(
+        values,
+        aspect="auto",
+        interpolation="none",
+        origin="lower",
+        extent=(
+            normalized.t[0] - bin_size / 2,
+            normalized.t[-1] + bin_size / 2,
+            n_units - 0.5,
+            -0.5,
+        ),
+        cmap="RdBu_r",
+        vmin=-color_limit,
+        vmax=color_limit,
+    )
+    ax.axvline(0, color="black", linestyle="--", linewidth=1)
+    ax.set_title(f"Target {int(target)}")
+    ax.set_xlabel("Time from go cue (s)")
+
+axes[0].set_ylabel("Neuron rank by PC 3 loading")
+fig.colorbar(image, ax=axes, label="Normalized activity (z-score)", shrink=0.8)
+plt.show()
+```
+Each panel shows the mean normalized neural activity across trials for one reach target. 
+Rows correspond to neurons and columns to time bins. 
+Both panels use the same neuron ordering, from largest to smallest PC 3
+loading, and the same color scale. 
 
 :::{card}
 Authors
