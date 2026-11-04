@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="497" height="497" viewBox="0 0 497 497">
+  <defs>
+    <pattern id="stripes" width="16" height="16"
+             patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#FFFFFF"/>
+      <rect width="8" height="16" fill="#353D49"/>
+    </pattern>
+    <pattern id="diagonal" href="#stripes"
+             patternTransform="rotate(45)"/>
+    <pattern id="horizontal" href="#stripes"
+             patternTransform="rotate(90)"/>
+
+    <g id="panel">
+      <rect x="6" y="8" width="316" height="110" rx="12"
+            fill="#AFC4D7"/>
+      <rect width="316" height="110" rx="12"
+            fill="#F8FBFE" stroke="#728DA5" stroke-width="5"/>
+    </g>
+
+    <g id="alignment">
+      <path d="M137 14V96"
+            stroke="#353D49" stroke-width="6"/>
+      <circle cx="137" cy="67" r="7"
+              fill="#353D49" stroke="#F8FBFE" stroke-width="3"/>
+    </g>
+  </defs>
+
+  <circle cx="248.5" cy="248.5" r="241" fill="#DDEBF7"/>
+
+  <g transform="translate(248.5 248.5) scale(0.88) translate(-248.5 -248.5)">
+    <!-- Rear trial -->
+    <g transform="translate(108 65)" color="#2875A7">
+      <use href="#panel"/>
+      <rect x="16" y="17" width="42" height="42" rx="5"
+            fill="url(#stripes)" stroke="currentColor" stroke-width="5"/>
+
+      <path d="M84 23V40 M116 23V40 M161 23V40
+               M195 23V40 M248 23V40 M286 23V40"
+            fill="none" stroke="currentColor" stroke-width="7"/>
+
+      <path d="M78 80H106
+               C121 80 123 51 137 67
+               S157 102 175 80
+               S199 61 217 80
+               S252 91 295 80"
+            fill="none" stroke="currentColor" stroke-width="7"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <use href="#alignment"/>
+    </g>
+
+    <!-- Middle trial -->
+    <g transform="translate(82 172)" color="#C77829">
+      <use href="#panel"/>
+      <rect x="16" y="17" width="42" height="42" rx="5"
+            fill="url(#diagonal)" stroke="currentColor" stroke-width="5"/>
+
+      <path d="M90 23V40 M125 23V40 M174 23V40
+               M207 23V40 M258 23V40 M288 23V40"
+            fill="none" stroke="currentColor" stroke-width="7"/>
+
+      <path d="M78 83H106
+               C121 83 123 51 137 67
+               S157 103 175 83
+               S196 57 217 77
+               S254 92 295 79"
+            fill="none" stroke="currentColor" stroke-width="7"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <use href="#alignment"/>
+    </g>
+
+    <!-- Front trial -->
+    <g transform="translate(56 279)" color="#8855A4">
+      <use href="#panel"/>
+      <rect x="16" y="17" width="42" height="42" rx="5"
+            fill="url(#horizontal)" stroke="currentColor" stroke-width="5"/>
+
+      <path d="M82 23V40 M113 23V40 M157 23V40
+               M190 23V40 M242 23V40 M285 23V40"
+            fill="none" stroke="currentColor" stroke-width="7"/>
+
+      <path d="M78 78H106
+               C121 78 123 51 137 67
+               S156 98 175 78
+               S199 64 220 82
+               S258 87 295 76"
+            fill="none" stroke="currentColor" stroke-width="7"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <use href="#alignment"/>
+    </g>
+
+    <!-- Time arrow -->
+    <path d="M142 438H354 M339 423L354 438L339 453"
+          fill="none" stroke="#353D49" stroke-width="7"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
+

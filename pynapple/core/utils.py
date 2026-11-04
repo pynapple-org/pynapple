@@ -675,3 +675,16 @@ def take(array, idx):
     for start, stop in zip(run_starts, run_stops):
         out[start:stop] = array[idx[start] : idx[stop - 1] + 1]
     return out
+
+
+def _format_bytes(size: int) -> str:
+    """Return a compact decimal byte size."""
+    units = ("B", "kB", "MB", "GB", "TB")
+    value = float(size)
+
+    for unit in units:
+        if value < 1000 or unit == units[-1]:
+            return f"{value:g}{unit}"
+        value /= 1000
+
+    return f"{value:g}TB"
