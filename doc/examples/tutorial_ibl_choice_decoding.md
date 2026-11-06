@@ -92,7 +92,7 @@ trials
 
 ## Trial alignment and binning
 
-Here, we start by discarding some trials where a choice wasn't made (a more complete analysis may include more criteria). 
+Here, we start by discarding some trials where a choice wasn't made (a more complete analysis may include more criteria).
 ```{code-cell} ipython3
 valid_choice = trials.mouse_wheel_choice != "none"
 trials = trials[valid_choice]
@@ -197,5 +197,3 @@ Authors
 
 Charlie Windolf
 :::
-
-

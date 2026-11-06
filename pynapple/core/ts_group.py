@@ -15,7 +15,6 @@ from numbers import Number
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
-import numpy
 import numpy as np
 import pandas as pd
 from tabulate import tabulate

@@ -26,7 +26,7 @@ Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at ini
 
 
 ## Adding metadata at initialization
-At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions. 
+At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions.
 
 ```{admonition} Class-specific exceptions
 - If column names are supplied to `TsdFrame`, metadata cannot overlap with those names.
@@ -89,7 +89,7 @@ Metadata added to `IntervalSet` must match the number of intervals, or the lengt
 ```{code-cell} ipython3
 metadata = {
     "reward": [1, 0, 1],
-    "choice": ["left", "right", "left"],    
+    "choice": ["left", "right", "left"],
 }
 intervalset = nap.IntervalSet(starts, ends, metadata=metadata)
 print(intervalset)
@@ -99,7 +99,7 @@ Metadata can be initialized as a DataFrame using the metadata argument, or it ca
 
 ```{code-cell} ipython3
 df = pd.DataFrame(
-    data=[[0, 30, 1, "left"], [35, 65, 0, "right"], [70, 100, 1, "left"]], 
+    data=[[0, 30, 1, "left"], [35, 65, 0, "right"], [70, 100, 1, "left"]],
     columns=["start", "end", "reward", "choice"]
     )
 
@@ -112,7 +112,7 @@ Metadata added to `TsdFrame` must match the number of data columns, or the lengt
 
 ```{code-cell} ipython3
 metadata = {
-    "color": ["red", "blue", "green"], 
+    "color": ["red", "blue", "green"],
     "position": [10,20,30],
     "label": ["x", "x", "y"]
     }
@@ -126,7 +126,7 @@ When initializing with a DataFrame, the DataFrame index must match the `TsdFrame
 ```{code-cell} ipython3
 metadata = pd.DataFrame(
     index=["a", "b", "c"],
-    data=[["red", 10, "x"], ["blue", 20, "x"], ["green", 30, "y"]], 
+    data=[["red", 10, "x"], ["blue", 20, "x"], ["green", 30, "y"]],
     columns=["color", "position", "label"],
 )
 
@@ -272,9 +272,9 @@ If the applied function requires additional inputs, these can be passed as addit
 ```{code-cell} ipython3
 feature = nap.Tsd(t=np.arange(100), d=np.repeat([0,1], 50))
 tsgroup.groupby_apply(
-    "region", 
-    nap.compute_tuning_curves, 
-    features=feature, 
+    "region",
+    nap.compute_tuning_curves,
+    features=feature,
     bins=2)
 ```
 
@@ -289,9 +289,9 @@ An anonymous function can also be used to apply a function where the grouped obj
 
 ```{code-cell} ipython3
 func = lambda x: nap.compute_tuning_curves(
-    data=tsgroup, 
-    features=feature, 
-    bins=2, 
+    data=tsgroup,
+    features=feature,
+    bins=2,
     epochs=x)
 intervalset.groupby_apply("choice", func)
 ```
@@ -300,11 +300,11 @@ Alternatively, the optional parameter `input_key` can be passed to specify which
 
 ```{code-cell} ipython3
 intervalset.groupby_apply(
-    "choice", 
-    nap.compute_tuning_curves, 
-    input_key="epochs", 
-    data=tsgroup, 
-    features=feature, 
+    "choice",
+    nap.compute_tuning_curves,
+    input_key="epochs",
+    data=tsgroup,
+    features=feature,
     bins=2)
 ```
 
