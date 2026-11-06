@@ -119,6 +119,7 @@ Analysis modules
     correlograms
     decoding
     filtering
+    isi
     perievent
     randomize
     signal
