@@ -334,6 +334,11 @@ def compute_perievent(
     RuntimeError
         If time_unit not in ["s", "ms", "us"], window format is invalid, or continuous
         data is not regularly sampled.
+    TypeError
+        If ``data`` or ``events`` is not a time series object.
+    ValueError
+        If ``data`` is continuous and has no overlap with ``epochs``, because the
+        perievent matrix is then empty.
 
     Examples
     --------
@@ -472,7 +477,7 @@ def compute_perievent(
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(data, nap.TsGroup):
-        return _align_group(data, events, window)
+        return _align_group(data, events, window, new_time_support)
 
     if isinstance(data, nap.Ts):
         # a Ts aligns as a group of one unit
@@ -614,7 +619,7 @@ def _event_windows(event_times, window):
     return nap.IntervalSet(start=starts[new_block], end=ends[last_of_block])
 
 
-def _align_group(data, events, window):
+def _align_group(data, events, window, new_time_support):
     """
     Align every unit of a ``TsGroup`` to events, with one ``_align_sorted``
     pass over the merged spikes.
@@ -631,6 +636,8 @@ def _align_group(data, events, window):
         Event timestamps (pre-filtered by epochs)
     window : array-like
         [before, after] window
+    new_time_support : IntervalSet
+        The window, ``[-before, after]``. All the output groups share it.
 
     Returns
     -------
@@ -649,7 +656,7 @@ def _align_group(data, events, window):
             relative_times[start:end],
             event_idx[start:end],
             event_times,
-            nap.IntervalSet(start=-window[0], end=window[1]),
+            new_time_support,
         )
     return aligned
 
@@ -726,10 +733,7 @@ def _align_regular(data, events, window, new_time_support):
             "No overlap between input and epochs, perievent matrix is empty..."
         )
     if new_data_array.ndim == 2:
-        columns = events.index if isinstance(events, nap.TsGroup) else None
-        return nap.TsdFrame(
-            t=time_idx, d=new_data_array, time_support=new_time_support, columns=columns
-        )
+        return nap.TsdFrame(t=time_idx, d=new_data_array, time_support=new_time_support)
     else:
         return nap.TsdTensor(
             t=time_idx,

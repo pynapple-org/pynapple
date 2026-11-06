@@ -17,11 +17,9 @@ from ._jitted_functions import (  # pjitconvolve,
     jitcount,
     jitcount_clusters,
     jitcount_epochs,
-    jitgroup_by_unit,
     jitremove_nan,
     jitrestrict,
     jitthreshold,
-    jittimediff_grouped,
     jitvaluefrom,
 )
 from .utils import get_backend
@@ -182,12 +180,6 @@ def _count(
     return t, (d[:, 0] if single else d)
 
 
-def _group_by_unit(unit_pos, n_units):
-    """``(order, offsets)``: ``order[offsets[i]:offsets[i + 1]]`` are the
-    positions of unit ``i`` in their original order (stable counting sort)."""
-    return jitgroup_by_unit(np.asarray(unit_pos, dtype=np.int64), n_units)
-
-
 def _is_dense_index(index):
     """Whether a ``key - min(key)`` lookup table over the sorted ``index`` is
     small enough to use: its size must stay O(number of keys), so that sparse
@@ -200,23 +192,12 @@ def _count_clusters(clusters, index):
     """Number of entries of ``clusters`` equal to each key of the sorted ``index``."""
     if len(index) == 0:
         return np.zeros(0, dtype=np.int64)
-    index = np.asarray(index, dtype=np.int64)
     if not _is_dense_index(index):
-        return np.bincount(
-            np.searchsorted(index, np.asarray(clusters, dtype=np.int64)),
-            minlength=len(index),
-        ).astype(np.int64)
+        return np.bincount(np.searchsorted(index, clusters), minlength=len(index))
     lo = int(index[0])
     span = int(index[-1]) - lo + 1
-    counts = jitcount_clusters(np.asarray(clusters, dtype=np.int64), lo, span)
+    counts = jitcount_clusters(clusters, lo, span)
     return counts[index - lo]
-
-
-def _time_diff_grouped(time_array, unit_pos, n_units, starts, ends, alpha):
-    """Per-unit differences between subsequent timestamps, within epochs, of a
-    merged multi-unit array. Returns ``(new_t, new_d, offsets)``, unit ``i``
-    holding the block ``[offsets[i]:offsets[i + 1]]``."""
-    return jittimediff_grouped(time_array, unit_pos, starts, ends, n_units, alpha)
 
 
 def _value_from(
@@ -227,6 +208,7 @@ def _value_from(
     ends,
     *arrays,
     mode: Literal["closest", "before", "after"] = "closest",
+    copy: bool = False,
 ):
     """Values of ``data_target_array`` matched to the timestamps of
     ``time_array`` inside the epochs ``[starts, ends]``.
@@ -234,7 +216,8 @@ def _value_from(
     Returns ``(times, values, *arrays)``: the timestamps of ``time_array``
     inside the epochs, their matched values, and each extra array of
     ``arrays`` (aligned with ``time_array``, ``None`` allowed) sliced the same
-    way as the timestamps.
+    way as the timestamps. With ``copy=False``, ``times`` can be a view of
+    ``time_array``. With ``copy=True``, ``times`` is always a new array.
     """
     # replace flag with int
     if mode == "closest":
@@ -252,7 +235,7 @@ def _value_from(
     target_start = np.searchsorted(time_target_array, starts, side="left")
     target_stop = np.searchsorted(time_target_array, ends, side="right")
 
-    new_time_array = _concat_ranges(time_array, in_start, in_stop, copy=False)
+    new_time_array = _concat_ranges(time_array, in_start, in_stop, copy=copy)
 
     # index into the *full* target for each kept timestamp, -1 where unmatched
     gather_idx = jitvaluefrom(

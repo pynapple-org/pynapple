@@ -216,16 +216,10 @@ def _jitwarp_count(times, unit_positions, starts, ends, num_bins, n_units):
         start = starts[trial]
         end = ends[trial]
         bin_size = (end - start) / num_bins
-        # number of bins that jitcount allocates for the trial
-        if end - start > bin_size:
-            max_bins = int(np.ceil((end + bin_size - start) / bin_size))
-        else:
-            max_bins = 1
-        max_bins = min(max_bins, num_bins)
 
         t = first[trial]
         left_edge = start
-        for b in range(max_bins):
+        for b in range(num_bins):
             if left_edge + bin_size / 2 > end:
                 break
             right_edge = np.round(left_edge + bin_size, 9)

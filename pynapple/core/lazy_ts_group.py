@@ -9,7 +9,7 @@ that group.
 A source knows the layout of the spike times on disk and reads parts of them.
 There are two sources:
 
-- ``_RaggedArraySource`` reads a ragged layout, as in an NWB units table: the
+- ``_ConcatenatedArraySource`` reads a concatenated layout, as in an NWB units table: the
   spike times of each unit, one unit after the other, and the end position of
   each unit. A selection of units is fast.
 - ``_SortedArraySource`` reads a sorted layout: all the spike times in one
@@ -37,6 +37,18 @@ _CLOSED_MESSAGE = (
 )
 
 
+def _warn_unsorted(keys, stacklevel):
+    """Warn that the spike times of the units ``keys`` are not sorted."""
+    warnings.warn(
+        f"Spike times of units {keys} are not sorted in the file. The "
+        "lazy TsGroup assumes sorted spike times. Thus its time "
+        "support, its rates and its time windows can be wrong. Load "
+        "the spike times in memory instead (for an NWB file, use "
+        "lazy_loading=False).",
+        stacklevel=stacklevel,
+    )
+
+
 def _search(array, lo, hi, t, right):
     """Find the position of ``t`` in the sorted values ``array[lo:hi]``, as
     ``np.searchsorted`` does. For a file, each step of the binary search reads
@@ -52,14 +64,6 @@ def _search(array, lo, hi, t, right):
         else:
             hi = mid
     return lo
-
-
-def _tsgroup_from_state(state):
-    """Make a regular TsGroup from a saved state, for pickle (see
-    ``_LazyTsGroup.__reduce_ex__``)."""
-    obj = TsGroup.__new__(TsGroup)
-    obj.__setstate__(state)
-    return obj
 
 
 def _support_and_counts(first, last, counts):
@@ -104,15 +108,15 @@ def _support_and_counts(first, last, counts):
     return IntervalSet(ts_start, ts_end), counts
 
 
-class _RaggedArraySource:
-    """Spike times in a ragged array, e.g. an NWB units table.
+class _ConcatenatedArraySource:
+    """Spike times in a concatenated array, e.g. an NWB units table.
 
-    ``ragged_array`` holds the spike times of each unit, one unit after the
-    other. The spike times of each unit are sorted. ``ragged_array_index``
-    holds the end position of each unit in ``ragged_array``. The arrays can be
+    ``concatenated_array`` holds the spike times of each unit, one unit after the
+    other. The spike times of each unit are sorted. ``concatenated_array_index``
+    holds the end position of each unit in ``concatenated_array``. The arrays can be
     numpy arrays, h5py datasets or other array-likes that support slices.
 
-    The constructor reads only ``ragged_array_index`` and the first and last
+    The constructor reads only ``concatenated_array_index`` and the first and last
     spike of each unit. These values give the keys, the counts and the time
     support.
 
@@ -131,69 +135,74 @@ class _RaggedArraySource:
         True after ``close()``.
     """
 
-    def __init__(self, ragged_array, ragged_array_index, keys, keep_alive=None):
+    def __init__(
+        self, concatenated_array, concatenated_array_index, keys, keep_alive=None
+    ):
         """
         Parameters
         ----------
-        ragged_array : array-like
+        concatenated_array : array-like
             The spike times of all the units.
-        ragged_array_index : array-like
-            The end position of each unit in ``ragged_array`` (one position
+        concatenated_array_index : array-like
+            The end position of each unit in ``concatenated_array`` (one position
             after its last spike).
         keys : array-like of int
-            The key of each unit, in the order of ``ragged_array_index``.
+            The key of each unit, in the order of ``concatenated_array_index``.
         keep_alive : object, optional
             An object that the source keeps, so that the file stays open.
 
         Raises
         ------
         ValueError
-            - If ``keys`` and ``ragged_array_index`` do not have the same
+            - If ``keys`` and ``concatenated_array_index`` do not have the same
               length, or if two keys are equal.
-            - If ``ragged_array_index`` decreases, or if it goes past the end
-              of ``ragged_array``.
+            - If ``concatenated_array_index`` decreases, or if it goes past the end
+              of ``concatenated_array``.
         """
         keys = np.asarray(keys, dtype=np.int64)
-        stops = np.asarray(ragged_array_index, dtype=np.int64)
-        starts = np.concatenate([[0], stops[:-1]]).astype(np.int64)
+        stops = np.asarray(concatenated_array_index, dtype=np.int64)
+        starts = np.concatenate([[0], stops[:-1]])
         counts = stops - starts
-
-        if not hasattr(ragged_array, "shape"):  # a list in memory
-            ragged_array = np.asarray(ragged_array, dtype=np.float64)
 
         if len(keys) != len(stops):
             raise ValueError(
                 f"keys must have one key for each unit. There are {len(stops)} "
-                f"units in ragged_array_index and {len(keys)} keys."
+                f"units in concatenated_array_index and {len(keys)} keys."
             )
         if len(np.unique(keys)) != len(keys):
             raise ValueError("Two keys have the same value.")
         if np.any(counts < 0):
-            raise ValueError("ragged_array_index must not decrease.")
-        if len(stops) and stops[-1] > len(ragged_array):
+            raise ValueError("concatenated_array_index must not decrease.")
+        if len(stops) and stops[-1] > len(concatenated_array):
             raise ValueError(
-                f"ragged_array_index goes past the end of ragged_array: the "
-                f"last unit ends at {stops[-1]}, and ragged_array has "
-                f"{len(ragged_array)} values."
+                f"concatenated_array_index goes past the end of concatenated_array: the "
+                f"last unit ends at {stops[-1]}, and concatenated_array has "
+                f"{len(concatenated_array)} values."
             )
 
         # The first and the last spike of each unit that is not empty. h5py
         # needs increasing positions for a point selection.
         nonempty = counts > 0
-        first = np.asarray(ragged_array[starts[nonempty]], dtype=np.float64)
-        last = np.asarray(ragged_array[stops[nonempty] - 1], dtype=np.float64)
+        first = np.asarray(concatenated_array[starts[nonempty]], dtype=np.float64)
+        last = np.asarray(concatenated_array[stops[nonempty] - 1], dtype=np.float64)
+
+        # A unit with `last < first` is not sorted, and `_support_and_counts`
+        # drops its span.
+        reversed_units = last < first
+        if np.any(reversed_units):
+            _warn_unsorted(keys[nonempty][reversed_units].tolist(), stacklevel=4)
 
         time_support, counts = _support_and_counts(first, last, counts)
 
-        # The arrays below follow the order of the units in the ragged array.
-        self._ragged_array = ragged_array
+        # The arrays below follow the order of the units in the concatenated array.
+        self._concatenated_array = concatenated_array
         self._starts = starts
         self._stops = stops
         self._first = np.full(len(keys), np.nan)
         self._first[nonempty] = first
         self._last = np.full(len(keys), np.nan)
         self._last[nonempty] = last
-        # `_sort_index[i]` is the position in the ragged array of `keys[i]`.
+        # `_sort_index[i]` is the position in the concatenated array of `keys[i]`.
         self._sort_index = np.argsort(keys, kind="stable")
 
         self.keys = keys[self._sort_index]
@@ -207,17 +216,12 @@ class _RaggedArraySource:
         self.closed = True
 
     def _rows(self, keys):
-        """Get the positions in the ragged array of the units ``keys``.
+        """Get the positions in the concatenated array of the units ``keys``.
         ``keys`` must be sorted keys of the source."""
         return self._sort_index[np.searchsorted(self.keys, keys)]
 
-    def _search(self, lo, hi, t, right):
-        """Find the position of ``t`` in the sorted spikes
-        ``ragged_array[lo:hi]`` of one unit."""
-        return _search(self._ragged_array, lo, hi, t, right)
-
     def _read_rows(self, keys, lo, hi):
-        """Read ``ragged_array[lo[i]:hi[i]]`` for each unit ``keys[i]``.
+        """Read ``concatenated_array[lo[i]:hi[i]]`` for each unit ``keys[i]``.
 
         ``keys`` must be sorted keys of the source.
 
@@ -227,11 +231,9 @@ class _RaggedArraySource:
             The spike times, sorted by time and then by key, and the key of
             each spike.
         """
-        if self.closed:
-            raise RuntimeError(_CLOSED_MESSAGE)
         lengths = hi - lo
         try:
-            array = self._ragged_array
+            array = self._concatenated_array
             n_total = int(self._stops[-1]) if len(self._stops) else 0
             if len(lengths) and np.sum(lengths) == n_total:
                 # For all the spikes, one read is faster than one read for
@@ -245,22 +247,14 @@ class _RaggedArraySource:
         except (ValueError, OSError, KeyError) as err:
             raise RuntimeError("Cannot read the spike times from the file.") from err
         times = np.concatenate(parts) if parts else np.zeros(0)
-        clusters = np.repeat(np.asarray(keys, dtype=np.int64), lengths)
+        clusters = np.repeat(keys, lengths)
 
         # The time support and the binary search assume that each unit is
         # sorted.
         ends = np.cumsum(lengths)
         unsorted = np.setdiff1d(np.flatnonzero(times[1:] < times[:-1]) + 1, ends)
         if len(unsorted):
-            bad = np.unique(clusters[unsorted]).tolist()
-            warnings.warn(
-                f"Spike times of units {bad} are not sorted in the file. The "
-                "lazy TsGroup assumes sorted spike times. Thus its time "
-                "support, its rates and its time windows can be wrong. Load "
-                "the spike times in memory instead (for an NWB file, use "
-                "lazy_loading=False).",
-                stacklevel=4,
-            )
+            _warn_unsorted(np.unique(clusters[unsorted]).tolist(), stacklevel=5)
 
         return _sort_merged(times, clusters)
 
@@ -291,6 +285,8 @@ class _RaggedArraySource:
             The spike times, sorted by time and then by key, and the key of
             each spike.
         """
+        if self.closed:
+            raise RuntimeError(_CLOSED_MESSAGE)
         keys = self.keys if keys is None else np.asarray(keys, dtype=np.int64)
         start, end = np.atleast_1d(start), np.atleast_1d(end)
         if len(start) == 0:
@@ -317,9 +313,9 @@ class _RaggedArraySource:
             outside = ~(first <= end) | ~(last >= start)
         hi[outside] = lo[outside]
         for i in np.flatnonzero(~outside & (first < start)):
-            lo[i] = self._search(lo[i], hi[i], start, right=False)
+            lo[i] = _search(self._concatenated_array, lo[i], hi[i], start, right=False)
         for i in np.flatnonzero(~outside & (last > end)):
-            hi[i] = self._search(lo[i], hi[i], end, right=True)
+            hi[i] = _search(self._concatenated_array, lo[i], hi[i], end, right=True)
         # With unsorted spikes, the binary search can give hi < lo.
         hi = np.maximum(hi, lo)
 
@@ -335,10 +331,15 @@ class _RaggedArraySource:
         times, clusters : ndarray
             As ``read`` returns them.
         """
+        if self.closed:
+            raise RuntimeError(_CLOSED_MESSAGE)
         rows = self._rows(self.keys)
         lo, hi = self._starts[rows], self._stops[rows]
         pos = np.array(
-            [self._search(a, b, t, right=False) for a, b in zip(lo, hi)],
+            [
+                _search(self._concatenated_array, a, b, t, right=False)
+                for a, b in zip(lo, hi)
+            ],
             dtype=np.int64,
         )
         return self._read_rows(
@@ -403,10 +404,6 @@ class _SortedArraySource:
             - If two keys are equal, or if ``clusters`` holds a key that is
               not in ``keys``.
         """
-        if not hasattr(times, "shape"):  # a list in memory
-            times = np.asarray(times, dtype=np.float64)
-        if not hasattr(clusters, "shape"):
-            clusters = np.asarray(clusters, dtype=np.int64)
         if len(times) != len(clusters):
             raise ValueError(
                 f"times and clusters must have the same length. times has "
@@ -667,13 +664,6 @@ class _SortedArraySource:
             width *= 4
 
 
-#################################
-# Methods that read, then call TsGroup
-#################################
-# A reader takes the lazy group and the arguments of a call (by name), and
-# reads the spikes that the call needs into a regular TsGroup.
-
-
 def _get_spikes(group, args):
     start, end, time_units = args["start"], args["end"], args["time_units"]
     for name, value in (("start", start), ("end", end)):
@@ -726,11 +716,11 @@ class _LazyTsGroup(TsGroup):
     operation needs them, and it does not keep them in memory.
 
     The class is private. Users make a lazy TsGroup only with
-    ``TsGroup.from_ragged_arrays`` or ``TsGroup.from_sorted_arrays``.
-    ``nap.load_file`` uses ``TsGroup.from_ragged_arrays`` for the units table
+    ``TsGroup.from_concatenated_arrays`` or ``TsGroup.from_sorted_arrays``.
+    ``nap.load_file`` uses ``TsGroup.from_concatenated_arrays`` for the units table
     of an NWB file.
 
-    A source reads the spike times from the disk (see ``_RaggedArraySource``
+    A source reads the spike times from the disk (see ``_ConcatenatedArraySource``
     and ``_SortedArraySource``). The constructor uses only the keys, the
     counts and the time support of the source. These give the index, the
     rates and the time support of the group.
@@ -764,7 +754,7 @@ class _LazyTsGroup(TsGroup):
         """
         Parameters
         ----------
-        source : _RaggedArraySource or _SortedArraySource
+        source : _ConcatenatedArraySource or _SortedArraySource
             The source of the spike times.
         metadata : dict, optional
             The metadata columns, in the order of ``source.keys``.
@@ -868,12 +858,13 @@ class _LazyTsGroup(TsGroup):
     save = _read_then_call("save", lambda g, a: g._read_units())
     merge = _read_then_call("merge", lambda g, a: g._read_units())
     __eq__ = _read_then_call("__eq__", lambda g, a: g._read_units())
-    __hash__ = None
 
     def __reduce_ex__(self, protocol):
         # Pickle and deepcopy cannot copy a file dataset. Thus give a regular
-        # TsGroup with the spikes.
-        return (_tsgroup_from_state, (self._read_units().__getstate__(),))
+        # TsGroup with the spikes. The `__reduce_ex__` of the regular group
+        # cannot give the result. For protocol 2 and higher, pickle refuses a
+        # result with a class that is not the class of the object.
+        return (object.__new__, (TsGroup,), self._read_units().__getstate__())
 
     # Some code reads the merged arrays directly. These properties read all
     # the spikes for each access, and do not keep them. The code in pynapple
@@ -881,4 +872,4 @@ class _LazyTsGroup(TsGroup):
     _times = _read_attribute("_times")
     _clusters = _read_attribute("_clusters")
     _cluster_positions = _read_attribute("_cluster_positions")
-    _ragged_index = _read_attribute("_ragged_index")
+    _concatenated_index = _read_attribute("_concatenated_index")

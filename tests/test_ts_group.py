@@ -1737,6 +1737,41 @@ def test_metadata_length_error(metadata, n_values):
         )
 
 
+@pytest.mark.parametrize(
+    "keys, metadata",
+    [
+        # one label matches, the other does not
+        ([3, 4], pd.DataFrame({"label": [1, 2]}, index=[3, 100])),
+        # the labels match, in a different order
+        ([1, 2, 3], pd.DataFrame({"label": [1, 2, 3]}, index=[1, 3, 2])),
+        # a Series in a dict
+        ([3, 4], {"label": pd.Series([1, 2], index=[7, 8])}),
+        # a default index holds no key of the group
+        ([10, 20], pd.DataFrame({"label": [1, 2]})),
+        # a default index holds one key of the group
+        ([0, 2], pd.DataFrame({"label": [1, 2]})),
+    ],
+)
+def test_metadata_index_must_match_keys(keys, metadata):
+    with pytest.raises(ValueError, match="Metadata index does not match"):
+        nap.TsGroup({k: nap.Ts(t=[1.0, 2.0]) for k in keys}, metadata=metadata)
+
+
+@pytest.mark.parametrize(
+    "keys, metadata, expected",
+    [
+        ([20, 10], pd.DataFrame({"label": [1, 2]}, index=[20, 10]), [2, 1]),
+        ([20, 10], {"label": [1, 2]}, [2, 1]),
+        ([0, 1], pd.DataFrame({"label": [1, 2]}), [1, 2]),
+        ([3, 4], {"label": pd.Series([1, 2])}, [1, 2]),
+        ([3], {"label": 1}, [1]),
+    ],
+)
+def test_metadata_follows_sorted_keys(keys, metadata, expected):
+    group = nap.TsGroup({k: nap.Ts(t=[1.0, 2.0]) for k in keys}, metadata=metadata)
+    np.testing.assert_array_equal(group["label"], expected)
+
+
 def test_data_view_repr():
     """The repr of ``tsgroup.data`` lists each element without building it."""
     tsgroup = nap.TsGroup(
@@ -1753,7 +1788,7 @@ def test_data_view_repr():
         "  3: Tsd, 5 timestamps\n"
         "  7: Ts, 1 timestamp"
     )
-    assert "_ragged_index" not in tsgroup.__dict__
+    assert "_concatenated_index" not in tsgroup.__dict__
 
     large = nap.TsGroup({i: nap.Ts(t=np.arange(3.0)) for i in range(12)})
     lines = repr(large.data).splitlines()
@@ -1818,8 +1853,8 @@ class TestMergedSortOrder:
         group = nap.TsGroup.from_sorted_arrays([1.0, 1.0, 2.0, 3.0], [5, 0, 5, 0])
         np.testing.assert_array_equal(group._clusters, [0, 5, 5, 0])
 
-    def test_from_ragged_arrays(self):
-        group = nap.TsGroup.from_ragged_arrays(
+    def test_from_concatenated_arrays(self):
+        group = nap.TsGroup.from_concatenated_arrays(
             [1.0, 2.0, 1.0, 3.0], [2, 4], keys=[5, 0]
         )
         np.testing.assert_array_equal(group._clusters, [0, 5, 5, 0])
@@ -1945,12 +1980,48 @@ class TestMemberColumns:
             }
         assert self.columns(merged) == expected
 
-    def test_merge_group_with_ts_group(self):
+    @pytest.mark.parametrize("frames_first", [True, False])
+    @pytest.mark.parametrize("reset_index", [False, True])
+    def test_merge_group_with_ts_group(self, frames_first, reset_index):
+        """The result does not depend on which group is the base group."""
         group = self.make()
         other = nap.TsGroup({7: nap.Ts(t=self.t)}, time_support=group.time_support)
-        merged = nap.TsGroup.merge_group(group, other, ignore_metadata=True)
-        assert type(merged[7]) is nap.Ts
-        assert list(merged[1].columns) == ["ch10", "ch11"]
+        groups = (group, other) if frames_first else (other, group)
+        merged = nap.TsGroup.merge_group(
+            *groups, ignore_metadata=True, reset_index=reset_index
+        )
+        if not reset_index:
+            keys = [0, 1, 2, 7]
+        elif frames_first:
+            keys = [0, 1, 2, 3]
+        else:
+            keys = [1, 2, 3, 0]
+        assert list(merged[keys[0]].columns) == ["ch3", "ch4"]
+        assert list(merged[keys[1]].columns) == ["ch10", "ch11"]
+        assert list(merged[keys[2]].columns) == [0, 1]
+        assert type(merged[keys[3]]) is nap.Ts
+
+    def test_value_from_tsdframe(self):
+        """Each unit gets the column names of the TsdFrame. The group has more
+        units than the TsdFrame has columns."""
+        support = nap.IntervalSet(0, 10)
+        group = nap.TsGroup(
+            {k: nap.Ts(t=self.t + 0.1 * k) for k in range(3)}, time_support=support
+        )
+        frame = nap.TsdFrame(
+            t=np.arange(0, 10, 0.05),
+            d=np.ones((200, 2)),
+            columns=["x", "y"],
+            time_support=support,
+        )
+        new = group.value_from(frame)
+        assert self.columns(new) == {k: ["x", "y"] for k in range(3)}
+
+        other = nap.TsGroup({7: nap.Ts(t=self.t)}, time_support=support)
+        for groups in [(new, other), (other, new)]:
+            merged = nap.TsGroup.merge_group(*groups, ignore_metadata=True)
+            assert list(merged[2].columns) == ["x", "y"]
+            assert type(merged[7]) is nap.Ts
 
     def test_equality(self):
         group = self.make()
@@ -1964,3 +2035,158 @@ class TestMemberColumns:
             time_support=group.time_support,
         )
         assert group != other
+
+    def test_merge_group_with_unnamed_frames(self):
+        """A unit with 2-dimensional values and no entry in ``_columns`` gets
+        the default names after a merge."""
+        group = self.make()
+        unnamed = nap.TsGroup._from_arrays(
+            self.t,
+            np.full(len(self.t), 7),
+            np.ones((len(self.t), 2)),
+            np.array([True]),
+            np.array([7]),
+            group.time_support,
+        )
+        merged = nap.TsGroup.merge_group(group, unnamed, ignore_metadata=True)
+        assert list(merged[7].columns) == [0, 1]
+        assert list(merged[1].columns) == ["ch10", "ch11"]
+
+
+class TestMemberMetadata:
+    """Each TsdFrame member keeps its own metadata, as in a dict of members."""
+
+    t = np.arange(5.0)
+    support = nap.IntervalSet(0, 10)
+
+    def frame(self, columns, metadata=None, shift=0.0):
+        return nap.TsdFrame(
+            t=self.t + shift, d=np.ones((5, 2)), columns=columns, metadata=metadata
+        )
+
+    def make(self, area=("CA1", "PFC")):
+        return nap.TsGroup(
+            {
+                0: self.frame(["a", "b"], {"area": list(area), "depth": [1, 2]}),
+                1: self.frame(["c", "d"], {"area": ["V1", "V2"]}, 0.5),
+                2: self.frame(["e", "f"], None, 0.2),
+            },
+            time_support=self.support,
+        )
+
+    def check(self, group):
+        assert group[0].get_info("area").tolist() == ["CA1", "PFC"]
+        assert group[0].get_info("depth").dtype == np.int64
+        assert group[1].get_info("area").tolist() == ["V1", "V2"]
+        assert group[1].metadata_columns == ["area"]
+        assert group[2].metadata_columns == []
+
+    def test_kept_by_group(self):
+        self.check(self.make())
+
+    def test_kept_by_data_view(self):
+        self.check(self.make().data)
+
+    @pytest.mark.parametrize(
+        "derive",
+        [
+            lambda g: g.restrict(nap.IntervalSet(0, 3)),
+            lambda g: g.get(0, 3),
+            lambda g: g.subsample(0.5, seed=1),
+            lambda g: g[[0, 1, 2]],
+            lambda g: g.copy(),
+            lambda g: pickle.loads(pickle.dumps(g)),
+        ],
+        ids=["restrict", "get", "subsample", "keys", "copy", "pickle"],
+    )
+    def test_kept_by_derived_groups(self, derive):
+        self.check(derive(self.make()))
+
+    @pytest.mark.parametrize("frames_first", [True, False])
+    def test_merge_group(self, frames_first):
+        group = self.make()
+        other = nap.TsGroup({7: nap.Ts(t=self.t)}, time_support=self.support)
+        groups = (group, other) if frames_first else (other, group)
+        self.check(nap.TsGroup.merge_group(*groups, ignore_metadata=True))
+
+    def test_value_from(self):
+        group = nap.TsGroup(
+            {k: nap.Ts(t=self.t + 0.1 * k) for k in range(3)},
+            time_support=self.support,
+        )
+        frame = nap.TsdFrame(
+            t=np.arange(0, 10, 0.05),
+            d=np.ones((200, 2)),
+            columns=["x", "y"],
+            metadata={"area": ["CA1", "PFC"]},
+            time_support=self.support,
+        )
+        new = group.value_from(frame)
+        for k in range(3):
+            assert new[k].get_info("area").tolist() == ["CA1", "PFC"]
+
+    def test_equality(self):
+        assert self.make() == self.make()
+        assert self.make() != self.make(area=("CA3", "PFC"))
+
+    def test_independent_of_input_frame(self):
+        """A later change to the input frame does not change the group."""
+        frame = self.frame(["a", "b"], {"area": ["CA1", "PFC"]})
+        group = nap.TsGroup({0: frame}, time_support=self.support)
+        frame.set_info(area=["V1", "V2"])
+        assert group[0].get_info("area").tolist() == ["CA1", "PFC"]
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda g, tsd, ep: g.restrict(ep),
+        lambda g, tsd, ep: g.get(0, 5),
+        lambda g, tsd, ep: g.value_from(tsd, ep),
+    ],
+    ids=["restrict", "get", "value_from"],
+)
+@pytest.mark.parametrize("with_values", [False, True], ids=["ts", "tsd"])
+def test_result_shares_no_memory(operation, with_values):
+    """A result does not share arrays with the group that made it."""
+    t = np.arange(0.0, 10.0, 0.5)
+    make = (lambda x: nap.Tsd(t=x, d=x)) if with_values else nap.Ts
+    group = nap.TsGroup({0: make(t), 1: make(t + 0.1)})
+    tsd = nap.Tsd(t=np.arange(0.0, 11.0, 0.1), d=np.arange(110.0))
+    new = operation(group, tsd, group.time_support)
+
+    for name in ("index", "_is_tsd", "_times", "_clusters"):
+        assert not np.shares_memory(getattr(new, name), getattr(group, name)), name
+    if with_values:
+        assert not np.shares_memory(new._data, group._data)
+
+
+def test_get_and_time_diff_keep_duplicates_at_epoch_end():
+    """`Ts` and `TsGroup` keep all the timestamps equal to the end of a slice."""
+    support = nap.IntervalSet(0, 5)
+    ts = nap.Ts(t=[1.0, 2.0, 2.0], time_support=support)
+    group = nap.TsGroup({0: ts}, time_support=support)
+    np.testing.assert_array_equal(ts.get(1, 2).t, [1.0, 2.0, 2.0])
+    np.testing.assert_array_equal(group.get(1, 2)[0].t, [1.0, 2.0, 2.0])
+
+    ep = nap.IntervalSet(0, 2)
+    np.testing.assert_array_equal(ts.time_diff(epochs=ep).values, [1.0, 0.0])
+    np.testing.assert_array_equal(group.time_diff(epochs=ep)[0].values, [1.0, 0.0])
+
+
+@pytest.mark.parametrize(
+    "make",
+    [lambda t: nap.Ts(t), lambda t: nap.Tsd(t=t, d=t * 2)],
+    ids=["ts", "tsd"],
+)
+def test_init_from_data_view(make):
+    """A TsGroup accepts the ``data`` of another TsGroup, and keeps its keys."""
+    group = nap.TsGroup({3: make(np.array([1.0, 2.0])), 7: make(np.array([1.5, 3.0]))})
+    new = nap.TsGroup(group.data)
+
+    np.testing.assert_array_equal(new.index, [3, 7])
+    for k in group.keys():
+        np.testing.assert_array_equal(new[k].t, group[k].t)
+        assert type(new[k]) is type(group[k])
+    if isinstance(group[3], nap.Tsd):
+        np.testing.assert_array_equal(new[3].values, group[3].values)

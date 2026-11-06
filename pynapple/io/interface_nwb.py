@@ -379,7 +379,7 @@ def _make_tsgroup(obj, lazy_loading=True, **kwargs):
 
     # The group reads the spike times only when an operation needs them. The
     # metadata follow the order of the units table.
-    return nap.TsGroup.from_ragged_arrays(
+    return nap.TsGroup.from_concatenated_arrays(
         obj.spike_times.data,
         obj.spike_times_index.data[:],
         keys=index,

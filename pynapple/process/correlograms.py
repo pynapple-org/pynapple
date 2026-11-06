@@ -80,7 +80,9 @@ def _validate_correlograms_inputs(func: Callable) -> Callable:
 
         for param, param_type in parameters_type.items():
             if param in kwargs:
-                if continuous and param in ("binsize", "ep") and kwargs[param] is None:
+                if kwargs[param] is None and (
+                    param == "ep" or (continuous and param == "binsize")
+                ):
                     continue
                 if not isinstance(kwargs[param], param_type):
                     raise TypeError(
@@ -145,13 +147,14 @@ def _cross_correlograms(
     numpy.ndarray
         The center of each bin, in seconds.
     """
-    # an odd number of bins, so that the center bin is the lag 0
-    nbins = int((windowsize * 2) // binsize)
+    # The bin size in integer time units. The bins and the lags use this value.
+    binsize_int = int(np.round(binsize * precision))
+    # An odd number of bins, so that the center bin is the lag 0. The division
+    # uses integers: as floats, `0.6 // 0.1` gives 5.
+    nbins = (2 * int(np.round(windowsize * precision))) // binsize_int
     if nbins % 2 == 0:
         nbins = nbins + 1
 
-    # The bin size in integer time units. The bins and the lags use this value.
-    binsize_int = int(np.round(binsize * precision))
     # The center of each bin. The division of two exact integers gives the
     # nearest float, so the lags have no floating-point error.
     lags = ((np.arange(nbins) - nbins // 2) * binsize_int) / precision
@@ -225,12 +228,9 @@ def _bin_parameters(binsize, windowsize, time_units):
     ValueError
         If binsize is smaller than the time precision of pynapple.
     """
-    binsize = nap.TsIndex.format_timestamps(
-        np.array([binsize], dtype=np.float64), time_units
-    )[0]
-    windowsize = nap.TsIndex.format_timestamps(
-        np.array([windowsize], dtype=np.float64), time_units
-    )[0]
+    binsize, windowsize = nap.TsIndex.format_timestamps(
+        np.array([binsize, windowsize], dtype=np.float64), time_units
+    )
 
     digits = nap.nap_config.time_index_precision
     precision = 10.0**digits
@@ -242,9 +242,9 @@ def _bin_parameters(binsize, windowsize, time_units):
     return binsize, windowsize, precision
 
 
-def _integer_ragged_times(group, precision):
+def _integer_concatenated_times(group, precision):
     """
-    Return the spike times of a TsGroup as a ragged array of integers.
+    Return the spike times of a TsGroup as a concatenated array of integers.
 
     Parameters
     ----------
@@ -260,7 +260,7 @@ def _integer_ragged_times(group, precision):
     offsets : numpy.ndarray
         The block of unit u is times[offsets[u]:offsets[u + 1]].
     """
-    order, offsets = group._ragged_index
+    order, offsets = group._concatenated_index
     times = np.round(group._times[order] * precision).astype(np.int64)
     return times, offsets
 
@@ -500,6 +500,14 @@ def _continuous_correlogram(
     return pd.DataFrame(correlations, index=lags, columns=columns, dtype=float)
 
 
+def _load_group(group, ep):
+    """Restrict ``group`` to ``ep``. If ``ep`` is None, give the group with its
+    spikes in memory."""
+    if isinstance(ep, nap.IntervalSet):
+        return group.restrict(ep)
+    return group._load_in_memory()
+
+
 @_validate_correlograms_inputs
 def compute_autocorrelogram(
     group: Union[nap.TsGroup, nap.TsdFrame],
@@ -638,23 +646,21 @@ def compute_autocorrelogram(
 
     binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
 
-    if isinstance(ep, nap.IntervalSet):
-        newgroup = group.restrict(ep)
-    else:
-        newgroup = group._load_in_memory()
+    newgroup = _load_group(group, ep)
 
     if len(newgroup) == 0:
         return pd.DataFrame().astype("float")
 
     # each unit is the reference and the target of its own pair
-    times, offsets = _integer_ragged_times(newgroup, precision)
+    times, offsets = _integer_concatenated_times(newgroup, precision)
     units = np.arange(len(newgroup))
     rates, lags = _cross_correlograms(
         times, offsets, times, offsets, units, units, binsize, windowsize, precision
     )
     # The number of bins is odd, so the center bin is always the lag 0.
-    # In this bin, each spike counts itself: set it to 0.
-    rates[:, len(lags) // 2] = 0.0
+    # In this bin, each spike counts itself: set it to 0. A unit with no spikes
+    # stays NaN.
+    rates[newgroup.rates > 0, len(lags) // 2] = 0.0
     if norm:
         with np.errstate(divide="ignore", invalid="ignore"):
             rates = rates / newgroup.rates[:, None]
@@ -839,17 +845,12 @@ def compute_crosscorrelogram(
 
     binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
 
-    def _load(g):
-        if isinstance(ep, nap.IntervalSet):
-            return g.restrict(ep)
-        return g._load_in_memory()
-
     if isinstance(group, (tuple, list)):
-        group1 = _load(group[0])
-        group2 = _load(group[1])
+        group1 = _load_group(group[0], ep)
+        group2 = _load_group(group[1], ep)
         pairs = list(product(group1.keys(), group2.keys()))
     else:
-        group1 = group2 = _load(group)
+        group1 = group2 = _load_group(group, ep)
         pairs = list(combinations(group1.keys(), 2))
         if reverse:
             pairs = [(j, i) for i, j in pairs]
@@ -857,11 +858,11 @@ def compute_crosscorrelogram(
     if len(pairs) == 0:
         return pd.DataFrame().astype("float")
 
-    times1, offsets1 = _integer_ragged_times(group1, precision)
+    times1, offsets1 = _integer_concatenated_times(group1, precision)
     if group2 is group1:
         times2, offsets2 = times1, offsets1
     else:
-        times2, offsets2 = _integer_ragged_times(group2, precision)
+        times2, offsets2 = _integer_concatenated_times(group2, precision)
 
     # the position of each unit in its group
     ref = np.searchsorted(group1.index, [i for i, _ in pairs])
@@ -994,10 +995,10 @@ def compute_eventcorrelogram(
 
     binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
 
-    # the event is the reference of each pair, as a ragged array with one unit
+    # the event is the reference of each pair, as a concatenated array with one unit
     times1 = np.round(np.asarray(tsd1) * precision).astype(np.int64)
     offsets1 = np.array([0, len(times1)])
-    times2, offsets2 = _integer_ragged_times(newgroup, precision)
+    times2, offsets2 = _integer_concatenated_times(newgroup, precision)
     units = np.arange(len(newgroup))
     rates, lags = _cross_correlograms(
         times1,

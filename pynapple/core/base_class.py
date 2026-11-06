@@ -679,7 +679,8 @@ class _Base(abc.ABC):
         elif mode == "after_t" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
         elif mode == "restrict":
-            idx_end += int(self.t[idx_end] <= end)
+            # `side="right"` keeps all the timestamps that are equal to `end`
+            idx_end = np.searchsorted(self.t, end, side="right")
 
         step = None
         if n_points:

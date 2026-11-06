@@ -13,6 +13,15 @@ from .. import core as nap
 from ..core._core_functions import _restrict_arrays, _sort_merged
 
 
+def _warn_units_with_values(group):
+    """Warn for each unit of ``group`` that is not a Ts."""
+    for key in group.index[group._is_tsd]:
+        warnings.warn(
+            f"TsGroup entry {key} was not a Ts, but treating it as one!",
+            UserWarning,
+        )
+
+
 def shift_timestamps(
     data: Union[nap.Ts, nap.TsGroup],
     min_shift: float = 0.0,
@@ -64,8 +73,9 @@ def shift_timestamps(
     Warns
     -----
     UserWarning
-        For each unit of a TsGroup that holds values. The function shifts its
-        timestamps and does not keep its values.
+        For each unit of a TsGroup that is a Tsd, a TsdFrame or a TsdTensor
+        and not a Ts. The function shifts its timestamps and does not keep
+        its values.
 
     Notes
     -----
@@ -148,12 +158,8 @@ def shift_timestamps(
     else:
         # a lazy group reads all its spikes here: every spike is needed
         data = data._load_in_memory()
-        for key in data.index[data._is_tsd]:
-            warnings.warn(
-                f"TsGroup entry {key} was not a Ts, but treating it as one!",
-                UserWarning,
-            )
-        order, offsets = data._ragged_index
+        _warn_units_with_values(data)
+        order, offsets = data._concatenated_index
         unit_sizes = np.diff(offsets)
         # one shift per unit, in key order, as for a loop over the units
         shifts = np.random.uniform(min_shift, max_shift, len(data.index))
@@ -198,8 +204,8 @@ def shuffle_ts_intervals(
 
     The intervals move freely across all the epochs. An interval that crosses
     a gap counts only the time in the epochs. No timestamp falls in a gap. The
-    output keeps the first timestamp, the number of timestamps and the
-    distribution of the intervals.
+    output keeps the first and the last timestamp, the number of timestamps
+    and the distribution of the intervals.
 
     The random numbers come from the global numpy generator. To get the same
     result again, call ``np.random.seed`` before the function.
@@ -221,6 +227,13 @@ def shuffle_ts_intervals(
     ------
     TypeError
         If ``ts`` is not a Ts or a TsGroup.
+
+    Warns
+    -----
+    UserWarning
+        For each unit of a TsGroup that is a Tsd, a TsdFrame or a TsdTensor
+        and not a Ts. The function shuffles its intervals and does not keep
+        its values.
 
     Examples
     --------
@@ -251,7 +264,8 @@ def shuffle_ts_intervals(
     else:
         # a lazy group reads all its spikes here: every spike is needed
         ts = ts._load_in_memory()
-        order, offsets = ts._ragged_index
+        _warn_units_with_values(ts)
+        order, offsets = ts._concatenated_index
         # the spikes of each unit one after the other, in time order
         times = ts._times[order]
 
@@ -275,9 +289,22 @@ def shuffle_ts_intervals(
     # by the smallest step between two floats
     epochs = np.searchsorted(cumulative_lengths, positions, side="right") - 1
     epochs = np.minimum(epochs, len(starts) - 1)
+    original = times
     times = np.minimum(
         starts[epochs] + (positions - cumulative_lengths[epochs]), ends[epochs]
     )
+
+    # A position on the border of two epochs is the end of one epoch and the
+    # start of the next. The search above always gives the start of the next.
+    # The first and the last timestamps of a unit do not move. The clip keeps
+    # the other timestamps between them.
+    for unit_start, unit_stop in zip(offsets[:-1], offsets[1:]):
+        if unit_stop > unit_start:
+            unit = slice(unit_start, unit_stop)
+            first, last = original[unit_start], original[unit_stop - 1]
+            times[unit] = np.clip(times[unit], first, last)
+            times[unit_start] = first
+            times[unit_stop - 1] = last
 
     if isinstance(ts, nap.Ts):
         return nap.Ts(t=times, time_support=time_support)
@@ -341,6 +368,13 @@ def jitter_timestamps(
         If ``ts`` is a TsGroup, ``keep_tsupport`` is False, and no unit has
         two timestamps or more. The new time support is then empty.
 
+    Warns
+    -----
+    UserWarning
+        For each unit of a TsGroup that is a Tsd, a TsdFrame or a TsdTensor
+        and not a Ts. The function moves its timestamps and does not keep
+        its values.
+
     Notes
     -----
     With ``keep_tsupport=False``, a TsGroup can lose timestamps. A unit with
@@ -380,6 +414,7 @@ def jitter_timestamps(
 
     # a lazy group reads all its spikes here: every spike is needed
     tsgroup = ts._load_in_memory()
+    _warn_units_with_values(tsgroup)
     times = tsgroup._times + np.random.uniform(
         -max_jitter, max_jitter, len(tsgroup._times)
     )
@@ -436,6 +471,13 @@ def resample_timestamps(
     TypeError
         If ``ts`` is not a Ts or a TsGroup.
 
+    Warns
+    -----
+    UserWarning
+        For each unit of a TsGroup that is a Tsd, a TsdFrame or a TsdTensor
+        and not a Ts. The function replaces its timestamps and does not keep
+        its values.
+
     Examples
     --------
     >>> import numpy as np
@@ -455,6 +497,7 @@ def resample_timestamps(
     if isinstance(ts, nap.TsGroup):
         # a lazy group reads all its spikes here: every spike is needed
         ts = ts._load_in_memory()
+        _warn_units_with_values(ts)
         n_times = len(ts._times)
     else:
         n_times = len(ts)

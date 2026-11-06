@@ -106,37 +106,15 @@ def jitcount_epochs(time_array, unit_pos, starts, ends, n_units, dtype=np.int64)
     n = len(time_array)
     m = len(starts)
     count = np.zeros((m, n_units), dtype=dtype)
-
-    if n == 0 or m == 0:
-        return count
-
-    k = 0
     t = 0
-
-    while k < m and ends[k] < time_array[t]:
-        k += 1
-
-    while k < m:
+    for k in range(m):
         # Outside
-        while t < n:
-            if time_array[t] >= starts[k]:
-                break
+        while t < n and time_array[t] < starts[k]:
             t += 1
-
         # Inside
-        while t < n:
-            if time_array[t] > ends[k]:
-                k += 1
-                break
-            else:
-                count[k, unit_pos[t]] += 1
+        while t < n and time_array[t] <= ends[k]:
+            count[k, unit_pos[t]] += 1
             t += 1
-
-        if k == m:
-            break
-        if t == n:
-            break
-
     return count
 
 

@@ -23,14 +23,17 @@ from tabulate import tabulate
 from ._core_functions import (
     _count,
     _count_clusters,
-    _group_by_unit,
     _is_dense_index,
     _restrict_arrays,
     _sort_merged,
-    _time_diff_grouped,
     _value_from,
 )
-from ._jitted_functions import jitunion, jitunion_isets
+from ._jitted_functions import (
+    jitgroup_by_unit,
+    jittimediff_grouped,
+    jitunion,
+    jitunion_isets,
+)
 from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
@@ -186,26 +189,31 @@ def _build_sorted_arrays(data):
 
 
 def _member_columns(members):
-    """Column names of each member, for the ``_columns`` of a TsGroup.
+    """Column names and metadata of each member, for the ``_columns`` of a
+    TsGroup.
 
-    Each TsdFrame keeps its own column names: the members can have different
-    names (e.g. the channels near each unit), but they have the same number
-    of columns.
+    Each TsdFrame keeps its own column names and metadata: the members can
+    have different names (e.g. the channels near each unit), but they have the
+    same number of columns.
 
     Returns
     -------
     tuple or None
-        One ``pandas.Index`` for each TsdFrame member, and None for each other
-        member, in the order of ``members``. None when no member is a TsdFrame.
+        One ``pandas.DataFrame`` for each TsdFrame member, and None for each
+        other member, in the order of ``members``. None when no member is a
+        TsdFrame. The rows of a DataFrame are the column names of the member,
+        and its columns are the metadata of the member (see
+        ``TsdFrame.metadata``).
     """
-    columns = tuple(m.columns if isinstance(m, TsdFrame) else None for m in members)
+    columns = tuple(m.metadata if isinstance(m, TsdFrame) else None for m in members)
     if all(c is None for c in columns):
         return None
     return columns
 
 
 def _columns_equal(a, b):
-    """Whether two ``_columns`` of TsGroups have the same names for each unit."""
+    """Whether two ``_columns`` of TsGroups have the same names and metadata
+    for each unit."""
     if a is None or b is None:
         return a is b
     return len(a) == len(b) and all(
@@ -458,19 +466,12 @@ class TsGroup(_MetadataMixin):
         # Check input type
         if time_units not in ["s", "ms", "us"]:
             raise ValueError("Argument time_units should be 's', 'ms' or 'us'")
-        passed_time_support = False
-
-        if isinstance(time_support, IntervalSet):
-            passed_time_support = True
-        else:
-            if time_support is not None:
-                raise TypeError("Argument time_support should be of type IntervalSet")
-            else:
-                passed_time_support = False
+        if time_support is not None and not isinstance(time_support, IntervalSet):
+            raise TypeError("Argument time_support should be of type IntervalSet")
 
         # The checks below write nothing to `self`: `_init_state` at the end
         # sets all the state (see `_init_state`).
-        if not isinstance(data, dict):
+        if not isinstance(data, Mapping):
             data = dict(enumerate(data))
 
         # convert all keys to integer
@@ -492,33 +493,22 @@ class TsGroup(_MetadataMixin):
         # Re-key data with the integer keys, ordered the same as the index
         order = np.argsort(keys)
         values = list(data.values())
-        index = np.asarray(keys, dtype=np.int64)[order]
+        index = np.asarray(keys)[order]
         data = {keys[i]: values[i] for i in order}
 
         # Also sort metadata if more than one key
-        if len(keys) > 1:
-            if (metadata is not None) and (len(metadata) > 0):
-                # one value per element, checked before the reorder below
-                for name, value in metadata.items():
-                    if isinstance(value, str) or not hasattr(value, "__len__"):
-                        n_values = 1
-                    else:
-                        n_values = len(value)
-                    if n_values != len(keys):
-                        raise ValueError(
-                            f"Metadata '{name}' must have {len(keys)} values, "
-                            f"one for each element. It has {n_values}."
-                        )
-                if hasattr(metadata, "index") and np.all(metadata.index != keys):
-                    # check that index matches before sort if index exists
-                    raise ValueError(
-                        "Metadata index does not match the index of the TsGroup."
-                    )
-                metadata = {
-                    key: np.array(value)[order] for key, value in metadata.items()
-                }
+        if len(keys) > 1 and metadata is not None and len(metadata) > 0:
+            columns = self._metadata_in_order(metadata, keys, order)
+            # The helper accepts a default RangeIndex. Here, the index of a
+            # DataFrame must be equal to the keys.
+            if hasattr(metadata, "index") and not np.array_equal(metadata.index, keys):
+                raise ValueError(
+                    "Metadata index does not match the index of the TsGroup."
+                )
+            metadata = columns
 
-        # Transform elements to Ts/Tsd objects
+        # Transform elements to Ts/Tsd objects. This comes before the union of
+        # time supports, which reads `.time_support`.
         for k in index:
             if not isinstance(data[k], _Base):
                 if isinstance(data[k], list) or is_array_like(data[k]):
@@ -533,16 +523,13 @@ class TsGroup(_MetadataMixin):
                         time_support=time_support,
                         time_units=time_units,
                     )
+                else:
+                    raise TypeError(
+                        f"Element {k} of TsGroup should be a Ts, Tsd, TsdFrame or "
+                        f"TsdTensor. {type(data[k])} provided instead."
+                    )
 
-        # before the union of time supports, which reads `.time_support`
-        for k in index:
-            if not isinstance(data[k], _Base):
-                raise TypeError(
-                    f"Element {k} of TsGroup should be a Ts, Tsd, TsdFrame or "
-                    f"TsdTensor. {type(data[k])} provided instead."
-                )
-
-        if not passed_time_support:
+        if time_support is None:
             # Do the union of all time supports
             time_support = _union_intervals([data[k].time_support for k in index])
             if len(time_support) == 0:
@@ -595,7 +582,7 @@ class TsGroup(_MetadataMixin):
             sorted array, ``_clusters`` the key of the unit of each
             timestamp, ``_data`` the matching values (None when no member
             holds values), ``_is_tsd`` which units hold values and
-            ``_columns`` the column names of each unit (see
+            ``_columns`` the column names and metadata of each unit (see
             ``_member_columns``).
 
         Raises
@@ -615,11 +602,13 @@ class TsGroup(_MetadataMixin):
             )
         # set directly in __dict__ to avoid infinite recursion in __setattr__
         self.__dict__["_initialized"] = False
-        self.index = np.asarray(index, dtype=np.int64)
+        # `np.array` makes a copy: a new group does not share its index with
+        # the group that made it
+        self.index = np.array(index, dtype=np.int64)
         _MetadataMixin.__init__(self)
         self.time_support = time_support
         if "_is_tsd" in state_attrs:
-            state_attrs["_is_tsd"] = np.asarray(state_attrs["_is_tsd"], dtype=bool)
+            state_attrs["_is_tsd"] = np.array(state_attrs["_is_tsd"], dtype=bool)
         for name, value in state_attrs.items():
             setattr(self, name, value)
         self._finalize(metadata)
@@ -675,7 +664,7 @@ class TsGroup(_MetadataMixin):
             cached: ``index`` and ``_clusters`` cannot change once the group
             is built. Not pickled (see ``__getstate__``).
         """
-        index = np.asarray(self.index, dtype=np.int64)
+        index = self.index
         if len(index) == 0:
             return np.zeros(len(self._clusters), dtype=np.int64)
         if not _is_dense_index(index):
@@ -705,8 +694,8 @@ class TsGroup(_MetadataMixin):
 
         ``times`` must be sorted, ``clusters`` hold keys of ``index``, and
         ``index`` be sorted; ``metadata`` rows must follow ``index``. ``columns``
-        holds the column names of each unit, in the order of ``index`` (see
-        ``_member_columns``).
+        holds the column names and metadata of each unit, in the order of
+        ``index`` (see ``_member_columns``).
         """
         obj = cls.__new__(cls)
         obj._init_state(
@@ -722,7 +711,7 @@ class TsGroup(_MetadataMixin):
         return obj
 
     @cached_property
-    def _ragged_index(self) -> tuple[np.ndarray, np.ndarray]:
+    def _concatenated_index(self) -> tuple[np.ndarray, np.ndarray]:
         """``(order, offsets)`` such that ``order[offsets[i]:offsets[i + 1]]``
         are the positions in ``_times`` of unit ``self.index[i]``, in time order.
 
@@ -730,7 +719,7 @@ class TsGroup(_MetadataMixin):
         over members costs one counting sort overall rather than a full scan per
         member.
         """
-        return _group_by_unit(self._cluster_positions, len(self.index))
+        return jitgroup_by_unit(self._cluster_positions, len(self.index))
 
     @cached_property
     def _keys_set(self) -> set[int]:
@@ -741,13 +730,13 @@ class TsGroup(_MetadataMixin):
         """Return the object of the unit ``key``, as ``tsgroup[key]`` does.
 
         Finds the position of ``key`` in ``self.index`` and takes the block of
-        that unit from ``_ragged_index``. The type of the object depends on
+        that unit from ``_concatenated_index``. The type of the object depends on
         the stored values:
 
         - ``Ts`` if the unit holds no values (``_is_tsd`` is False),
         - ``Tsd``, ``TsdFrame`` or ``TsdTensor`` if ``_data`` is 1-, 2- or
-          N-dimensional. A ``TsdFrame`` gets the column names of the unit in
-          ``_columns``, or the default names if there are none.
+          N-dimensional. A ``TsdFrame`` gets the column names and the metadata
+          of the unit in ``_columns``, or the default names if there are none.
 
         The object is built on each call (nothing is cached) and shares the
         group's ``time_support``.
@@ -767,7 +756,7 @@ class TsGroup(_MetadataMixin):
             The unit ``key``.
         """
         i = np.searchsorted(self.index, key)
-        order, offsets = self._ragged_index
+        order, offsets = self._concatenated_index
         idx = order[offsets[i] : offsets[i + 1]]
         t = self._times[idx]
         # timestamps come sorted out of the merged arrays
@@ -776,8 +765,12 @@ class TsGroup(_MetadataMixin):
                 return Ts(t=t, time_support=self.time_support)
             d = self._data[idx]
             kwargs = {}
-            if d.ndim == 2 and self._columns is not None:
-                kwargs["columns"] = self._columns[i]
+            # a merge can give None for one unit, and names for the others
+            info = None if self._columns is None else self._columns[i]
+            if d.ndim == 2 and info is not None:
+                kwargs["columns"] = info.index
+                if info.shape[1]:
+                    kwargs["metadata"] = info
             return _get_class(d)(t=t, d=d, time_support=self.time_support, **kwargs)
 
     def _members(self) -> list[_Member]:
@@ -824,7 +817,7 @@ class TsGroup(_MetadataMixin):
     def __getstate__(self) -> dict:
         state = dict(self.__dict__)
         # derived and O(n_timestamps): recomputed on demand after unpickling
-        state.pop("_ragged_index", None)
+        state.pop("_concatenated_index", None)
         state.pop("_cluster_positions", None)
         return state
 
@@ -835,7 +828,7 @@ class TsGroup(_MetadataMixin):
         does not run). Two kinds of state are accepted:
 
         - State from this version: it holds the merged arrays and is copied
-          as is. ``_ragged_index`` and ``_cluster_positions`` are not in it
+          as is. ``_concatenated_index`` and ``_cluster_positions`` are not in it
           and are built again when first needed.
         - State from a version older than the merged arrays: it holds a
           ``data`` dict of Ts/Tsd objects instead. The merged arrays are
@@ -896,10 +889,6 @@ class TsGroup(_MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        # try:
-        #     metadata = self._metadata
-        # except Exception:
-        #     metadata = pd.DataFrame(index=self.index)
         metadata = self._metadata
 
         if name == "_metadata":
@@ -1237,39 +1226,54 @@ class TsGroup(_MetadataMixin):
     #################################
 
     @staticmethod
-    def _metadata_in_order(metadata, n_units, order):
+    def _metadata_in_order(metadata, keys, order):
         """Check that each metadata column has one value for each unit, then
-        put the values in the order ``order``."""
+        put the values in the order ``order``.
+
+        ``keys`` are the keys of the units, in the order of the metadata rows.
+        A pandas index must be equal to ``keys``. A default ``RangeIndex``
+        holds no labels, thus the rows follow their positions.
+        """
         if metadata is None:
             return None
+        keys = np.asarray(keys)
+        n_units = len(keys)
         columns = {}
         for name, value in metadata.items():
+            if (
+                isinstance(value, pd.Series)
+                and not isinstance(value.index, pd.RangeIndex)
+                and not np.array_equal(value.index, keys)
+            ):
+                raise ValueError(
+                    "Metadata index does not match the index of the TsGroup."
+                )
             value = np.asarray(value)
             if value.ndim == 0 or len(value) != n_units:
                 n_values = 1 if value.ndim == 0 else len(value)
                 raise ValueError(
                     f"Metadata '{name}' must have {n_units} values, one for "
-                    f"each unit. It has {n_values}."
+                    f"each element. It has {n_values}."
                 )
             columns[name] = value[order]
         return columns
 
     @classmethod
-    def from_ragged_arrays(
+    def from_concatenated_arrays(
         cls,
-        ragged_array: Any,
-        ragged_array_index: Any,
+        concatenated_array: Any,
+        concatenated_array_index: Any,
         keys: Optional[Iterable[int]] = None,
         metadata: Optional[Union[pd.DataFrame, dict]] = None,
         lazy: bool = True,
     ) -> TsGroup:
         """
-        Make a TsGroup from spike times in a ragged layout.
+        Make a TsGroup from spike times in a concatenated layout.
 
-        ``ragged_array`` holds the spike times of each unit, one unit after the
+        ``concatenated_array`` holds the spike times of each unit, one unit after the
         other. The spike times of each unit must be sorted.
-        ``ragged_array_index`` holds the end position of each unit in
-        ``ragged_array``. This is the layout of the units table of an NWB file
+        ``concatenated_array_index`` holds the end position of each unit in
+        ``concatenated_array``. This is the layout of the units table of an NWB file
         (``spike_times`` and ``spike_times_index``).
 
         The arrays can be numpy arrays, memory-mapped arrays, h5py datasets or
@@ -1277,22 +1281,24 @@ class TsGroup(_MetadataMixin):
 
         Parameters
         ----------
-        ragged_array : array-like
+        concatenated_array : array-like
             The spike times of all the units, in seconds.
-        ragged_array_index : array-like of int
-            The end position of each unit in ``ragged_array`` (one position
+        concatenated_array_index : array-like of int
+            The end position of each unit in ``concatenated_array`` (one position
             after its last spike). Unit ``i`` holds
-            ``ragged_array[ragged_array_index[i - 1]:ragged_array_index[i]]``.
+            ``concatenated_array[concatenated_array_index[i - 1]:concatenated_array_index[i]]``.
         keys : array-like of int, optional
-            The key of each unit, in the order of ``ragged_array_index``. The
+            The key of each unit, in the order of ``concatenated_array_index``. The
             default is ``0..n_units-1``.
         metadata : dict or pandas.DataFrame, optional
-            One value for each unit, in the order of ``ragged_array_index``.
+            One value for each unit, in the order of ``concatenated_array_index``.
+            A pandas index must be equal to ``keys``. A default ``RangeIndex``
+            is not compared.
         lazy : bool, optional
-            - True (default): if ``ragged_array`` is on disk (e.g. an h5py
+            - True (default): if ``concatenated_array`` is on disk (e.g. an h5py
               dataset, a zarr array or a numpy.memmap), return a lazy
               TsGroup. It keeps the spike times on disk and reads them only
-              when an operation needs them. If ``ragged_array`` is in memory
+              when an operation needs them. If ``concatenated_array`` is in memory
               (e.g. a numpy array or a list), return a regular TsGroup.
             - False: read all the spike times and return a regular TsGroup.
 
@@ -1307,9 +1313,10 @@ class TsGroup(_MetadataMixin):
         ValueError
             - If ``keys`` does not have one key for each unit, or if two keys
               are equal.
-            - If ``ragged_array_index`` decreases, or if it goes past the end
-              of ``ragged_array``.
+            - If ``concatenated_array_index`` decreases, or if it goes past the end
+              of ``concatenated_array``.
             - If a metadata column does not have one value for each unit.
+            - If the pandas index of the metadata is not equal to ``keys``.
 
         See Also
         --------
@@ -1338,10 +1345,10 @@ class TsGroup(_MetadataMixin):
         --------
         >>> import numpy as np
         >>> import pynapple as nap
-        >>> ragged_array = np.array([0.5, 1.5, 2.0, 4.0, 1.0, 3.0])
-        >>> ragged_array_index = np.array([4, 6])
-        >>> units = nap.TsGroup.from_ragged_arrays(
-        ...     ragged_array, ragged_array_index, metadata={"area": ["CA1", "PFC"]}
+        >>> concatenated_array = np.array([0.5, 1.5, 2.0, 4.0, 1.0, 3.0])
+        >>> concatenated_array_index = np.array([4, 6])
+        >>> units = nap.TsGroup.from_concatenated_arrays(
+        ...     concatenated_array, concatenated_array_index, metadata={"area": ["CA1", "PFC"]}
         ... )
         >>> units
           Index     rate  area
@@ -1365,24 +1372,26 @@ class TsGroup(_MetadataMixin):
             import h5py
 
             f = h5py.File("spikes.h5", "r")
-            units = nap.TsGroup.from_ragged_arrays(
+            units = nap.TsGroup.from_concatenated_arrays(
                 f["spike_times"], f["spike_times_index"][:]
             )
         """
-        from .lazy_ts_group import _LazyTsGroup, _RaggedArraySource
+        from .lazy_ts_group import _ConcatenatedArraySource, _LazyTsGroup
 
-        if not hasattr(ragged_array, "shape"):  # e.g. a list
-            ragged_array = np.asarray(ragged_array, dtype=np.float64)
-        n_units = len(ragged_array_index)
+        if not hasattr(concatenated_array, "shape"):  # e.g. a list
+            concatenated_array = np.asarray(concatenated_array, dtype=np.float64)
+        n_units = len(concatenated_array_index)
         if keys is None:
             keys = np.arange(n_units)
-        source = _RaggedArraySource(ragged_array, ragged_array_index, keys)
+        source = _ConcatenatedArraySource(
+            concatenated_array, concatenated_array_index, keys
+        )
         metadata = cls._metadata_in_order(
-            metadata, n_units, np.argsort(np.asarray(keys), kind="stable")
+            metadata, keys, np.argsort(np.asarray(keys), kind="stable")
         )
         group = _LazyTsGroup(source, metadata=metadata)
         # Arrays in memory give a regular TsGroup: a lazy group has no use.
-        if lazy and is_lazy_array(ragged_array):
+        if lazy and is_lazy_array(concatenated_array):
             return group
         return group._read_units()
 
@@ -1417,7 +1426,9 @@ class TsGroup(_MetadataMixin):
             default is the keys in ``clusters``.
         metadata : dict or pandas.DataFrame, optional
             One value for each unit, in the order of ``keys``. Without
-            ``keys``, in the order of the sorted keys in ``clusters``.
+            ``keys``, in the order of the sorted keys in ``clusters``. A
+            pandas index must be equal to these keys. A default ``RangeIndex``
+            is not compared.
         lazy : bool, optional
             - True (default): if ``times`` or ``clusters`` is on disk (e.g. an
               h5py dataset, a zarr array or a numpy.memmap), return a lazy
@@ -1439,10 +1450,11 @@ class TsGroup(_MetadataMixin):
             - If two keys are equal, or if ``clusters`` holds a key that is not
               in ``keys``.
             - If a metadata column does not have one value for each unit.
+            - If the pandas index of the metadata is not equal to the keys.
 
         See Also
         --------
-        from_ragged_arrays : Make a TsGroup from spike times in a ragged layout.
+        from_concatenated_arrays : Make a TsGroup from spike times in a concatenated layout.
 
         Notes
         -----
@@ -1516,7 +1528,9 @@ class TsGroup(_MetadataMixin):
             order = np.arange(len(source.keys))
         else:
             order = np.argsort(np.asarray(keys), kind="stable")
-        metadata = cls._metadata_in_order(metadata, len(source.keys), order)
+        metadata = cls._metadata_in_order(
+            metadata, source.keys if keys is None else keys, order
+        )
         group = _LazyTsGroup(source, metadata=metadata)
         # Arrays in memory give a regular TsGroup: a lazy group has no use.
         if lazy and (is_lazy_array(times) or is_lazy_array(clusters)):
@@ -1716,6 +1730,7 @@ class TsGroup(_MetadataMixin):
             ends,
             self._clusters,
             mode=mode,
+            copy=True,
         )
 
         cols = self._metadata.columns[1:]  # .drop("rate")
@@ -1727,7 +1742,9 @@ class TsGroup(_MetadataMixin):
             self.index,
             IntervalSet(start=starts, end=ends),
             metadata=self._metadata[cols],
-            columns=tsd.columns if isinstance(tsd, TsdFrame) else None,
+            columns=(
+                (tsd.metadata,) * len(self.index) if isinstance(tsd, TsdFrame) else None
+            ),
         )
 
     @add_or_convert_metadata
@@ -2234,12 +2251,12 @@ class TsGroup(_MetadataMixin):
             raise TypeError("epochs should be an object of type IntervalSet")
 
         alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
-        new_t, new_d, offsets = _time_diff_grouped(
+        new_t, new_d, offsets = jittimediff_grouped(
             self._times,
             self._cluster_positions,
-            len(self.index),
             epochs.start,
             epochs.end,
+            len(self.index),
             alpha,
         )
 
@@ -2270,6 +2287,9 @@ class TsGroup(_MetadataMixin):
         ``restrict``. The ``rate`` metadata of the result uses the new number
         of timestamps and the time support that did not change. The other
         metadata do not change.
+
+        The result is a copy. A change to the result does not change this
+        group. ``Ts.get`` is different: with ``end``, it returns a view.
 
         Parameters
         ----------
@@ -2362,9 +2382,9 @@ class TsGroup(_MetadataMixin):
         )
 
         return TsGroup._from_arrays(
-            self._times[sl],
-            self._clusters[sl],
-            None if self._data is None else self._data[sl],
+            self._times[sl].copy(),
+            self._clusters[sl].copy(),
+            None if self._data is None else self._data[sl].copy(),
             self._is_tsd,
             self.index,
             self.time_support,
@@ -2763,7 +2783,7 @@ class TsGroup(_MetadataMixin):
                 offset += len(tsg.index)
             else:
                 clusters.append(tsg._clusters)
-        clusters = np.concatenate(clusters).astype(np.int64, copy=False)
+        clusters = np.concatenate(clusters)
         if reset_index:
             index = np.arange(offset, dtype=np.int64)
         else:
@@ -3030,14 +3050,6 @@ class TsGroup(_MetadataMixin):
         # don't save rate in metadata since it will be re-added when loading
         dicttosave["_metadata"] = dict(self._metadata.copy().drop("rate"))
 
-        # are these things that still need to be enforced?
-        # for k in self._metadata.columns:
-        #     if k not in ["t", "d", "start", "end", "index", "keys"]:
-        #         tmp = self._metadata[k].values
-        #         if tmp.dtype == np.dtype("O"):
-        #             tmp = tmp.astype(np.str_)
-        #         dicttosave[k] = tmp
-
         # The merged arrays already are the flattened layout saved on disk.
         dicttosave["t"] = self._times
         dicttosave["index"] = self._clusters
@@ -3053,22 +3065,20 @@ class TsGroup(_MetadataMixin):
 
         np.savez(filename, **dicttosave)
 
-        return
-
     @classmethod
     def _from_npz_reader(cls, file: Mapping[str, Any]) -> TsGroup:
         """
-        Load a Tsd object from a npz file.
+        Load a TsGroup object from a npz file.
 
         Parameters
         ----------
-        file : str
+        file : Mapping
             The opened npz file
 
         Returns
         -------
-        Tsd
-            The Tsd object
+        TsGroup
+            The TsGroup object
         """
 
         times = file["t"]
@@ -3543,7 +3553,7 @@ class TsGroup(_MetadataMixin):
         # (argpartition: O(n), no sort). Units are drawn in key order, only when
         # a choice is needed, so a given seed selects the same timestamps as
         # when units were stored as separate objects.
-        order, offsets = self._ragged_index
+        order, offsets = self._concatenated_index
         counts = np.diff(offsets)
         keep = np.zeros(len(self._times), dtype=bool)
         for i in range(len(self.index)):

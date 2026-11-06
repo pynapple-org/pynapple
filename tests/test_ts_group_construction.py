@@ -119,5 +119,5 @@ class TestSpy:
 
     def test_cached_properties_are_not_reported(self, tsgroup_spy, group):
         group[1]
-        assert "_ragged_index" in group.__dict__
+        assert "_concatenated_index" in group.__dict__
         assert tsgroup_spy.violations() == []

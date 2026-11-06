@@ -19,8 +19,8 @@ import pytest
 
 import pynapple as nap
 from pynapple.core.lazy_ts_group import (
+    _ConcatenatedArraySource,
     _LazyTsGroup,
-    _RaggedArraySource,
     _SortedArraySource,
 )
 from pynapple.core.utils import is_lazy_array
@@ -128,13 +128,13 @@ def store(request, tmp_path):
     yield store_zarr
 
 
-def ragged_source(spikes, store):
-    """A ragged source: the units in the order of `spikes`, one after the
+def concatenated_source(spikes, store):
+    """A concatenated source: the units in the order of `spikes`, one after the
     other."""
     keys = list(spikes)
     flat = np.concatenate([spikes[k] for k in keys])
     index = np.cumsum([len(spikes[k]) for k in keys])
-    return _RaggedArraySource(store("ragged_array", flat), index, keys)
+    return _ConcatenatedArraySource(store("concatenated_array", flat), index, keys)
 
 
 def sorted_source(spikes, store, chunk_size=64):
@@ -152,7 +152,7 @@ def sorted_source(spikes, store, chunk_size=64):
     )
 
 
-SOURCES = {"ragged": ragged_source, "sorted": sorted_source}
+SOURCES = {"concatenated": concatenated_source, "sorted": sorted_source}
 
 
 @pytest.fixture(params=list(SOURCES))
@@ -319,6 +319,21 @@ def test_same_as_eager(make_lazy, name):
     assert_same(run(operation, lazy), run(operation, make_eager(SPIKES)))
 
 
+def test_init_from_data_view(make_lazy):
+    """The ``data`` of a lazy group gives a regular TsGroup with the same
+    spikes."""
+    lazy = make_lazy(SPIKES)
+    with warnings.catch_warnings():
+        # empty and single-spike units give warnings about their time support
+        warnings.simplefilter("ignore")
+        new = nap.TsGroup(lazy.data, time_support=lazy.time_support)
+
+    assert type(new) is nap.TsGroup
+    np.testing.assert_array_equal(new.index, lazy.index)
+    for k in lazy.keys():
+        np.testing.assert_array_equal(new[k].t, lazy[k].t)
+
+
 def test_equal_to_eager(make_lazy):
     lazy = make_lazy(SPIKES)
     eager = make_eager(SPIKES)
@@ -327,9 +342,22 @@ def test_equal_to_eager(make_lazy):
     assert lazy != eager[[2, 4]]
 
 
+def test_not_hashable(make_lazy):
+    with pytest.raises(TypeError, match="unhashable"):
+        hash(make_lazy(SPIKES))
+
+
+@pytest.mark.parametrize("protocol", range(pickle.HIGHEST_PROTOCOL + 1))
+def test_pickle_protocols(make_lazy, protocol):
+    """Each pickle protocol gives a regular TsGroup with the spikes."""
+    output = pickle.loads(pickle.dumps(make_lazy(SPIKES), protocol=protocol))
+    assert type(output) is nap.TsGroup
+    assert output == make_eager(SPIKES)
+
+
 # Members of TsGroup that OPERATIONS does not call, with the reason.
 NOT_IN_OPERATIONS = {
-    "from_ragged_arrays": "a constructor: see test_from_ragged_arrays",
+    "from_concatenated_arrays": "a constructor: see test_from_concatenated_arrays",
     "from_sorted_arrays": "a constructor: see test_from_sorted_arrays",
 }
 # The special methods that users call, e.g. with `g[k]` or `len(g)`.
@@ -389,7 +417,7 @@ def test_operations_cover_tsgroup(monkeypatch):
     # One storage is enough: the test checks which members the operations
     # call, not their results.
     def make_lazy():
-        source = ragged_source(SPIKES, lambda name, array: np.asarray(array))
+        source = concatenated_source(SPIKES, lambda name, array: np.asarray(array))
         metadata = {"quality": [QUALITY[k] for k in source.keys]}
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -503,18 +531,18 @@ def counted(make_lazy):
     return lazy, construction, n_read
 
 
-def test_ragged_reads(counted, request):
-    if request.node.callspec.params["make_lazy"] != "ragged":
-        pytest.skip("ragged source only")
+def test_concatenated_reads(counted, request):
+    if request.node.callspec.params["make_lazy"] != "concatenated":
+        pytest.skip("concatenated source only")
     lazy, construction, n_read_arrays = counted
     eager = make_eager(SPIKES)
 
     def n_read():
-        return n_read_arrays()["ragged_array"]
+        return n_read_arrays()["concatenated_array"]
 
     # construction: the first and the last spike of each unit that is not empty
     assert construction == {
-        "ragged_array": 2 * sum(len(t) > 0 for t in SPIKES.values())
+        "concatenated_array": 2 * sum(len(t) > 0 for t in SPIKES.values())
     }
 
     # metadata: no spike read
@@ -605,7 +633,7 @@ def test_sorted_reads(counted, request):
 def test_fragmented_epochs(counted, request):
     """Many short epochs over a long time.
 
-    - A ragged source reads one slice of each unit, from the start of the
+    - A concatenated source reads one slice of each unit, from the start of the
       first epoch to the end of the last epoch. It does two binary searches
       in each unit.
     - A sorted source reads one slice for each epoch, with two binary
@@ -622,8 +650,10 @@ def test_fragmented_epochs(counted, request):
     in_ep = n_spikes_in(ep)
     in_span = n_spikes_in(span_of(ep))
     assert in_ep < in_span
-    if "ragged" in request.node.name:
-        assert in_span <= reads["ragged_array"] <= in_span + 2 * len(SPIKES) * steps
+    if "concatenated" in request.node.name:
+        assert (
+            in_span <= reads["concatenated_array"] <= in_span + 2 * len(SPIKES) * steps
+        )
     else:
         assert reads["clusters"] == in_ep
         assert in_ep <= reads["times"] <= in_ep + len(ep) * 2 * steps
@@ -733,7 +763,39 @@ def test_after_close(make_lazy):
     np.testing.assert_array_equal(selection[7].t, SPIKES[7])
 
 
-def test_ragged_unsorted_warns(store):
+@pytest.mark.parametrize("source_type", ["concatenated", "sorted"])
+@pytest.mark.parametrize(
+    "read",
+    [
+        lambda s: s.read(),
+        lambda s: s.read(start=1.5, end=4.5),
+        lambda s: s.read_closest(2.5),
+    ],
+    ids=["read", "read-window", "read_closest"],
+)
+def test_read_after_file_close(tmp_path, source_type, read):
+    """After a real close of the file, as in ``NWBFile.close``, each read
+    raises the closed error, and not the error of h5py. A read with a window
+    starts with a binary search in the file."""
+    path = tmp_path / "spikes.h5"
+    with h5py.File(path, "w") as f:
+        f["unit_times"] = np.array([1.0, 3.0, 5.0, 2.0, 4.0, 6.0])
+        f["times"] = np.arange(1.0, 7.0)
+        f["clusters"] = np.array([0, 1, 0, 1, 0, 1])
+
+    file = h5py.File(path, "r")
+    if source_type == "concatenated":
+        source = _ConcatenatedArraySource(file["unit_times"], np.array([3, 6]), [0, 1])
+    else:
+        source = _SortedArraySource(file["times"], file["clusters"])
+    file.close()
+    source.close()
+
+    with pytest.raises(RuntimeError, match="The file is closed"):
+        read(source)
+
+
+def test_concatenated_unsorted_warns(store):
     """A read of a unit with unsorted spikes gives a warning."""
     spikes = {
         3: np.array([5.0, 1.0, 9.0, 6.0]),
@@ -742,13 +804,21 @@ def test_ragged_unsorted_warns(store):
     }
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        lazy = _LazyTsGroup(ragged_source(spikes, store))
+        lazy = _LazyTsGroup(concatenated_source(spikes, store))
 
     with pytest.warns(UserWarning, match=r"units \[3\] are not sorted"):
         lazy[3]
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         np.testing.assert_array_equal(lazy[1].t, [2.0, 3.0, 4.0])
+
+
+def test_concatenated_reversed_unit_warns_at_construction(store):
+    """A unit with its last spike before its first spike gives a warning
+    without a read of the spikes."""
+    spikes = {0: np.array([9.0, 5.0, 1.0]), 1: np.array([2.0, 3.0, 4.0])}
+    with pytest.warns(UserWarning, match=r"units \[0\] are not sorted"):
+        concatenated_source(spikes, store)
 
 
 #################################
@@ -764,22 +834,22 @@ def test_not_exported():
 
 
 @pytest.mark.parametrize("lazy", [True, False])
-def test_from_ragged_arrays(store, lazy):
+def test_from_concatenated_arrays(store, lazy):
     keys = list(SPIKES)
     flat = np.concatenate([SPIKES[k] for k in keys])
     index = np.cumsum([len(SPIKES[k]) for k in keys])
-    ragged_array = store("ragged_array", flat)
+    concatenated_array = store("concatenated_array", flat)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        units = nap.TsGroup.from_ragged_arrays(
-            ragged_array,
+        units = nap.TsGroup.from_concatenated_arrays(
+            concatenated_array,
             index,
             keys=keys,
             metadata={"quality": [QUALITY[k] for k in keys]},
             lazy=lazy,
         )
     # a lazy group only for an array on disk
-    on_disk = is_lazy_array(ragged_array)
+    on_disk = is_lazy_array(concatenated_array)
     assert type(units) is (_LazyTsGroup if lazy and on_disk else nap.TsGroup)
     assert_same(run(lambda g: g.restrict(EP), units), make_eager(SPIKES).restrict(EP))
     assert units == make_eager(SPIKES)
@@ -810,28 +880,28 @@ def test_from_sorted_arrays(store, lazy):
 def test_from_arrays_in_memory_or_on_disk(tmp_path):
     """Arrays in memory give a regular TsGroup. Arrays on disk give a lazy
     TsGroup, unless ``lazy=False``."""
-    ragged_array = np.array([0.5, 1.5, 2.0, 1.0, 3.0])
+    concatenated_array = np.array([0.5, 1.5, 2.0, 1.0, 3.0])
     index = np.array([3, 5])
     times = np.array([0.5, 1.0, 1.5, 2.0, 3.0])
     clusters = np.array([0, 1, 0, 0, 1])
-    np.save(tmp_path / "ragged.npy", ragged_array)
+    np.save(tmp_path / "concatenated.npy", concatenated_array)
     np.save(tmp_path / "times.npy", times)
     np.save(tmp_path / "clusters.npy", clusters)
     memmap = {
         n: np.load(tmp_path / f"{n}.npy", mmap_mode="r")
-        for n in ["ragged", "times", "clusters"]
+        for n in ["concatenated", "times", "clusters"]
     }
 
     in_memory = [
-        nap.TsGroup.from_ragged_arrays(ragged_array, index),
-        nap.TsGroup.from_ragged_arrays(list(ragged_array), list(index)),
+        nap.TsGroup.from_concatenated_arrays(concatenated_array, index),
+        nap.TsGroup.from_concatenated_arrays(list(concatenated_array), list(index)),
         nap.TsGroup.from_sorted_arrays(times, clusters),
         nap.TsGroup.from_sorted_arrays(list(times), list(clusters)),
-        nap.TsGroup.from_ragged_arrays(memmap["ragged"], index, lazy=False),
+        nap.TsGroup.from_concatenated_arrays(memmap["concatenated"], index, lazy=False),
         nap.TsGroup.from_sorted_arrays(memmap["times"], memmap["clusters"], lazy=False),
     ]
     on_disk = [
-        nap.TsGroup.from_ragged_arrays(memmap["ragged"], index),
+        nap.TsGroup.from_concatenated_arrays(memmap["concatenated"], index),
         nap.TsGroup.from_sorted_arrays(memmap["times"], memmap["clusters"]),
         # one array on disk is enough
         nap.TsGroup.from_sorted_arrays(times, memmap["clusters"]),
@@ -846,8 +916,8 @@ def test_from_arrays_in_memory_or_on_disk(tmp_path):
         assert units == expected
 
 
-def test_from_ragged_arrays_default_keys():
-    units = nap.TsGroup.from_ragged_arrays(
+def test_from_concatenated_arrays_default_keys():
+    units = nap.TsGroup.from_concatenated_arrays(
         np.array([0.5, 1.5, 2.0, 1.0, 3.0]), np.array([3, 5])
     )
     np.testing.assert_array_equal(units.index, [0, 1])
@@ -856,13 +926,13 @@ def test_from_ragged_arrays_default_keys():
 
 @pytest.mark.parametrize("as_dataframe", [False, True])
 def test_metadata_order(as_dataframe):
-    """The metadata follow the order of the units in the arrays (ragged) or
+    """The metadata follow the order of the units in the arrays (concatenated) or
     the order of ``keys`` (sorted). The group sorts them with the keys."""
     metadata = {"area": ["a7", "a2"], "depth": [7.0, 2.0]}
     if as_dataframe:
         metadata = pd.DataFrame(metadata)
 
-    ragged = nap.TsGroup.from_ragged_arrays(
+    concatenated = nap.TsGroup.from_concatenated_arrays(
         np.array([0.5, 1.5, 1.0, 3.0]),
         np.array([2, 4]),
         keys=[7, 2],
@@ -874,7 +944,7 @@ def test_metadata_order(as_dataframe):
         keys=[7, 2],
         metadata=metadata,
     )
-    for units in [ragged, sorted_]:
+    for units in [concatenated, sorted_]:
         np.testing.assert_array_equal(units.index, [2, 7])
         np.testing.assert_array_equal(units.area.values, ["a2", "a7"])
         np.testing.assert_array_equal(units.depth.values, [2.0, 7.0])
@@ -888,31 +958,98 @@ def test_metadata_order(as_dataframe):
     np.testing.assert_array_equal(units.area.values, ["a2", "a7"])
 
 
+def _from_concatenated(metadata, keys):
+    return nap.TsGroup.from_concatenated_arrays(
+        np.array([0.5, 1.5, 1.0, 3.0]), np.array([2, 4]), keys=keys, metadata=metadata
+    )
+
+
+def _from_sorted(metadata, keys):
+    return nap.TsGroup.from_sorted_arrays(
+        np.array([0.5, 1.0, 1.5, 3.0]),
+        np.array([7, 2, 7, 2]),
+        keys=keys,
+        metadata=metadata,
+    )
+
+
+@pytest.mark.parametrize("make", [_from_concatenated, _from_sorted])
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        pd.DataFrame({"area": ["a2", "a7"]}, index=[2, 7]),
+        pd.DataFrame({"area": ["a", "b"]}, index=[100, 200]),
+        pd.DataFrame({"area": ["a", "b"]}, index=[7, 100]),
+        {"area": pd.Series(["a2", "a7"], index=[2, 7])},
+    ],
+    ids=["other-order", "other-labels", "one-label", "series"],
+)
+def test_metadata_index_must_match_keys(make, metadata):
+    """A pandas index that is not equal to ``keys`` raises an error, and the
+    function does not silently give the metadata to the wrong units."""
+    with pytest.raises(ValueError, match="Metadata index does not match"):
+        make(metadata, [7, 2])
+
+
+@pytest.mark.parametrize("make", [_from_concatenated, _from_sorted])
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        pd.DataFrame({"area": ["a7", "a2"]}, index=[7, 2]),
+        {"area": pd.Series(["a7", "a2"], index=[7, 2])},
+    ],
+    ids=["dataframe", "series"],
+)
+def test_metadata_index_equal_to_keys(make, metadata):
+    units = make(metadata, [7, 2])
+    np.testing.assert_array_equal(units.index, [2, 7])
+    np.testing.assert_array_equal(units.area.values, ["a2", "a7"])
+
+
+def test_metadata_index_without_keys():
+    """Without ``keys``, a pandas index must follow the sorted keys in
+    ``clusters``."""
+    times = np.array([0.5, 1.0, 1.5, 3.0])
+    clusters = np.array([7, 2, 7, 2])
+    units = nap.TsGroup.from_sorted_arrays(
+        times, clusters, metadata=pd.DataFrame({"area": ["a2", "a7"]}, index=[2, 7])
+    )
+    np.testing.assert_array_equal(units.area.values, ["a2", "a7"])
+    with pytest.raises(ValueError, match="Metadata index does not match"):
+        nap.TsGroup.from_sorted_arrays(
+            times, clusters, metadata=pd.DataFrame({"area": ["a", "b"]}, index=[7, 2])
+        )
+
+
 @pytest.mark.parametrize(
     "make, message",
     [
         (
-            lambda: nap.TsGroup.from_ragged_arrays(
+            lambda: nap.TsGroup.from_concatenated_arrays(
                 np.arange(4.0), np.array([2, 4]), keys=[0]
             ),
             "one key for each unit",
         ),
         (
-            lambda: nap.TsGroup.from_ragged_arrays(
+            lambda: nap.TsGroup.from_concatenated_arrays(
                 np.arange(4.0), np.array([2, 4]), keys=[1, 1]
             ),
             "Two keys have the same value",
         ),
         (
-            lambda: nap.TsGroup.from_ragged_arrays(np.arange(4.0), np.array([3, 2])),
+            lambda: nap.TsGroup.from_concatenated_arrays(
+                np.arange(4.0), np.array([3, 2])
+            ),
             "must not decrease",
         ),
         (
-            lambda: nap.TsGroup.from_ragged_arrays(np.arange(4.0), np.array([2, 5])),
+            lambda: nap.TsGroup.from_concatenated_arrays(
+                np.arange(4.0), np.array([2, 5])
+            ),
             "goes past the end",
         ),
         (
-            lambda: nap.TsGroup.from_ragged_arrays(
+            lambda: nap.TsGroup.from_concatenated_arrays(
                 np.arange(4.0), np.array([2, 4]), metadata={"area": ["a"]}
             ),
             "Metadata 'area' must have 2 values",

@@ -683,16 +683,16 @@ def units_nwb_path(tmp_path):
 @pytest.fixture
 def read_counter(monkeypatch):
     """Count the spikes that lazy units groups read from the file."""
-    from pynapple.core.lazy_ts_group import _RaggedArraySource
+    from pynapple.core.lazy_ts_group import _ConcatenatedArraySource
 
     reads = []
-    original = _RaggedArraySource._read_rows
+    original = _ConcatenatedArraySource._read_rows
 
     def spy(self, keys, lo, hi):
         reads.append(int(np.sum(hi - lo)))
         return original(self, keys, lo, hi)
 
-    monkeypatch.setattr(_RaggedArraySource, "_read_rows", spy)
+    monkeypatch.setattr(_ConcatenatedArraySource, "_read_rows", spy)
     return reads
 
 

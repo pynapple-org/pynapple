@@ -1,5 +1,6 @@
 """Tests of randomize for `pynapple` package."""
 
+import warnings
 from contextlib import nullcontext as does_not_raise
 
 import numpy as np
@@ -348,3 +349,74 @@ def test_shuffle_intervals_across_epochs(group):
         (1.0, 2.0, 100.0, 101.0, 102.0),
         (1.0, 9.0, 100.0, 101.0, 102.0),
     }
+
+
+@pytest.mark.parametrize(
+    "t",
+    [
+        [10.0, 101.0, 102.0],
+        [1.0, 2.0, 10.0],
+        [100.0, 101.0, 102.0],
+        [10.0, 101.0, 110.0],
+        [1.0, 10.0, 10.0],
+    ],
+    ids=["first-on-end", "last-on-end", "first-on-start", "first-and-last", "tie"],
+)
+def test_shuffle_ts_intervals_epoch_borders(t):
+    """The first and the last timestamps do not move, also on the border of
+    an epoch. The output stays sorted and in the epochs."""
+    epochs = nap.IntervalSet(start=[0, 100], end=[10, 110])
+    ts = nap.Ts(t=np.array(t), time_support=epochs)
+    group = nap.TsGroup({3: ts}, time_support=epochs)
+    for seed in range(20):
+        np.random.seed(seed)
+        for output in [
+            nap.shuffle_ts_intervals(ts),
+            nap.shuffle_ts_intervals(group)[3],
+        ]:
+            assert output.t[0] == t[0]
+            assert output.t[-1] == t[-1]
+            assert len(output) == len(t)
+            assert np.all(np.diff(output.t) >= 0)
+            assert len(output.restrict(epochs)) == len(t)
+
+
+def test_shuffle_ts_intervals_short_units():
+    """A unit with one timestamp and an empty unit do not change."""
+    epochs = nap.IntervalSet(start=[0, 100], end=[10, 110])
+    group = nap.TsGroup(
+        {
+            0: nap.Ts(t=np.array([10.0, 101.0, 102.0])),
+            1: nap.Ts(t=np.array([10.0])),
+            2: nap.Ts(t=np.array([])),
+        },
+        time_support=epochs,
+    )
+    output = nap.shuffle_ts_intervals(group)
+    assert output[0].t[0] == 10.0
+    np.testing.assert_array_equal(output[1].t, [10.0])
+    assert len(output[2]) == 0
+
+
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        (nap.shuffle_ts_intervals, {}),
+        (nap.jitter_timestamps, {"max_jitter": 0.1}),
+        (nap.resample_timestamps, {}),
+    ],
+)
+def test_warning_for_units_with_values(func, kwargs):
+    """A unit that is not a Ts gives a warning, and a Ts unit does not."""
+    t = np.arange(5.0)
+    group = nap.TsGroup({1: nap.Ts(t=t), 2: nap.Tsd(t=t, d=t)})
+    with pytest.warns(
+        UserWarning, match="TsGroup entry 2 was not a Ts, but treating it as one!"
+    ) as record:
+        output = func(group, **kwargs)
+    assert len(record) == 1
+    assert isinstance(output[2], nap.Ts)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        func(nap.TsGroup({1: nap.Ts(t=t)}), **kwargs)

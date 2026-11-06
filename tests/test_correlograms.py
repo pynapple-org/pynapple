@@ -1406,7 +1406,7 @@ def test_cross_correlograms_matches_pairs(n_units, binsize, windowsize):
     }
     units[n_units] = nap.Ts(np.array([]))
     group = nap.TsGroup(units, time_support=nap.IntervalSet(0, 10))
-    order, offsets = group._ragged_index
+    order, offsets = group._concatenated_index
     precision = 10.0**nap.nap_config.time_index_precision
     times = np.round(group._times[order] * precision).astype(np.int64)
     pairs = [(i, j) for i in range(len(group)) for j in range(len(group)) if i != j]
@@ -1417,9 +1417,9 @@ def test_cross_correlograms_matches_pairs(n_units, binsize, windowsize):
     )
 
     # the expected bins, in integer time units
-    nbins = int((windowsize * 2) // binsize)
-    nbins = nbins + 1 if nbins % 2 == 0 else nbins
     binsize_int = int(np.round(binsize * precision))
+    nbins = (2 * int(np.round(windowsize * precision))) // binsize_int
+    nbins = nbins + 1 if nbins % 2 == 0 else nbins
     expected_lags = (np.arange(nbins) - nbins // 2) * binsize_int / precision
     np.testing.assert_array_equal(lags, expected_lags)
 
@@ -1436,3 +1436,67 @@ def test_cross_correlograms_matches_pairs(n_units, binsize, windowsize):
         with np.errstate(divide="ignore", invalid="ignore"):
             expected = counts / (len(t1) * binsize_int / precision)
         np.testing.assert_array_equal(rates[p], expected)
+
+
+@pytest.mark.parametrize(
+    "binsize, windowsize, last_lag",
+    [
+        (0.1, 0.3, 0.3),
+        (0.001, 0.009, 0.009),
+        (0.01, 0.07, 0.07),
+        (0.1, 0.4, 0.4),
+        (0.1, 0.25, 0.2),
+    ],
+)
+def test_lags_reach_the_window(binsize, windowsize, last_lag):
+    """A window that is a multiple of the bin size gives a last lag equal to
+    the window. As floats, `0.6 // 0.1` gives 5, which removes one bin on each
+    side."""
+    group = nap.TsGroup({0: nap.Ts(t=np.arange(0, 100, 0.013))})
+    lags = nap.compute_autocorrelogram(
+        group, binsize=binsize, windowsize=windowsize, norm=False
+    ).index.values
+    np.testing.assert_allclose(lags[-1], last_lag)
+    np.testing.assert_allclose(lags[0], -last_lag)
+    assert len(lags) % 2 == 1
+
+
+@pytest.mark.parametrize(
+    "func, args",
+    [
+        (nap.compute_autocorrelogram, ()),
+        (nap.compute_crosscorrelogram, ()),
+        (nap.compute_eventcorrelogram, (get_event(),)),
+    ],
+)
+def test_explicit_ep_none_is_the_default(func, args):
+    """`ep=None` gives the same result as no `ep`."""
+    group = get_group2()
+    expected = func(group, *args, binsize=1, windowsize=5)
+    result = func(group, *args, binsize=1, windowsize=5, ep=None)
+    pd.testing.assert_frame_equal(result, expected)
+
+
+@pytest.mark.parametrize("norm", [False, True])
+@pytest.mark.parametrize(
+    "spikes, ep",
+    [
+        ([], None),
+        (np.arange(20.0, 30.0, 0.1), nap.IntervalSet(0, 10)),
+    ],
+    ids=["no-spikes", "no-spikes-in-ep"],
+)
+def test_autocorrelogram_empty_unit_is_nan(norm, spikes, ep):
+    """A unit with no spikes is NaN in all the bins, including the bin at lag
+    0. A unit with spikes has 0 in that bin."""
+    group = nap.TsGroup({0: nap.Ts(t=np.arange(0, 10, 0.1)), 1: spikes})
+    result = nap.compute_autocorrelogram(
+        group,
+        binsize=0.05,
+        windowsize=0.2,
+        norm=norm,
+        **({} if ep is None else {"ep": ep}),
+    )
+    assert np.all(np.isnan(result[1].values))
+    assert result[0].loc[0.0] == 0.0
+    assert not np.any(np.isnan(result[0].values))
