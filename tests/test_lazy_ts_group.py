@@ -482,6 +482,15 @@ def span_of(ep):
     return nap.IntervalSet(ep.start[0], ep.end[-1])
 
 
+def n_spikes_of_units_in(span):
+    """The number of spikes of the units whose first and last spikes do not
+    exclude them from ``span``: a concatenated source reads these full units."""
+    start, end = span.start[0], span.end[-1]
+    return sum(
+        len(t) for t in SPIKES.values() if len(t) and t[0] <= end and t[-1] >= start
+    )
+
+
 def perievent_windows(window):
     """The windows that ``compute_perievent(g, EVENT, window)`` reads: one
     window for each event in the time support of the group. The windows of
@@ -556,13 +565,11 @@ def test_concatenated_reads(counted, request):
     lazy[7]
     assert n_read() == len(SPIKES[7])
 
-    # time: one slice of each unit, from the start of the first epoch to the
-    # end of the last epoch, plus two binary searches in each unit
-    search = 2 * len(SPIKES) * int(np.ceil(np.log2(N_TOTAL) + 1))
+    # time: one slice for each unit that has spikes in the span of the epochs.
+    # The slice is the full unit.
     for operation, ep in OPERATIONS_WITH_EPOCHS:
         assert_same(operation(lazy), operation(eager))
-        in_span = n_spikes_in(span_of(ep))
-        assert in_span <= n_read() <= in_span + search
+        assert n_read() == n_spikes_of_units_in(span_of(ep))
     lazy.restrict(nap.IntervalSet(100, 200))
     assert n_read() == 0
 
@@ -633,9 +640,9 @@ def test_sorted_reads(counted, request):
 def test_fragmented_epochs(counted, request):
     """Many short epochs over a long time.
 
-    - A concatenated source reads one slice of each unit, from the start of the
-      first epoch to the end of the last epoch. It does two binary searches
-      in each unit.
+    - A concatenated source reads each full unit that has spikes between the
+      start of the first epoch and the end of the last epoch. It does no
+      binary search.
     - A sorted source reads one slice for each epoch, with two binary
       searches in ``times`` for each epoch. Thus it skips the gaps.
     """
@@ -648,12 +655,9 @@ def test_fragmented_epochs(counted, request):
     assert_same(lazy.restrict(ep), eager.restrict(ep))
     reads = n_read()
     in_ep = n_spikes_in(ep)
-    in_span = n_spikes_in(span_of(ep))
-    assert in_ep < in_span
+    assert in_ep < n_spikes_in(span_of(ep))
     if "concatenated" in request.node.name:
-        assert (
-            in_span <= reads["concatenated_array"] <= in_span + 2 * len(SPIKES) * steps
-        )
+        assert reads["concatenated_array"] == n_spikes_of_units_in(span_of(ep))
     else:
         assert reads["clusters"] == in_ep
         assert in_ep <= reads["times"] <= in_ep + len(ep) * 2 * steps

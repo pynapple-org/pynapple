@@ -249,8 +249,7 @@ class _ConcatenatedArraySource:
         times = np.concatenate(parts) if parts else np.zeros(0)
         clusters = np.repeat(keys, lengths)
 
-        # The time support and the binary search assume that each unit is
-        # sorted.
+        # The time support assumes that each unit is sorted.
         ends = np.cumsum(lengths)
         unsorted = np.setdiff1d(np.flatnonzero(times[1:] < times[:-1]) + 1, ends)
         if len(unsorted):
@@ -261,15 +260,14 @@ class _ConcatenatedArraySource:
     def read(self, keys=None, start=-np.inf, end=np.inf):
         """Read the spike times of the units ``keys`` in the time windows.
 
-        The function reads one slice for each unit, from the start of the
-        first window to the end of the last window. In a unit that is only
-        partly in this span, a binary search in the file finds the slice.
-        Then the function keeps only the spikes ``t`` with
-        ``start <= t <= end`` (in seconds) for a window.
+        The function reads one slice for each unit that has spikes between
+        the start of the first window and the end of the last window. The
+        slice is the full unit. Then the function keeps only the spikes ``t``
+        with ``start <= t <= end`` (in seconds) for a window.
 
-        Thus the cost is two binary searches and one slice for each unit,
-        whatever the number of windows. The function also reads the spikes
-        between the windows, and then drops them.
+        There is no binary search here. In a remote file, each step of a
+        binary search is a slow read, and the steps cost more than the spikes
+        outside the windows.
 
         Parameters
         ----------
@@ -292,32 +290,24 @@ class _ConcatenatedArraySource:
         if len(start) == 0:
             return np.zeros(0), np.zeros(0, dtype=np.int64)
         times, clusters = self._read_window(keys, start[0], end[-1])
-        if len(start) > 1:
-            # Drop the spikes between the windows.
+        if len(start) > 1 or start[0] > -np.inf or end[-1] < np.inf:
+            # Drop the spikes outside the windows.
             times, clusters = _restrict_arrays(times, start, end, clusters)
         return times, clusters
 
     def _read_window(self, keys, start, end):
-        """Read the spikes of the units ``keys`` in one time window."""
+        """Read the full units ``keys`` that have spikes in one time window."""
         rows = self._rows(keys)
         lo = self._starts[rows].copy()
         hi = self._stops[rows].copy()
-        first = self._first[rows]
-        last = self._last[rows]
 
         # Units with no spike in [start, end]. An empty unit has NaN as
         # `first`.
         if start > end:
             outside = np.ones(len(rows), dtype=bool)
         else:
-            outside = ~(first <= end) | ~(last >= start)
+            outside = ~(self._first[rows] <= end) | ~(self._last[rows] >= start)
         hi[outside] = lo[outside]
-        for i in np.flatnonzero(~outside & (first < start)):
-            lo[i] = _search(self._concatenated_array, lo[i], hi[i], start, right=False)
-        for i in np.flatnonzero(~outside & (last > end)):
-            hi[i] = _search(self._concatenated_array, lo[i], hi[i], end, right=True)
-        # With unsorted spikes, the binary search can give hi < lo.
-        hi = np.maximum(hi, lo)
 
         return self._read_rows(keys, lo, hi)
 
@@ -731,7 +721,7 @@ class _LazyTsGroup(TsGroup):
     - A selection of units (``units[k]``, ``units[[k1, k2]]``, ``getby_*``)
       reads only the selected units.
     - ``restrict(ep)``, ``get(start, end)`` and the operations with an epoch
-      argument (``count``, ``value_from``, ``time_diff``) read only the spikes
+      argument (``count``, ``value_from``, ``time_diff``) keep only the spikes
       in the epochs. The source selects how it reads the epochs (see the
       ``read`` method of each source).
     - The other operations (``to_tsd``, ``count`` without ``ep``, iteration,

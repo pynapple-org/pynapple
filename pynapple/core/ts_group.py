@@ -1329,11 +1329,10 @@ class TsGroup(_MetadataMixin):
         - A selection of units (``units[[0, 1]]``) reads only these units. It
           is fast.
         - ``restrict(ep)``, ``get(start, end)`` and the operations with an
-          epoch argument read one slice of each unit, from the start of the
-          first epoch to the end of the last epoch. Then they drop the spikes
-          between the epochs. A binary search in each unit finds the slice,
-          with one read for each step. This is fast for h5py, but slow for
-          zarr.
+          epoch argument read each full unit that has spikes between the
+          start of the first epoch and the end of the last epoch. Then they
+          drop the spikes outside the epochs. Thus a short epoch can read
+          almost all the spikes.
         - The other operations read all the spike times, each time that they
           run.
 
