@@ -42,6 +42,16 @@ def add_or_convert_metadata(func):
             # special case for pickling due to infinite recursion in getattr
             raise AttributeError(args[0])
 
+        if func.__name__ == "__getattr__" and "_metadata" not in self.__dict__:
+            # Python calls __getattr__ only for a missing attribute. Before the
+            # constructor sets `_metadata` (e.g. a debugger reads attributes of
+            # an object that is not fully built), the object has no metadata
+            # column. Raise the error now: a read of `self._metadata` or of
+            # `self.index` here calls __getattr__ again, without end.
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{args[0]}'"
+            )
+
         if hasattr(self, "_metadata") is False:
             # add empty metadata
             _MetadataMixin.__init__(self)

@@ -3350,3 +3350,27 @@ def test_value_from_out_of_range(tsd, ts, mode, expected_data):
     assert np.issubdtype(tsd.d.dtype, np.integer)
     assert np.issubdtype(out.d.dtype, np.floating)
     np.testing.assert_array_equal(out.d, expected_data)
+
+
+@pytest.mark.parametrize(
+    "t, d, ep",
+    [
+        # equal times with different values, values not in key order
+        ([0.0, 1.0, 1.0, 1.0, 2.0], [5, 2, 0, 2, -1], None),
+        # float values are cut to integers
+        ([0.0, 1.0, 2.0, 3.0], [0.2, 1.7, -1.5, 1.0], None),
+        ([0.0, 1.0, 5.0, 6.0], [1, 0, 1, 0], nap.IntervalSet([0, 4], [2, 7])),
+        ([], [], nap.IntervalSet(0, 1)),
+    ],
+)
+def test_to_tsgroup_matches_dict_construction(t, d, ep):
+    tsd = nap.Tsd(t=np.array(t), d=np.array(d), time_support=ep)
+    values = tsd.values.astype(np.int64)
+    ref = nap.TsGroup(
+        {
+            k: nap.Ts(t=tsd.t[values == k], time_support=tsd.time_support)
+            for k in np.unique(values)
+        },
+        time_support=tsd.time_support,
+    )
+    assert tsd.to_tsgroup() == ref

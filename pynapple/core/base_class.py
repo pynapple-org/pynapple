@@ -11,7 +11,7 @@ import numpy as np
 from ._core_functions import (
     _count,
     _restrict,
-    _restrict_ranges,
+    _restrict_arrays,
     _use_searchsorted_restrict,
     _value_from,
 )
@@ -393,15 +393,11 @@ class _Base(abc.ABC):
             # ~200x slower on jax at 512 intervals. Never take the range path.
             use_ranges = False
 
-        if use_ranges:
-            # locate boundaries with searchsorted and copy contiguous ranges
-            # (no O(n) scan, no fancy-index gather)
-            new_t, data = _restrict_ranges(time_array, values, starts, ends)
-        else:
-            # single merge scan + gather
-            idx = _restrict(time_array, starts, ends)
-            new_t = time_array[idx]
-            data = None if values is None else values[idx]
+        # ranges: searchsorted boundaries + contiguous copies (no O(n) scan, no
+        # fancy-index gather); otherwise a single merge scan + gather
+        new_t, data = _restrict_arrays(
+            time_array, starts, ends, values, use_ranges=use_ranges
+        )
 
         # output timestamps are a sorted subset already within `iset`
         with trusted_construction():
@@ -683,7 +679,8 @@ class _Base(abc.ABC):
         elif mode == "after_t" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
         elif mode == "restrict":
-            idx_end += int(self.t[idx_end] <= end)
+            # `side="right"` keeps all the timestamps that are equal to `end`
+            idx_end = np.searchsorted(self.t, end, side="right")
 
         step = None
         if n_points:

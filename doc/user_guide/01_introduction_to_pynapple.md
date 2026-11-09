@@ -161,6 +161,13 @@ signals = nap.TsdFrame(
 signal_trials = nap.TsdTrials(source=signals, trials=trials)
 signal_trials
 ```
+:::{note}
+Internally, a `TsGroup` does not keep one object per element. All timestamps are merged into a single sorted array, together with the key of the element each timestamp belongs to. Operations over the whole group (`count`, `restrict`, `value_from`, `time_diff`, `to_tsd`, ...) therefore run once over all elements rather than once per element, which makes them much faster for large groups. In return:
+
+- Building a `TsGroup` sorts every timestamp once.
+- Indexing an element (`tsgroup[0]`) builds a new `Ts`/`Tsd` each time it is called.
+- Values of `Tsd`, `TsdFrame` or `TsdTensor` elements are stored in one shared array: they must have the same shape after the time axis, and are cast to a common dtype.
+:::
 
 ***
 Interaction between pynapple objects
