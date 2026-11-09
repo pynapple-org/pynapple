@@ -174,7 +174,8 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, n=No
     fft = compute_fft(sig, fs=fs, ep=ep, n=n, full_range=full_range)
 
     # transform to power spectral density, power/Hz
-    psd = (1 / (fs * n)) * (np.abs(fft) ** 2)
+    n_samples = min(n, len(sig.restrict(ep)))
+    psd = (1 / (fs * n_samples)) * (np.abs(fft) ** 2)
 
     if full_range is False:
         # frequencies not at 0 and not at the nyquist frequency occur twice
