@@ -36,6 +36,7 @@ examples/tutorial_calcium_imaging
 examples/tutorial_wavelet_decomposition
 examples/tutorial_phase_preferences
 examples/tutorial_ibl_choice_decoding
+examples/tutorial_v1_stimulus_trials
 examples/tutorial_ripple_detection
 ```
 
@@ -232,6 +233,31 @@ Trial-align spiking activity from a monkey reach task and compute a population m
 
 :::{image} _static/example_thumbs/tutorial_population_manifolds.png
 :alt: Computing population manifolds
+:class: example-thumb dark-light
+:::
+::::
+
+:::::
+::::::
+
+::::::{card} Stimulus-aligned responses of a V1 neuron
+:link: examples/tutorial_v1_stimulus_trials
+:link-type: doc
+
+:::::{grid} 1 1 2 2
+:gutter: 2
+
+::::{grid-item}
+:columns: 12 12 6 6
+
+Define trials around white noise frames and measure the response of a V1 neuron with `TsTrials`.
+::::
+
+::::{grid-item}
+:columns: 12 12 6 6
+
+:::{image} _static/example_thumbs/tutorial_v1_stimulus_trials.png
+:alt: Stimulus-aligned responses of a V1 neuron
 :class: example-thumb dark-light
 :::
 ::::
