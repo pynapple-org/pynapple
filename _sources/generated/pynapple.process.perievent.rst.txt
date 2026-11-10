@@ -1,0 +1,14 @@
+﻿pynapple.process.perievent
+==========================
+
+.. automodule:: pynapple.process.perievent
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_event_triggered_average
+      compute_perievent
+      compute_spike_triggered_average
+   

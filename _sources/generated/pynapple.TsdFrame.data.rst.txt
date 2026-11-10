@@ -1,0 +1,6 @@
+pynapple.TsdFrame.data
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.data

@@ -1,0 +1,6 @@
+pynapple.TsdFrame.dropna
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.dropna

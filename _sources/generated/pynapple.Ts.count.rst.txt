@@ -1,0 +1,6 @@
+pynapple.Ts.count
+=================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.count

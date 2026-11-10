@@ -1,0 +1,6 @@
+pynapple.TsGroup.get
+====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.get

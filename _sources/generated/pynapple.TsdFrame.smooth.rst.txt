@@ -1,0 +1,6 @@
+pynapple.TsdFrame.smooth
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.smooth

@@ -1,0 +1,6 @@
+pynapple.TsdTensor.data
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.data

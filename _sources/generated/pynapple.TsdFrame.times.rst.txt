@@ -1,0 +1,6 @@
+pynapple.TsdFrame.times
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.times

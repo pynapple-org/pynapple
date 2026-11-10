@@ -1,0 +1,6 @@
+pynapple.TsdTensor.convolve
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.convolve

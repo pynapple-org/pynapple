@@ -1,0 +1,6 @@
+pynapple.Tsd.smooth
+===================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.smooth

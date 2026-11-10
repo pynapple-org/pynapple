@@ -1,0 +1,6 @@
+pynapple.TsGroup.copy
+=====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.copy

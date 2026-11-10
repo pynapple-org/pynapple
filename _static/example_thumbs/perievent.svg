@@ -1,0 +1,1008 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 497 497" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-miterlimit:10;">
+    <g id="fig_peth.svg" transform="matrix(1.32745,0,0,2.72462,248.031,284.578)">
+        <clipPath id="_clip1">
+            <ellipse cx="0" cy="-13.413" rx="179.285" ry="87.349"/>
+        </clipPath>
+        <g clip-path="url(#_clip1)">
+            <g transform="matrix(1,0,0,1,-352.882,-147.824)">
+                <clipPath id="_clip2">
+                    <rect x="0" y="0" width="705.765" height="295.647"/>
+                </clipPath>
+                <g clip-path="url(#_clip2)">
+                    <g id="fig_peth" transform="matrix(1.33333,0,0,-1.33333,-35,243.118)">
+                        <g id="rect3144" transform="matrix(1,0,0,-1,0,0)">
+                            <rect x="27" y="-181.588" width="527.824" height="220.235" style="fill:rgb(220,235,214);stroke:black;stroke-opacity:0;stroke-width:1.5px;"/>
+                        </g>
+                        <g id="g124" transform="matrix(1,0,0,0.359846,0,64.9846)">
+                            <g id="g126">
+                                <path id="path132" d="M92.291,160.601L93.103,155.576L93.914,149.419L94.726,146.463L95.537,147.948L96.349,151.622L97.161,154.744L97.972,156.007L98.784,155.158L99.596,152.898L100.407,151.156L101.219,151.617L102.031,153.754L102.842,155.442L103.654,155.509L104.465,154.837L105.277,154.733L106.089,154.938L106.9,153.913L107.712,150.843L108.524,146.967L109.335,145.145L110.147,147.822L111.77,161.631L112.582,164.886L113.393,162.866L114.205,157.16L115.017,150.641L115.828,146.041L116.64,144.836L117.452,146.255L119.075,150.459L119.887,154.064L120.698,159.313L121.51,162.99L122.321,161.349L123.945,149.679L124.756,148.733L126.38,153.505L127.191,153.035L128.003,151.124L128.815,150.874L130.438,155.173L131.249,154.483L132.061,152.393L132.873,152.179L133.684,154.341L134.496,155.98L135.308,155.06L136.119,153.134L136.931,152.746L137.743,153.778L138.554,154.068L140.177,151.755L140.989,152.397L141.801,153.88L142.612,153.642L144.236,148.083L145.047,148.979L146.671,157.925L147.482,159.681L148.294,158.883L149.917,154.961L150.729,152.771L152.352,147.945L153.164,147.258L153.975,148.848L155.599,154.478L156.41,156.727L157.222,158.149L158.033,158.158L158.845,156.547L160.468,151.101L161.28,149.552L162.092,150.043L162.903,151.947L163.715,153.408L164.527,153.412L165.338,153.04L166.15,153.73L166.961,155.005L167.773,155.173L168.585,153.735L169.396,151.897L170.208,151.043L171.02,151.638L171.831,153.367L172.643,155.42L173.455,156.627L174.266,156.101L175.078,154.059L175.889,151.658L176.701,150.111L177.513,150.237L178.324,152.178L179.136,154.868L179.948,156.389L180.759,155.696L181.571,153.696L182.383,152.21L183.194,152.2L184.006,153.179L184.817,153.938L185.629,153.553L187.252,150.454L188.064,149.963L188.876,150.919L189.687,152.833L191.311,157.432L192.122,158.474L192.934,157.3L194.557,151.35L195.369,149.948L196.18,150.146L197.804,152.186L199.427,154.621L200.239,156.066L201.05,156.775L201.862,155.635L203.485,150.657L204.297,149.863L205.108,150.25L205.92,150.907L206.732,151.915L207.543,154.049L208.355,156.753L209.167,157.77L209.978,155.858L210.79,152.745L211.601,151.26L212.413,152.296L214.036,157.528L214.848,158.377L215.66,154.056L216.471,145.392L217.283,140.112L218.095,144.418L218.906,154.757L219.718,162.569L220.529,163.549L221.341,159.413L222.153,154.161L222.964,150.618L223.776,149.043L224.588,148.554L225.399,149.553L226.211,153.077L227.023,157.676L227.834,159.364L228.646,156.232L229.457,151.666L230.269,150.474L231.081,152.202L231.892,151.888L232.704,148.394L233.516,147.215L234.327,152.273L235.139,159.519L235.951,162.353L236.762,159.838L237.574,155.943L240.82,144.779L241.632,145.516L243.255,153.62L244.067,154.953L244.879,155.777L245.69,160.52L246.502,167.63L247.313,168.292L248.125,157.816L248.937,144.257L249.748,139.16L250.56,143.586L251.372,149.753L252.183,152.025L252.995,150.877L253.807,150.234L254.618,153.69L255.43,159.929L256.241,162.598L257.053,158.682L257.865,153.952L258.676,154.708L259.488,157.622L260.3,154.564L261.111,145.168L261.923,137.839L262.735,139.283L263.546,148.461L264.358,160.204L265.169,169.84L265.981,173.409L266.793,167.523L268.416,136.658L269.228,130.044L270.039,138.289L270.851,155.991L271.663,170.299L272.474,170.872L274.097,147.092L274.909,143.608L275.721,145.99L276.532,147.421L277.344,148.394L278.156,154.111L278.967,163.982L279.779,170.1L280.591,166.006L282.214,142.184L283.025,136.962L283.837,137.807L284.649,142.465L285.46,151.097L286.272,163.08L287.084,173.217L287.895,175.364L288.707,168.846L289.519,157.5L291.142,127.501L291.953,119.054L292.765,129.57L294.388,180.238L295.2,186.644L296.012,178.727L296.823,165.603L297.635,148.764L298.447,129.21L299.258,117.916L300.07,126.245L301.693,171.868L302.505,181.082L303.316,178.376L304.128,168.262L305.751,134.728L306.563,124.179L307.375,128.274L308.186,144.956L308.998,164.521L309.809,177.144L310.621,178.357L311.433,169.91L313.868,131.027L314.679,129.981L315.491,140.88L316.303,156.333L317.114,165.991L317.926,167.559L318.737,166.127L319.549,164.091L320.361,158.084L321.172,147.001L321.984,137.458L322.796,137.185L323.607,145.668L324.419,155.409L325.231,160.686L326.042,161.328L326.854,159.417L328.477,153.574L329.289,151.86L330.1,151.206L330.912,150.961L331.724,151.37L333.347,154.516L334.159,154.131L334.97,151.905L335.782,150.548L336.593,152L337.405,154.934L338.217,156.56L339.028,155.938L341.463,150.956L342.275,149.693L343.087,150.096L343.898,152.471L344.71,155.38L345.521,157.209L346.333,157.464L347.145,156.342L347.956,154.166L348.768,151.643L349.58,149.952L350.391,150.023L351.203,151.771L352.015,154.118L352.826,155.638L353.638,155.349L354.449,153.35L355.261,150.864L356.073,149.479L356.884,150.17L357.696,152.707L358.508,155.623L359.319,157.168L360.131,156.791L361.754,153.819L362.566,152.768L363.377,152.476L364.189,152.864L365.001,153.119L365.812,152.391L366.624,151.042L367.436,150.532L368.247,151.68L369.059,153.604L369.871,154.891L370.682,155.211L371.494,155.116L372.305,154.749L373.117,153.735L373.929,152.35L374.74,151.678L375.552,152.067L376.364,152.59L377.175,152.736L377.987,153.194L379.61,155.504L380.422,156.16L381.233,156.243L382.045,155.495L382.857,153.633L384.48,148.561L385.292,147.147L386.103,147.772L386.915,150.769L387.727,154.725L388.538,157.311L389.35,157.693L390.973,156.205L391.785,155.16L393.408,152.164L394.22,152.053L395.031,152.753L395.843,152.698L396.655,151.646L397.466,151.146L398.278,152.127L399.089,153.676L399.901,154.635L400.713,154.925L401.524,154.83L402.336,154.054L403.959,150.611L404.771,150.602L405.583,152.646L406.394,155.143L407.206,156.385L408.017,155.874L408.829,153.953L409.641,151.591L410.452,150.295L411.264,150.855L412.887,153.775L414.511,155.707L415.322,156.096L416.134,155.018L416.945,153.099L417.757,151.981L418.569,152.051L419.38,152.322L421.004,152.239L421.815,152.042L422.627,151.675L423.439,152.229L424.25,154.526L425.062,157.21L425.873,157.95L426.685,156.181L427.497,153.468L428.308,151.55L429.12,150.824L429.932,150.553L431.555,149.778L432.367,150.448L433.178,152.481L434.801,157.665L435.613,158.791L436.425,158.05L437.236,155.551L438.048,152.603L438.86,151.047L439.671,151.405L440.483,152.103L441.295,151.366L442.106,149.791L442.918,149.76L444.541,154.473L445.353,155.166L446.164,154.708L446.976,154.912L447.788,156.056L448.599,156.644L449.411,155.585L450.223,153.528L451.034,151.834L451.846,151.16L452.657,151.463L453.469,152.397L454.281,153.107L455.092,152.591L455.904,151.083L456.716,150.394L457.527,151.89L458.339,154.514L459.151,155.988L459.962,155.752L460.774,155.212L461.585,155.15L462.397,154.857L463.209,154.111L464.02,153.732L464.832,153.507L465.644,151.925L466.455,149.101L467.267,147.743L468.079,149.744L468.89,153.524L469.702,156.159L470.513,156.741L471.325,156.354L472.137,155.814L472.948,154.907L474.572,152.147L475.383,151.362L476.195,151.137L477.007,151.364L477.818,152.074L478.63,153.038L479.441,153.76L481.065,154.47L481.876,155.038L482.688,155.274L483.5,154.666L484.311,153.614L485.123,152.952L486.746,152.695L488.369,151.74L489.181,151.71L491.616,153.097L492.428,153.172L493.239,153.42L495.674,155.197L496.486,155.288L497.297,155.062L498.109,154.408" style="fill:none;fill-rule:nonzero;stroke:black;stroke-opacity:0.45;stroke-width:2.5px;stroke-linecap:square;stroke-linejoin:round;"/>
+                            </g>
+                        </g>
+                        <g id="g282">
+                            <g id="g284">
+                                <clipPath id="_clip3">
+                                    <rect x="72" y="23.76" width="446.4" height="75.6"/>
+                                </clipPath>
+                                <g clip-path="url(#_clip3)">
+                                    <g id="g290" transform="matrix(1,0,0,1,237.098,27.1964)">
+                                        <g id="g292">
+                                            <g id="g294">
+                                                <path id="path300" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g302" transform="matrix(1,0,0,1,6.14023,0)">
+                                            <g id="g304">
+                                                <g id="g306">
+                                                    <path id="path312" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g314" transform="matrix(1,0,0,1,20.1604,0)">
+                                                <g id="g316">
+                                                    <g id="g318">
+                                                        <path id="path324" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g326" transform="matrix(1,0,0,1,10.8989,0)">
+                                                    <g id="g328">
+                                                        <g id="g330">
+                                                            <path id="path336" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g338" transform="matrix(1,0,0,1,3.88881,0)">
+                                                        <g id="g340">
+                                                            <g id="g342">
+                                                                <path id="path348" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g350" transform="matrix(1,0,0,1,1.17688,0)">
+                                                            <g id="g352">
+                                                                <g id="g354">
+                                                                    <path id="path360" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g362" transform="matrix(1,0,0,1,3.88881,0)">
+                                                                <g id="g364">
+                                                                    <g id="g366">
+                                                                        <path id="path372" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g374" transform="matrix(1,0,0,1,2.04674,0)">
+                                                                    <g id="g376">
+                                                                        <g id="g378">
+                                                                            <path id="path384" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g386" transform="matrix(1,0,0,1,2.30259,0)">
+                                                                        <g id="g388">
+                                                                            <g id="g390">
+                                                                                <path id="path396" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g398">
+                            <g id="g400">
+                                <g id="g406" transform="matrix(1,0,0,1,248.509,29.8999)">
+                                    <g id="g408">
+                                        <g id="g410">
+                                            <path id="path416" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                        </g>
+                                    </g>
+                                    <g id="g418" transform="matrix(1,0,0,1,4.75868,0)">
+                                        <g id="g420">
+                                            <g id="g422">
+                                                <path id="path428" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g430" transform="matrix(1,0,0,1,9.67087,0)">
+                                            <g id="g432">
+                                                <g id="g434">
+                                                    <path id="path440" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g442" transform="matrix(1,0,0,1,13.4062,0)">
+                                                <g id="g444">
+                                                    <g id="g446">
+                                                        <path id="path452" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g454" transform="matrix(1,0,0,1,25.3285,0)">
+                                                    <g id="g456">
+                                                        <g id="g458">
+                                                            <path id="path464" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g466" transform="matrix(1,0,0,1,65.0353,0)">
+                                                        <g id="g468">
+                                                            <g id="g470">
+                                                                <path id="path476" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g478" transform="matrix(1,0,0,1,12.3828,0)">
+                                                            <g id="g480">
+                                                                <g id="g482">
+                                                                    <path id="path488" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g490" transform="matrix(1,0,0,1,30.5988,0)">
+                                                                <g id="g492">
+                                                                    <g id="g494">
+                                                                        <path id="path500" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g502" transform="matrix(1,0,0,1,13.4573,0)">
+                                                                    <g id="g504">
+                                                                        <g id="g506">
+                                                                            <path id="path512" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g514">
+                            <g id="g516">
+                                <g id="g522" transform="matrix(1,0,0,1,166.434,39.2912)">
+                                    <g id="g524">
+                                        <g id="g526">
+                                            <path id="path532" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                        </g>
+                                    </g>
+                                    <g id="g534" transform="matrix(1,0,0,1,6.24257,0)">
+                                        <g id="g536">
+                                            <g id="g538">
+                                                <path id="path544" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g546" transform="matrix(1,0,0,1,5.01452,0)">
+                                            <g id="g548">
+                                                <g id="g550">
+                                                    <path id="path556" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g558" transform="matrix(1,0,0,1,6.90776,0)">
+                                                <g id="g560">
+                                                    <g id="g562">
+                                                        <path id="path568" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g570" transform="matrix(1,0,0,1,5.47504,0)">
+                                                    <g id="g572">
+                                                        <g id="g574">
+                                                            <path id="path580" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g582" transform="matrix(1,0,0,1,25.1238,0)">
+                                                        <g id="g584">
+                                                            <g id="g586">
+                                                                <path id="path592" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g594" transform="matrix(1,0,0,1,74.1433,0)">
+                                                            <g id="g596">
+                                                                <g id="g598">
+                                                                    <path id="path604" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g606">
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g630">
+                            <g id="g632">
+                                <g id="g638" transform="matrix(1,0,0,1,106.976,44.9829)">
+                                    <g id="g640">
+                                    </g>
+                                    <g id="g650" transform="matrix(1,0,0,1,124.289,0)">
+                                        <g id="g652">
+                                            <g id="g654">
+                                                <path id="path660" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g662" transform="matrix(1,0,0,1,19.9558,0)">
+                                            <g id="g664">
+                                                <g id="g666">
+                                                    <path id="path672" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g674" transform="matrix(1,0,0,1,19.5464,0)">
+                                                <g id="g676">
+                                                    <g id="g678">
+                                                        <path id="path684" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g686" transform="matrix(1,0,0,1,7.62412,0)">
+                                                    <g id="g688">
+                                                        <g id="g690">
+                                                            <path id="path696" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g698" transform="matrix(1,0,0,1,11.2059,0)">
+                                                        <g id="g700">
+                                                            <g id="g702">
+                                                                <path id="path708" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g710" transform="matrix(1,0,0,1,21.7467,0)">
+                                                            <g id="g712">
+                                                                <g id="g714">
+                                                                    <path id="path720" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g722" transform="matrix(1,0,0,1,14.1225,0)">
+                                                                <g id="g724">
+                                                                    <g id="g726">
+                                                                        <path id="path732" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g734" transform="matrix(1,0,0,1,66.468,0)">
+                                                                    <g id="g736">
+                                                                        <g id="g738">
+                                                                            <path id="path744" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g746" transform="matrix(1,0,0,1,7.93113,0)">
+                                                                        <g id="g748">
+                                                                            <g id="g750">
+                                                                                <path id="path756" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                        <g id="g758">
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g782">
+                            <g id="g784">
+                                <g id="g790" transform="matrix(1,0,0,1,93.2119,45.1252)">
+                                    <g id="g792">
+                                    </g>
+                                    <g id="g802" transform="matrix(1,0,0,1,19.5464,0)">
+                                        <g id="g804">
+                                        </g>
+                                        <g id="g814" transform="matrix(1,0,0,1,7.62412,0)">
+                                            <g id="g816">
+                                            </g>
+                                            <g id="g826" transform="matrix(1,0,0,1,11.2059,0)">
+                                                <g id="g828">
+                                                </g>
+                                                <g id="g838" transform="matrix(1,0,0,1,21.7467,0)">
+                                                    <g id="g840">
+                                                        <g id="g842">
+                                                            <path id="path848" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g850" transform="matrix(1,0,0,1,14.1225,0)">
+                                                        <g id="g852">
+                                                            <g id="g854">
+                                                                <path id="path860" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g862" transform="matrix(1,0,0,1,66.468,0)">
+                                                            <g id="g864">
+                                                                <g id="g866">
+                                                                    <path id="path872" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g874" transform="matrix(1,0,0,1,7.93113,0)">
+                                                                <g id="g876">
+                                                                    <g id="g878">
+                                                                        <path id="path884" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g886" transform="matrix(1,0,0,1,68.6683,0)">
+                                                                    <g id="g888">
+                                                                        <g id="g890">
+                                                                            <path id="path896" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g898" transform="matrix(1,0,0,1,11.8711,0)">
+                                                                        <g id="g900">
+                                                                            <g id="g902">
+                                                                                <path id="path908" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                        <g id="g910">
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g958">
+                            <g id="g960">
+                                <g id="g966" transform="matrix(1,0,0,1,304.487,50.9592)">
+                                    <g id="g968">
+                                        <g id="g970">
+                                            <path id="path976" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                        </g>
+                                    </g>
+                                    <g id="g978" transform="matrix(1,0,0,1,15.5553,0)">
+                                        <g id="g980">
+                                            <g id="g982">
+                                                <path id="path988" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g990" transform="matrix(1,0,0,1,5.47504,0)">
+                                            <g id="g992">
+                                                <g id="g994">
+                                                    <path id="path1000" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1002" transform="matrix(1,0,0,1,10.8477,0)">
+                                                <g id="g1004">
+                                                    <g id="g1006">
+                                                        <path id="path1012" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1014" transform="matrix(1,0,0,1,6.39608,0)">
+                                                    <g id="g1016">
+                                                        <g id="g1018">
+                                                            <path id="path1024" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1026" transform="matrix(1,0,0,1,2.96778,0)">
+                                                        <g id="g1028">
+                                                            <g id="g1030">
+                                                                <path id="path1036" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1038" transform="matrix(1,0,0,1,2.66077,0)">
+                                                            <g id="g1040">
+                                                                <g id="g1042">
+                                                                    <path id="path1048" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1050">
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1074">
+                            <g id="g1076">
+                                <g id="g1082" transform="matrix(1,0,0,1,139.161,53.9474)">
+                                    <g id="g1084">
+                                    </g>
+                                    <g id="g1094" transform="matrix(1,0,0,1,5.2192,0)">
+                                        <g id="g1096">
+                                        </g>
+                                        <g id="g1106" transform="matrix(1,0,0,1,146.547,0)">
+                                            <g id="g1108">
+                                                <g id="g1110">
+                                                    <path id="path1116" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1118" transform="matrix(1,0,0,1,5.47504,0)">
+                                                <g id="g1120">
+                                                    <g id="g1122">
+                                                        <path id="path1128" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1130" transform="matrix(1,0,0,1,94.7643,0)">
+                                                    <g id="g1132">
+                                                        <g id="g1134">
+                                                            <path id="path1140" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1142" transform="matrix(1,0,0,1,9.00567,0)">
+                                                        <g id="g1144">
+                                                            <g id="g1146">
+                                                                <path id="path1152" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1154" transform="matrix(1,0,0,1,7.77763,0)">
+                                                            <g id="g1156">
+                                                                <g id="g1158">
+                                                                    <path id="path1164" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1166" transform="matrix(1,0,0,1,0.562855,0)">
+                                                                <g id="g1168">
+                                                                    <g id="g1170">
+                                                                        <path id="path1176" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g1178" transform="matrix(1,0,0,1,9.92671,0)">
+                                                                    <g id="g1180">
+                                                                        <g id="g1182">
+                                                                            <path id="path1188" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g1190" transform="matrix(1,0,0,1,5.98673,0)">
+                                                                        <g id="g1192">
+                                                                            <g id="g1194">
+                                                                                <path id="path1200" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(227,119,194);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1202">
+                            <g id="g1204">
+                                <g id="g1210" transform="matrix(1,0,0,1,131.793,59.4968)">
+                                    <g id="g1212">
+                                    </g>
+                                    <g id="g1222" transform="matrix(1,0,0,1,129.15,0)">
+                                        <g id="g1224">
+                                            <g id="g1226">
+                                                <path id="path1232" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,127,127);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g1234" transform="matrix(1,0,0,1,4.29816,0)">
+                                            <g id="g1236">
+                                                <g id="g1238">
+                                                    <path id="path1244" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,127,127);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1246" transform="matrix(1,0,0,1,8.59633,0)">
+                                                <g id="g1248">
+                                                    <g id="g1250">
+                                                        <path id="path1256" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,127,127);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1258" transform="matrix(1,0,0,1,9.31269,0)">
+                                                    <g id="g1260">
+                                                        <g id="g1262">
+                                                            <path id="path1268" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,127,127);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1270" transform="matrix(1,0,0,1,33.5666,0)">
+                                                        <g id="g1272">
+                                                            <g id="g1274">
+                                                                <path id="path1280" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(127,127,127);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1282">
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1330">
+                            <g id="g1332">
+                                <g id="g1338" transform="matrix(1,0,0,1,92.2909,59.6391)">
+                                    <g id="g1340">
+                                    </g>
+                                    <g id="g1350" transform="matrix(1,0,0,1,4.29816,0)">
+                                        <g id="g1352">
+                                        </g>
+                                        <g id="g1362" transform="matrix(1,0,0,1,8.59633,0)">
+                                            <g id="g1364">
+                                            </g>
+                                            <g id="g1374" transform="matrix(1,0,0,1,9.31269,0)">
+                                                <g id="g1376">
+                                                </g>
+                                                <g id="g1386" transform="matrix(1,0,0,1,33.5666,0)">
+                                                    <g id="g1388">
+                                                    </g>
+                                                    <g id="g1398" transform="matrix(1,0,0,1,121.218,0)">
+                                                        <g id="g1400">
+                                                            <g id="g1402">
+                                                                <path id="path1408" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(188,189,34);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1410" transform="matrix(1,0,0,1,6.54958,0)">
+                                                            <g id="g1412">
+                                                                <g id="g1414">
+                                                                    <path id="path1420" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(188,189,34);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1422" transform="matrix(1,0,0,1,22.77,0)">
+                                                                <g id="g1424">
+                                                                    <g id="g1426">
+                                                                        <path id="path1432" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(188,189,34);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g1434" transform="matrix(1,0,0,1,6.60075,0)">
+                                                                    <g id="g1436">
+                                                                        <g id="g1438">
+                                                                            <path id="path1444" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(188,189,34);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g1446" transform="matrix(1,0,0,1,40.0138,0)">
+                                                                        <g id="g1448">
+                                                                            <g id="g1450">
+                                                                                <path id="path1456" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(188,189,34);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1458">
+                            <g id="g1460">
+                                <g id="g1466" transform="matrix(1,0,0,1,201.024,69.1726)">
+                                    <g id="g1468">
+                                        <g id="g1470">
+                                            <path id="path1476" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(23,190,207);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                        </g>
+                                    </g>
+                                    <g id="g1478" transform="matrix(1,0,0,1,4.60517,0)">
+                                        <g id="g1480">
+                                            <g id="g1482">
+                                                <path id="path1488" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(23,190,207);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g1490" transform="matrix(1,0,0,1,8.28931,0)">
+                                            <g id="g1492">
+                                                <g id="g1494">
+                                                    <path id="path1500" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(23,190,207);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1502" transform="matrix(1,0,0,1,69.487,0)">
+                                                <g id="g1504">
+                                                    <g id="g1506">
+                                                        <path id="path1512" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(23,190,207);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1514" transform="matrix(1,0,0,1,101.416,0)">
+                                                    <g id="g1516">
+                                                        <g id="g1518">
+                                                            <path id="path1524" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(23,190,207);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1526">
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1574">
+                            <g id="g1576">
+                                <g id="g1582" transform="matrix(1,0,0,1,129.951,70.311)">
+                                    <g id="g1584">
+                                    </g>
+                                    <g id="g1594" transform="matrix(1,0,0,1,7.06127,0)">
+                                        <g id="g1596">
+                                        </g>
+                                        <g id="g1606" transform="matrix(1,0,0,1,9.31269,0)">
+                                            <g id="g1608">
+                                            </g>
+                                            <g id="g1618" transform="matrix(1,0,0,1,16.4763,0)">
+                                                <g id="g1620">
+                                                    <g id="g1622">
+                                                        <path id="path1628" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1630" transform="matrix(1,0,0,1,30.1895,0)">
+                                                    <g id="g1632">
+                                                        <g id="g1634">
+                                                            <path id="path1640" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1642" transform="matrix(1,0,0,1,89.3915,0)">
+                                                        <g id="g1644">
+                                                            <g id="g1646">
+                                                                <path id="path1652" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1654" transform="matrix(1,0,0,1,110.012,0)">
+                                                            <g id="g1656">
+                                                                <g id="g1658">
+                                                                    <path id="path1664" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1666" transform="matrix(1,0,0,1,5.3727,0)">
+                                                                <g id="g1668">
+                                                                    <g id="g1670">
+                                                                        <path id="path1676" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g1678" transform="matrix(1,0,0,1,4.4005,0)">
+                                                                    <g id="g1680">
+                                                                        <g id="g1682">
+                                                                            <path id="path1688" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g1690" transform="matrix(1,0,0,1,5.32153,0)">
+                                                                        <g id="g1692">
+                                                                            <g id="g1694">
+                                                                                <path id="path1700" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(31,119,180);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1702">
+                            <g id="g1704">
+                                <g id="g1710" transform="matrix(1,0,0,1,123.555,78.2794)">
+                                    <g id="g1712">
+                                    </g>
+                                    <g id="g1722" transform="matrix(1,0,0,1,5.73088,0)">
+                                        <g id="g1724">
+                                        </g>
+                                        <g id="g1734" transform="matrix(1,0,0,1,8.28931,0)">
+                                            <g id="g1736">
+                                            </g>
+                                            <g id="g1746" transform="matrix(1,0,0,1,11.6664,0)">
+                                                <g id="g1748">
+                                                    <g id="g1750">
+                                                        <path id="path1756" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1758" transform="matrix(1,0,0,1,10.4384,0)">
+                                                    <g id="g1760">
+                                                        <g id="g1762">
+                                                            <path id="path1768" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1770" transform="matrix(1,0,0,1,100.597,0)">
+                                                        <g id="g1772">
+                                                            <g id="g1774">
+                                                                <path id="path1780" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1782" transform="matrix(1,0,0,1,17.9602,0)">
+                                                            <g id="g1784">
+                                                                <g id="g1786">
+                                                                    <path id="path1792" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1794" transform="matrix(1,0,0,1,8.59633,0)">
+                                                                <g id="g1796">
+                                                                    <g id="g1798">
+                                                                        <path id="path1804" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(255,127,14);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g1806">
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1818">
+                            <g id="g1820">
+                                <g id="g1826" transform="matrix(1,0,0,1,278.34,82.2636)">
+                                    <g id="g1828">
+                                        <g id="g1830">
+                                            <path id="path1836" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                        </g>
+                                    </g>
+                                    <g id="g1838" transform="matrix(1,0,0,1,30.7012,0)">
+                                        <g id="g1840">
+                                            <g id="g1842">
+                                                <path id="path1848" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g1850" transform="matrix(1,0,0,1,4.4005,0)">
+                                            <g id="g1852">
+                                                <g id="g1854">
+                                                    <path id="path1860" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1862" transform="matrix(1,0,0,1,7.06127,0)">
+                                                <g id="g1864">
+                                                    <g id="g1866">
+                                                        <path id="path1872" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g1874" transform="matrix(1,0,0,1,51.9873,0)">
+                                                    <g id="g1876">
+                                                        <g id="g1878">
+                                                            <path id="path1884" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g1886" transform="matrix(1,0,0,1,52.499,0)">
+                                                        <g id="g1888">
+                                                            <g id="g1890">
+                                                                <path id="path1896" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g1898" transform="matrix(1,0,0,1,4.86102,0)">
+                                                            <g id="g1900">
+                                                                <g id="g1902">
+                                                                    <path id="path1908" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(44,160,44);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g1910">
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g1946">
+                            <g id="g1948">
+                                <g id="g1954" transform="matrix(1,0,0,1,137.524,82.4059)">
+                                    <g id="g1956">
+                                    </g>
+                                    <g id="g1966" transform="matrix(1,0,0,1,30.7012,0)">
+                                        <g id="g1968">
+                                            <g id="g1970">
+                                                <path id="path1976" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g1978" transform="matrix(1,0,0,1,4.4005,0)">
+                                            <g id="g1980">
+                                                <g id="g1982">
+                                                    <path id="path1988" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g1990" transform="matrix(1,0,0,1,7.06127,0)">
+                                                <g id="g1992">
+                                                    <g id="g1994">
+                                                        <path id="path2000" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g2002" transform="matrix(1,0,0,1,51.9873,0)">
+                                                    <g id="g2004">
+                                                        <g id="g2006">
+                                                            <path id="path2012" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g2014" transform="matrix(1,0,0,1,52.499,0)">
+                                                        <g id="g2016">
+                                                            <g id="g2018">
+                                                                <path id="path2024" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g2026" transform="matrix(1,0,0,1,4.86102,0)">
+                                                            <g id="g2028">
+                                                                <g id="g2030">
+                                                                    <path id="path2036" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g2038" transform="matrix(1,0,0,1,8.18698,0)">
+                                                                <g id="g2040">
+                                                                    <g id="g2042">
+                                                                        <path id="path2048" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g2050" transform="matrix(1,0,0,1,11.3083,0)">
+                                                                    <g id="g2052">
+                                                                        <g id="g2054">
+                                                                            <path id="path2060" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g2062" transform="matrix(1,0,0,1,37.9671,0)">
+                                                                        <g id="g2064">
+                                                                            <g id="g2066">
+                                                                                <path id="path2072" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(214,39,40);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g2074">
+                            <g id="g2076">
+                                <g id="g2082" transform="matrix(1,0,0,1,119.922,82.5481)">
+                                    <g id="g2084">
+                                    </g>
+                                    <g id="g2094" transform="matrix(1,0,0,1,4.4005,0)">
+                                        <g id="g2096">
+                                        </g>
+                                        <g id="g2106" transform="matrix(1,0,0,1,7.06127,0)">
+                                            <g id="g2108">
+                                            </g>
+                                            <g id="g2118" transform="matrix(1,0,0,1,51.9873,0)">
+                                                <g id="g2120">
+                                                    <g id="g2122">
+                                                        <path id="path2128" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g2130" transform="matrix(1,0,0,1,52.499,0)">
+                                                    <g id="g2132">
+                                                        <g id="g2134">
+                                                            <path id="path2140" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g2142" transform="matrix(1,0,0,1,4.86102,0)">
+                                                        <g id="g2144">
+                                                            <g id="g2146">
+                                                                <path id="path2152" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g2154" transform="matrix(1,0,0,1,8.18698,0)">
+                                                            <g id="g2156">
+                                                                <g id="g2158">
+                                                                    <path id="path2164" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g2166" transform="matrix(1,0,0,1,11.3083,0)">
+                                                                <g id="g2168">
+                                                                    <g id="g2170">
+                                                                        <path id="path2176" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g2178" transform="matrix(1,0,0,1,37.9671,0)">
+                                                                    <g id="g2180">
+                                                                        <g id="g2182">
+                                                                            <path id="path2188" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(148,103,189);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g2190">
+                            <g id="g2192">
+                                <clipPath id="_clip4">
+                                    <rect x="72" y="23.76" width="446.4" height="75.6"/>
+                                </clipPath>
+                                <g clip-path="url(#_clip4)">
+                                    <g id="g2198" transform="matrix(1,0,0,1,242.37,95.9236)">
+                                        <g id="g2200">
+                                            <g id="g2202">
+                                                <path id="path2208" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                            </g>
+                                        </g>
+                                        <g id="g2210" transform="matrix(1,0,0,1,20.5186,0)">
+                                            <g id="g2212">
+                                                <g id="g2214">
+                                                    <path id="path2220" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                </g>
+                                            </g>
+                                            <g id="g2222" transform="matrix(1,0,0,1,14.5309,0)">
+                                                <g id="g2224">
+                                                    <g id="g2226">
+                                                        <path id="path2232" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                    </g>
+                                                </g>
+                                                <g id="g2234" transform="matrix(1,0,0,1,24.5108,0)">
+                                                    <g id="g2236">
+                                                        <g id="g2238">
+                                                            <path id="path2244" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                        </g>
+                                                    </g>
+                                                    <g id="g2246" transform="matrix(1,0,0,1,8.23814,0)">
+                                                        <g id="g2248">
+                                                            <g id="g2250">
+                                                                <path id="path2256" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                            </g>
+                                                        </g>
+                                                        <g id="g2258" transform="matrix(1,0,0,1,17.1415,0)">
+                                                            <g id="g2260">
+                                                                <g id="g2262">
+                                                                    <path id="path2268" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                </g>
+                                                            </g>
+                                                            <g id="g2270" transform="matrix(1,0,0,1,8.13581,0)">
+                                                                <g id="g2272">
+                                                                    <g id="g2274">
+                                                                        <path id="path2280" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                    </g>
+                                                                </g>
+                                                                <g id="g2282" transform="matrix(1,0,0,1,77.1111,0)">
+                                                                    <g id="g2284">
+                                                                        <g id="g2286">
+                                                                            <path id="path2292" d="M0,-5L0,5" style="fill:none;fill-rule:nonzero;stroke:rgb(140,86,75);stroke-width:2.25px;stroke-linejoin:round;"/>
+                                                                        </g>
+                                                                    </g>
+                                                                    <g id="g2294">
+                                                                    </g>
+                                                                </g>
+                                                            </g>
+                                                        </g>
+                                                    </g>
+                                                </g>
+                                            </g>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                        <g id="g2308" transform="matrix(1,1.23629e-17,1.23629e-17,1.10095,4.30269e-14,-6.64336)">
+                            <g id="g2306">
+                                <g id="g23081" serif:id="g2308">
+                                    <clipPath id="_clip5">
+                                        <rect x="72" y="23.76" width="446.4" height="75.6"/>
+                                    </clipPath>
+                                    <g clip-path="url(#_clip5)">
+                                        <path id="path2314" d="M295.533,23.76L295.533,99.36" style="fill:none;fill-rule:nonzero;stroke:black;stroke-width:2.25px;stroke-linecap:square;stroke-linejoin:round;"/>
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

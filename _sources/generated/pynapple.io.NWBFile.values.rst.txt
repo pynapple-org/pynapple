@@ -1,0 +1,6 @@
+pynapple.io.NWBFile.values
+==========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NWBFile.values

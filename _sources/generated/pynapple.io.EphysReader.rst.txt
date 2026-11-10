@@ -1,0 +1,37 @@
+﻿pynapple.io.EphysReader
+=======================
+
+.. currentmodule:: pynapple.io
+
+.. autoclass:: EphysReader
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~EphysReader.__init__
+      ~EphysReader.clear
+      ~EphysReader.close
+      ~EphysReader.copy
+      ~EphysReader.fromkeys
+      ~EphysReader.get
+      ~EphysReader.items
+      ~EphysReader.keys
+      ~EphysReader.pop
+      ~EphysReader.popitem
+      ~EphysReader.setdefault
+      ~EphysReader.update
+      ~EphysReader.values
+   
+   
+
+   
+   
+   

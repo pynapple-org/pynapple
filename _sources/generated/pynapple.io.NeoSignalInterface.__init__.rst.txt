@@ -1,0 +1,6 @@
+pynapple.io.NeoSignalInterface.\_\_init\_\_
+===========================================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NeoSignalInterface.__init__

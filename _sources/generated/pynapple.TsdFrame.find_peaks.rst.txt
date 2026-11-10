@@ -1,0 +1,6 @@
+pynapple.TsdFrame.find\_peaks
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.find_peaks

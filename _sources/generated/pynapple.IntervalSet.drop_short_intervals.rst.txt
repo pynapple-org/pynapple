@@ -1,0 +1,6 @@
+pynapple.IntervalSet.drop\_short\_intervals
+===========================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.drop_short_intervals

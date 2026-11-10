@@ -1,0 +1,6 @@
+pynapple.io.NWBFile.copy
+========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NWBFile.copy

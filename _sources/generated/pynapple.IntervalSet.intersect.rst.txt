@@ -1,0 +1,6 @@
+pynapple.IntervalSet.intersect
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.intersect

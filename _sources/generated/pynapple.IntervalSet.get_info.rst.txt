@@ -1,0 +1,6 @@
+pynapple.IntervalSet.get\_info
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.get_info

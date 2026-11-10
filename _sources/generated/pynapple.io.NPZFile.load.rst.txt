@@ -1,0 +1,6 @@
+pynapple.io.NPZFile.load
+========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NPZFile.load

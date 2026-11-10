@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.load
+==============================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.load

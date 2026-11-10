@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.update
+==============================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.update

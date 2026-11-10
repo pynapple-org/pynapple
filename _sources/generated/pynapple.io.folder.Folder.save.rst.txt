@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.save
+==============================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.save

@@ -1,0 +1,6 @@
+pynapple.TsdFrame.derivative
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.derivative

@@ -1,0 +1,6 @@
+pynapple.TsdFrame.in\_interval
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.in_interval

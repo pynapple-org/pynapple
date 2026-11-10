@@ -1,0 +1,6 @@
+pynapple.Ts.\_\_init\_\_
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.__init__

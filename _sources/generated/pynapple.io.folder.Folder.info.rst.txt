@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.info
+==============================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.info
