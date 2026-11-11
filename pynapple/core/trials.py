@@ -2551,7 +2551,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """
         Smooth each trial independently with a Gaussian kernel.
 
-        Gaussian smoothing combines neighboring time samples to reduce rapid fluctuations. 
+        Gaussian smoothing combines neighboring time samples to reduce rapid fluctuations.
         Larger standard deviations produce stronger smoothing but reduce temporal detail.
 
         Parameters
