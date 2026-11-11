@@ -251,7 +251,73 @@ class _TrialMetadataMixin:
         return self.trials.index
 
     def groupby(self, by: str):
-        """Group trials by a metadata column."""
+        """
+        Group trials by a trial metadata column.
+
+        Trials with the same metadata value are collected into a trial object.
+
+        Parameters
+        ----------
+        by : str
+            Name of a metadata column in ``trials``.
+
+        Returns
+        -------
+        dict
+            Mapping from metadata values to trial subsets. Each subset
+            has the same type as the original object: :class:`TsTrials`
+            or :class:`TsdTrials`.
+
+        Raises
+        ------
+        KeyError
+            If the trial metadata column does not exist.
+
+        Notes
+        -----
+        Grouping selects trials, not units or features. Each subset retains
+        the original alignment and the selected trials' window boundaries
+        and metadata. Unit or feature metadata is retained.
+
+        A group containing one trial still has a trial axis.
+        For :class:`TsdTrials`, the shared time axis is unchanged, including
+        time points that may be invalid for every trial in a group.
+
+        Use :meth:`groupby_apply` to apply a function to each subset.
+
+        Examples
+        --------
+        Create three trials with two experimental conditions:
+
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> time = np.arange(13) / 2
+        >>> source = nap.Tsd(t=time, d=time)
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0, 4.0],
+        ...     end=[1.0, 3.0, 5.0],
+        ...     metadata={"condition": ["a", "b", "a"]},
+        ... )
+        >>> data = nap.TsdTrials(source, intervals)
+        >>> groups = data.groupby("condition")
+
+        Condition ``"a"`` contains two trials; condition ``"b"`` contains
+        one. Both groups retain the three relative time points:
+
+        >>> groups["a"].shape
+        (2, 3)
+        >>> groups["b"].shape
+        (1, 3)
+        >>> groups["a"].t
+        array([0. , 0.5, 1. ])
+
+        The values remain associated with their original trials:
+
+        >>> groups["a"].d
+        array([[0. , 0.5, 1. ],
+               [4. , 4.5, 5. ]])
+        """
+
         if by not in self.trials.metadata_columns:
             raise KeyError(f"Unknown trial metadata column: {by!r}")
 
@@ -266,7 +332,77 @@ class _TrialMetadataMixin:
         func: Callable[..., Any],
         **kwargs: Any,
     ) -> dict[Any, Any]:
-        """Apply a function to each group of trials."""
+        """
+        Apply a function to each group of trials.
+
+        Trials are grouped by a trial metadata column,
+        then each subset is passed to ``func``.
+
+        Parameters
+        ----------
+        by : str
+            Name of a metadata column in ``trials``.
+        func : callable
+            Function called as ``func(group, **kwargs)``. Its first
+            argument is a :class:`TsTrials` or :class:`TsdTrials` subset,
+            not a raw array.
+        **kwargs
+            Additional keyword arguments passed to ``func``.
+
+        Returns
+        -------
+        dict
+            Mapping from metadata values to the corresponding function
+            results. Results are returned without further conversion
+            or combination.
+
+        Raises
+        ------
+        KeyError
+            If the trial metadata column does not exist.
+
+        Notes
+        -----
+        This method is equivalent to applying ``func`` to each value
+        returned by :meth:`groupby`.
+
+        For :class:`TsdTrials`, use ``axis=0`` to reduce across trials.
+        For example, ``np.nanmean`` ignores NaN padding when averaging
+        trials with different durations. Reducing only the trial axis
+        returns a :class:`~pynapple.Tsd` or :class:`~pynapple.TsdFrame`,
+        depending on whether a feature axis is present.
+
+        Examples
+        --------
+        Compute a mean response for each experimental condition:
+
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> time = np.arange(13) / 2
+        >>> source = nap.Tsd(t=time, d=time)
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0, 4.0],
+        ...     end=[1.0, 3.0, 5.0],
+        ...     metadata={"condition": ["a", "b", "a"]},
+        ... )
+        >>> data = nap.TsdTrials(source, intervals)
+        >>> means = data.groupby_apply("condition", np.nanmean, axis=0)
+
+        The result for each condition retains the relative time axis:
+
+        >>> means["a"].t
+        array([0. , 0.5, 1. ])
+        >>> means["a"].d
+        array([2. , 2.5, 3. ])
+
+        Functions can also return ordinary Python values. Count the
+        number of trials in each condition:
+
+        >>> sizes = data.groupby_apply("condition", len)
+        >>> sizes["a"], sizes["b"]
+        (2, 1)
+        """
+
         return {key: func(group, **kwargs) for key, group in self.groupby(by).items()}
 
     def _select_trial_positions(self, positions: np.ndarray):
@@ -895,26 +1031,6 @@ class TsTrials(_TrialMetadataMixin):
 
         >>> events.d.tolist()
         [[0, 10], [1, 10], [0, 10]]
-
-        This representation is useful for raster plots. Select one unit by
-        position, then plot its aligned spike times against trial identifiers.
-        Each vertical mark represents one spike:
-
-        >>> import matplotlib.pyplot as plt
-        >>> events = trials[:, 0].to_tsdframe()
-        >>> fig, ax = plt.subplots()
-        >>> _ = ax.plot(
-        ...     events.t,
-        ...     events["trial"].d,
-        ...     marker="|",
-        ...     linestyle="none",
-        ... )
-        >>> _ = ax.set(
-        ...     xlabel="Time from trial start (s)",
-        ...     ylabel="Trial",
-        ...     yticks=trials.trial_ids,
-        ... )
-        >>> plt.show()
         """
 
         order = np.argsort(self.spikes, kind="stable")
@@ -944,7 +1060,7 @@ class TsTrials(_TrialMetadataMixin):
         """
         Select events within an aligned time window across all trials.
 
-        Events at both ``start`` and ``end`` are included. 
+        Events at both ``start`` and ``end`` are included.
         The window is intersected with each trial's current window.
 
         Parameters
@@ -1251,14 +1367,174 @@ class TsTrials(_TrialMetadataMixin):
 
 class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     """
-    Trial-aligned timestamps with data.
+    Trial-aligned sampled data with a shared relative time axis.
+
+    Each interval defines a trial, with time zero at its start.
+    Data are stored with axes ``(trial, time)`` for a scalar signal or
+    ``(trial, time, feature)`` for multiple signals.
+    Shorter trials are padded with NaN.
 
     Parameters
     ----------
     source : Tsd or TsdFrame
-        Uniformly sampled source data.
+        Uniformly sampled source data containing at least two samples.
+        Columns and column metadata are retained for a
+        :class:`~pynapple.TsdFrame` source.
     trials : IntervalSet
-        Trial intervals, data is aligned to trial starts.
+        Trial intervals in the same time reference as the source.
+        Trial starts must coincide with source samples within numerical
+        tolerance, and the source must contain the required samples.
+        Interval metadata is retained as trial metadata.
+
+    Attributes
+    ----------
+    trials : IntervalSet
+        Original trial intervals and their metadata.
+    trial_ids : numpy.ndarray
+        Trial identifiers from the interval index.
+    values : numpy.ndarray
+        Dense data with axes ``(trial, time)`` or
+        ``(trial, time, feature)``.
+    d : numpy.ndarray
+        Alias for ``values``.
+    t : numpy.ndarray
+        Shared aligned timestamps in seconds.
+    valid : numpy.ndarray
+        Boolean mask with shape ``(trial, time)`` indicating which
+        samples belong to each trial's current window.
+    shape : tuple of int
+        Dimensions of the data array.
+    ndim : int
+        Number of data dimensions: two or three.
+    columns : pandas.Index
+        Feature names for three-dimensional data. Not available for
+        scalar trial data.
+    feature_names : pandas.Index or None
+        Feature names, or ``None`` for scalar trial data.
+    feature_metadata : metadata table or None
+        Metadata associated with features, or ``None`` for scalar data.
+    sample_period : float
+        Sampling interval in seconds.
+    bin_size : float or None
+        Bin width in seconds for data created by
+        :meth:`TsTrials.count`; otherwise ``None``.
+    data_kind : str
+        Data interpretation: ``"continuous"`` for sampled source data
+        or ``"count"`` for data created by :meth:`TsTrials.count`.
+        Can be changed with :meth:`with_data`.
+    alignment : str
+        Time reference. Construction uses ``"start"``; data created by
+        :meth:`TsTrials.count` inherit the timestamp object's alignment.
+    window_starts, window_ends : numpy.ndarray
+        Current window boundaries for each trial, in aligned seconds.
+    durations : numpy.ndarray
+        Current window duration for each trial, in seconds.
+
+    Notes
+    -----
+    Construction copies source samples without interpolation. Samples
+    at both trial boundaries are included within numerical tolerance.
+    The shared relative time grid is reconstructed from the estimated
+    sampling interval.
+
+    The ``valid`` mask describes sample availability, not whether values
+    are finite. A valid sample can contain NaN from the source data.
+    Use ``np.nanmean`` rather than ``np.mean`` when NaN padding should
+    be excluded from an average.
+
+    Indexing uses positions, not trial identifiers or feature names.
+    Selecting one trial returns a :class:`~pynapple.Tsd` or
+    :class:`~pynapple.TsdFrame`, with invalid samples removed.
+    Keeping both trial and time axes returns a :class:`TsdTrials`.
+    Selecting a single time position returns a NumPy array or scalar.
+    Lists on different axes select independently rather than pairwise.
+
+    Arithmetic and shape-preserving NumPy ufuncs retain the axes and
+    metadata. Supported NumPy reductions return different objects
+    depending on the reduced axes:
+
+    - Reducing only the trial axis returns a :class:`~pynapple.Tsd`
+      or :class:`~pynapple.TsdFrame`. Times invalid in every trial
+      are omitted.
+    - Reducing only the feature axis returns a scalar
+      :class:`TsdTrials`.
+    - Reducing the time axis or all axes returns a NumPy result.
+      Reductions over nonempty axes with ``keepdims=True`` also
+      return NumPy results.
+
+    Use ``np.asarray(data)`` to access the dense array for operations
+    that are not supported directly. Use :meth:`with_data` to attach
+    transformed values to the existing trial and time axes.
+
+    Examples
+    --------
+    Create two trials with different durations from a scalar signal:
+
+    >>> import numpy as np
+    >>> import pynapple as nap
+    >>> time = np.arange(9) / 2
+    >>> source = nap.Tsd(t=time, d=time)
+    >>> intervals = nap.IntervalSet(
+    ...     start=[0.0, 2.0],
+    ...     end=[1.0, 2.5],
+    ...     metadata={"condition": ["a", "b"]},
+    ... )
+    >>> data = nap.TsdTrials(source, intervals)
+    >>> data.shape
+    (2, 3)
+    >>> data.t
+    array([0. , 0.5, 1. ])
+
+    The shorter trial is padded rather than filled with zeros:
+
+    >>> data.d
+    array([[0. , 0.5, 1. ],
+           [2. , 2.5, nan]])
+    >>> data.valid
+    array([[ True,  True,  True],
+           [ True,  True, False]])
+
+    Selecting one trial removes its padding and returns a time series:
+
+    >>> data[1].t
+    array([0. , 0.5])
+    >>> data[1].d
+    array([2. , 2.5])
+
+    Use a slice to retain the trial axis:
+
+    >>> data[1:].shape
+    (1, 3)
+
+    Average across trials while ignoring NaN padding:
+
+    >>> mean = np.nanmean(data, axis=0)
+    >>> mean.d
+    array([1. , 1.5, 1. ])
+
+    A frame source adds a feature axis and retains its column names:
+
+    >>> frame = nap.TsdFrame(
+    ...     t=time,
+    ...     d=np.column_stack([time, -time]),
+    ...     columns=["x", "y"],
+    ... )
+    >>> population = nap.TsdTrials(frame, intervals)
+    >>> population.shape
+    (2, 3, 2)
+    >>> list(population.columns)
+    ['x', 'y']
+
+    Select the first feature across all trials and times:
+
+    >>> population[..., 0].shape
+    (2, 3)
+
+    Select an inclusive time window with :meth:`get`:
+
+    >>> window = data.get(0.0, 0.5)
+    >>> window.t
+    array([0. , 0.5])
     """
 
     __array_priority__ = 1000
@@ -1841,10 +2117,87 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         columns: pd.Index | list[str] | None = None,
         data_kind: str | None = None,
     ) -> TsdTrials:
-        """Replace data while preserving trial and time axes.
-        Explicit column names replace the existing feature metadata.
-        Invalid samples remain NaN.
         """
+        Return new data with the existing trial and time axes.
+
+        Use this method to attach externally computed values, such as
+        model predictions or dimensionality-reduction results, to the original trials.
+
+        Parameters
+        ----------
+        values : array-like
+            Replacement data with shape ``(trial, time)`` or
+            ``(trial, time, feature)``. The first two dimensions must
+            match the original data. The feature dimension may change.
+        columns : pandas.Index or list of str, optional
+            Names for the replacement features. Must match the feature
+            dimension and cannot be supplied for two-dimensional data.
+            Explicit names discard existing feature metadata.
+        data_kind : str, optional
+            Replacement data interpretation. If omitted, the current
+            value is retained. Use ``"continuous"`` for transformed values
+            that should be selected by timestamp rather than bin edges.
+
+        Returns
+        -------
+        TsdTrials
+            Replacement values with the original time axis, validity mask,
+            trial metadata, alignment, and window boundaries.
+            The original object is unchanged.
+
+        Raises
+        ------
+        ValueError
+            If the data dimensions do not match, or the column names
+            are incompatible with the feature dimension.
+
+        Notes
+        -----
+        Invalid samples are set to NaN regardless of the supplied values.
+        NaNs at valid samples are preserved.
+
+        Without explicit ``columns``, feature names and metadata are
+        retained when the feature count is unchanged. Otherwise, new
+        features receive integer names and empty metadata.
+        Two-dimensional values have no feature names or metadata.
+
+        Matching dimensions do not verify sample identity: replacement
+        values must remain in the original trial and time order.
+
+        Changing ``data_kind`` does not transform the values or change
+        ``sample_period`` or ``bin_size``. It changes how :meth:`get`
+        interprets the data: ``"count"`` requires complete bins, while
+        other values select by timestamp.
+
+        Examples
+        --------
+        Attach a transformed signal to two trials:
+
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> time = np.arange(9) / 2
+        >>> source = nap.Tsd(t=time, d=time)
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0], end=[1.0, 3.0]
+        ... )
+        >>> data = nap.TsdTrials(source, intervals)
+        >>> squared = data.with_data(data.d ** 2)
+        >>> squared.d
+        array([[0.  , 0.25, 1.  ],
+               [4.  , 6.25, 9.  ]])
+
+        Replace the scalar signal with two named features:
+
+        >>> features = np.stack([data.d, data.d ** 2], axis=-1)
+        >>> transformed = data.with_data(
+        ...     features, columns=["value", "squared"]
+        ... )
+        >>> transformed.shape
+        (2, 3, 2)
+        >>> list(transformed.columns)
+        ['value', 'squared']
+        """
+
         values = np.asarray(values)
         if values.ndim not in (2, 3) or values.shape[:2] != self.shape[:2]:
             raise ValueError(
@@ -1878,7 +2231,77 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         return result
 
     def get(self, start: float, end: float) -> TsdTrials:
-        """Return data within an aligned time window."""
+        """
+        Select an aligned time window across all trials.
+
+        For continuous data, samples at both boundaries are included.
+        For count data, only bins fully contained in the window are selected.
+
+        Parameters
+        ----------
+        start : float
+            Window start in seconds, relative to the current alignment.
+        end : float
+            Window end in seconds, relative to the current alignment.
+            Must be greater than ``start``.
+
+        Returns
+        -------
+        TsdTrials
+            Selected time points and values with updated validity,
+            window boundaries, and durations. All trials and features
+            are retained. The original object is unchanged.
+
+        Raises
+        ------
+        ValueError
+            If either boundary is non-finite or ``start >= end``.
+
+        Notes
+        -----
+        The requested window is intersected with each trial's current
+        window. Invalid samples remain NaN, and previously excluded
+        samples are not restored.
+
+        Continuous data use the inclusive interval ``[start, end]``.
+        Boundary comparisons allow a small numerical tolerance based
+        on the sampling interval.
+
+        For ``data_kind="count"``, both bin edges must lie within the
+        window. A bin is not included merely because its center lies
+        within the window. Counts are not recomputed or split.
+
+        Selected timestamps keep their existing reference; the window
+        start does not become time zero. Original intervals and metadata
+        in ``trials`` are unchanged.
+
+        Examples
+        --------
+        Select a window from two sampled trials:
+
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> time = np.arange(9) / 2
+        >>> source = nap.Tsd(t=time, d=time)
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0], end=[1.0, 3.0]
+        ... )
+        >>> data = nap.TsdTrials(source, intervals)
+        >>> selected = data.get(0.5, 1.0)
+        >>> selected.t
+        array([0.5, 1. ])
+        >>> selected.d
+        array([[0.5, 1. ],
+               [2.5, 3. ]])
+
+        The window changes, but the alignment reference does not:
+
+        >>> selected.window_starts
+        array([0.5, 0.5])
+        >>> selected.durations
+        array([0.5, 0.5])
+        """
+
         start = float(start)
         end = float(end)
 
@@ -2009,30 +2432,71 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         array: np.ndarray,
         trim: str = "both",
     ) -> TsdTrials:
-        """Convolve each trial independently along time.
+        """
+        Convolve each trial independently along the time axis.
+
+        The same one-dimensional kernel is applied separately to every
+        trial and feature. The full convolution is trimmed to preserve
+        the original data shape and timestamps.
 
         Parameters
         ----------
         array : array-like
             Nonempty one-dimensional convolution kernel.
+            Kernel positions correspond to successive time samples.
         trim : {"both", "left", "right"}, optional
-            Side of the full convolution to trim to the original length.
-            Default is "both", which centers the kernel.
+            Side of the full convolution to trim. Default is ``"both"``,
+            which takes the centered segment. ``"left"`` removes the
+            first ``len(array) - 1`` samples; ``"right"`` removes the
+            last ``len(array) - 1`` samples.
 
         Returns
         -------
         TsdTrials
-            Convolved data with the original axes and metadata.
+            Convolved values with the original axes, validity mask,
+            and metadata. The original object is unchanged.
+
+        Raises
+        ------
+        ValueError
+            If the kernel is empty or not one-dimensional, ``trim`` is
+            unknown, or the time axis does not match a positive, uniform
+            sampling interval.
 
         Notes
         -----
-        Each trial is zero-padded outside its valid samples during
-        convolution. Invalid bins are restored to NaN afterward.
-        No edge correction or kernel normalization is applied.
-        Trials and features are convolved independently.
-        NaNs within valid bins propagate locally.
+        Each trial is zero-padded outside its valid samples. Invalid
+        samples are restored to NaN afterward. Trials and features never
+        contribute to one another's convolution.
 
-        The time axis must be uniformly sampled.
+        The kernel is not normalized, and no edge correction is applied.
+        For a moving average, supply a kernel that sums to one. Values
+        near trial boundaries may be attenuated by the zero padding.
+
+        NaNs within valid samples propagate locally through the kernel.
+        For an even-length kernel, ``trim="both"`` removes
+        ``(len(array) - 1) // 2`` samples from the left and the remainder
+        from the right.
+
+        Use :meth:`smooth` to construct and apply a Gaussian kernel.
+
+        Examples
+        --------
+        Apply a three-sample moving average to a constant signal:
+
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> source = nap.Tsd(t=np.arange(5), d=np.ones(5))
+        >>> data = nap.TsdTrials(source, nap.IntervalSet(0.0, 4.0))
+        >>> averaged = data.convolve(np.ones(3) / 3)
+        >>> np.round(averaged.d, 3)
+        array([[0.667, 1.   , 1.   , 1.   , 0.667]])
+
+        Boundary values are smaller because the signal is zero-padded.
+        The time axis is unchanged:
+
+        >>> averaged.t
+        array([0., 1., 2., 3., 4.])
         """
         from scipy import signal
 
@@ -2085,53 +2549,85 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """
         Smooth each trial independently with a Gaussian kernel.
 
+        Gaussian smoothing combines neighboring time samples to reduce rapid fluctuations. 
+        Larger standard deviations produce stronger smoothing but reduce temporal detail.
+
         Parameters
         ----------
         std : float
-            Standard deviation of the Gaussian kernel in units of time.
+            Positive, finite standard deviation of the Gaussian kernel,
+            expressed in ``time_units``.
         windowsize : float or None, optional
-            Duration of the kernel. If None, its length is determined by
-            std and size_factor. The kernel length is rounded up to an
-            odd number of samples.
-        time_units : str, optional
-            Units of std and windowsize: 's', 'ms', or 'us'.
+            Positive, finite kernel duration in ``time_units``.
+            If omitted, the kernel length is determined by ``std`` and
+            ``size_factor``.
+        time_units : {"s", "ms", "us"}, optional
+            Units of ``std`` and ``windowsize``. Default is ``"s"``.
         size_factor : int, optional
-            Kernel length as a multiple of the standard deviation in
-            samples. Default is 100. Ignored when windowsize is provided.
+            Positive multiplier used to determine kernel length from
+            the standard deviation in samples. Default is ``100``.
+            Ignored for length calculation when ``windowsize`` is given.
         norm : bool, optional
-            Whether to normalise the kernel to sum to one. Default is True.
+            Whether to normalize the kernel to sum to one.
+            Default is ``True``.
 
         Returns
         -------
         TsdTrials
-            Smoothed data with the original time axis, validity mask,
+            Smoothed values with the original axes, validity mask,
             and metadata. The original object is unchanged.
+
+        Raises
+        ------
+        ValueError
+            If ``std`` or ``windowsize`` is nonpositive or non-finite,
+            ``size_factor`` is not a positive integer, or the time axis
+            does not match a positive, uniform sampling interval.
 
         Notes
         -----
-        Smoothing requires a uniformly sampled time axis. Each unit or
-        feature is smoothed separately within each trial.
+        The standard deviation in samples is ``std_seconds / sample_period``.
+        Kernel length is the integer part of this value multiplied by
+        ``size_factor``, or the integer part of
+        ``windowsize_seconds / sample_period`` when a duration is given.
+        An even length is increased by one to obtain an odd-length kernel.
 
-        Each trial is zero-padded outside its valid samples during
-        convolution. Invalid bins are restored to NaN afterward.
+        Each trial and feature is smoothed separately. Values outside
+        valid samples are treated as zero, and invalid samples are
+        restored to NaN afterward. NaNs within valid samples propagate
+        locally through the kernel.
+
         No edge correction is applied, so values near trial boundaries
-        may be attenuated. Trials are smoothed independently.
-        NaNs within valid bins propagate locally.
+        may be attenuated. A kernel much longer than a trial can affect
+        every sample through zero padding.
+
+        Smoothing does not convert counts to rates or change
+        ``data_kind``. Use :meth:`convolve` to supply a custom kernel.
 
         Examples
         --------
-        Create two trials from a sampled signal:
+        Create two trials from a signal sampled at 100 Hz:
+
         >>> import numpy as np
         >>> import pynapple as nap
-        >>> source = nap.Tsd(t=np.arange(200) / 100, d=np.sin(np.arange(200)))
-        >>> trials = nap.IntervalSet(start=[0.0, 1.0], end=[0.9, 1.9])
-        >>> data = nap.TsdTrials(source=source, trials=trials)
+        >>> time = np.arange(200) / 100
+        >>> source = nap.Tsd(t=time, d=np.sin(2 * np.pi * time))
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 1.0], end=[0.9, 1.9]
+        ... )
+        >>> data = nap.TsdTrials(source, intervals)
 
         Smooth with a Gaussian standard deviation of 50 ms:
+
         >>> smoothed = data.smooth(std=50, time_units="ms")
 
-        Specify a kernel duration of 500 ms:
-        >>> smoothed = data.smooth(std=50, windowsize=500, time_units="ms")
+        Limit the kernel duration to 500 ms:
+
+        >>> smoothed = data.smooth(
+        ...     std=50, windowsize=500, time_units="ms"
+        ... )
+        >>> smoothed.shape == data.shape
+        True
         """
         from scipy import signal
 
