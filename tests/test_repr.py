@@ -34,7 +34,6 @@ def mock_terminal_size(size):
     ],
 )
 class TestObjectRepr:
-
     @pytest.mark.parametrize(
         "kwargs",
         [

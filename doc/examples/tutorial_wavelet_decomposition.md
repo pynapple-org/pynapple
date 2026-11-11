@@ -353,7 +353,7 @@ ax1.legend();
 We observe that the theta power is far stronger during the first 4 seconds of the dataset, during which the rat
 is traversing the linear track.
 
-There also seem to be peaks in the 200Hz frequency power after traversal of thew maze is complete. 
+There also seem to be peaks in the 200Hz frequency power after traversal of thew maze is complete.
 Those events are called sharp-waves ripples, take a look at [the tutorial on sharp-wave ripples](../examples/tutorial_ripple_detection.md) to find out more about them!
 ***
 

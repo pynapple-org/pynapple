@@ -526,7 +526,9 @@ def compute_tuning_curves(
     keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
-        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+        else data.columns
+        if isinstance(data, nap.TsdFrame)
+        else [0]
     )
     rates = None
     if isinstance(data, nap.TsGroup):
@@ -734,7 +736,9 @@ def compute_response_per_epoch(
     keys = np.asarray(
         data.keys()
         if isinstance(data, nap.TsGroup)
-        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+        else data.columns
+        if isinstance(data, nap.TsdFrame)
+        else [0]
     )
     if isinstance(data, (nap.TsGroup, nap.Ts)):
         # SPIKES
