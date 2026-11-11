@@ -331,19 +331,116 @@ def _count_spikes(
 
 class TsTrials(_TrialMetadataMixin):
     """
-    Trial-aligned timestamps.
+    Trial-aligned timestamps from multiple units.
+
+    Each interval defines a trial. Events within a trial are expressed
+    relative to its start, so time zero marks the beginning of each trial.
 
     Parameters
     ----------
     source : TsGroup
-        Timestamp data for each unit.
+        Timestamp data for each unit. All entries must be
+        :class:`~pynapple.Ts` objects.
     trials : IntervalSet
-        Trial intervals, unit timestamps are aligned to trial starts.
+        Trial intervals in the same time reference as the source.
+        Interval metadata is retained as trial metadata.
+
+    Attributes
+    ----------
+    trials : IntervalSet
+        Original trial intervals and their metadata.
+    trial_ids : numpy.ndarray
+        Trial identifiers from the interval index.
+    unit_keys : numpy.ndarray
+        Unit identifiers from the source :class:`~pynapple.TsGroup`.
+    unit_metadata : metadata table
+        Metadata associated with the units.
+    spikes : numpy.ndarray
+        Aligned event times in seconds.
+    trial_index : numpy.ndarray
+        Positional trial index for each event.
+    neuron_index : numpy.ndarray
+        Positional unit index for each event.
+    shape : tuple of int
+        Number of trials and units, ordered as ``(trial, unit)``.
+    alignment : str
+        Alignment reference: ``"start"`` initially, or the metadata column
+        passed to :meth:`realign_to`.
+    window_starts, window_ends : numpy.ndarray
+        Current window boundaries for each trial, in aligned seconds.
+    durations : numpy.ndarray
+        Current window duration for each trial, in seconds.
 
     Notes
     -----
-    Events are represented by three parallel arrays: sorted aligned spike
-    times, positional trial indices, and positional neuron indices.
+    Indexing follows the axis order ``(trial, unit)`` and uses positions,
+    not trial identifiers or unit keys.
+
+    Selecting one trial returns a :class:`~pynapple.TsGroup`. Selecting
+    one trial and one unit returns a :class:`~pynapple.Ts`. Keeping the
+    trial axis with a slice or list returns a :class:`TsTrials` object.
+
+    The event arrays are parallel: ``spikes[i]``, ``trial_index[i]``, and
+    ``neuron_index[i]`` describe the same event. Events are not guaranteed
+    to be globally sorted by aligned time.
+
+    Use :meth:`realign_to` to express times relative to an event stored
+    in trial metadata. Use :meth:`count` to create a :class:`TsdTrials`
+    object with axes ``(trial, time, unit)``.
+
+    Examples
+    --------
+    Create two units and two trials:
+
+    >>> import pynapple as nap
+    >>> support = nap.IntervalSet(start=0.0, end=4.0)
+    >>> source = nap.TsGroup(
+    ...     {
+    ...         10: nap.Ts(t=[0.25, 0.75, 2.25], time_support=support),
+    ...         20: nap.Ts(t=[0.5, 2.5, 2.75], time_support=support),
+    ...     },
+    ...     time_support=support,
+    ...     metadata={"region": ["ca1", "ca3"]},
+    ... )
+    >>> intervals = nap.IntervalSet(
+    ...     start=[0.0, 2.0],
+    ...     end=[1.0, 3.0],
+    ...     metadata={"condition": ["a", "b"], "cue": [0.5, 2.5]},
+    ... )
+    >>> trials = nap.TsTrials(source, intervals)
+    >>> trials.shape
+    (2, 2)
+
+    Select the first unit by position. Its source key is ``10``:
+
+    >>> trials[0, 0].t
+    array([0.25, 0.75])
+    >>> trials[1, 0].t
+    array([0.25])
+
+    Keep the trial axis when selecting a subset:
+
+    >>> trials[:1].shape
+    (1, 2)
+
+    Align events to the cue timestamp in each trial with
+    :meth:`realign_to`:
+
+    >>> aligned = trials.realign_to("cue")
+    >>> aligned[0, 0].t
+    array([-0.25,  0.25])
+
+    Count events in 0.5-second bins with :meth:`count`:
+
+    >>> counts = trials.count(0.5)
+    >>> counts.shape
+    (2, 2, 2)
+
+    Group trials by their condition metadata with :meth:`groupby`:
+
+    >>> groups = trials.groupby("condition")
+    >>> groups["a"].shape
+    (1, 2)
     """
 
     def __init__(
@@ -417,7 +514,7 @@ class TsTrials(_TrialMetadataMixin):
         trials: IntervalSet,
         unit_keys: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Create sorted aligned event arrays."""
+        """Create aligned event arrays."""
         time_chunks = []
         neuron_chunks = []
 
@@ -626,7 +723,78 @@ class TsTrials(_TrialMetadataMixin):
         )
 
     def realign_to(self, column: str) -> TsTrials:
-        """Return trials aligned to metadata timestamps."""
+        """
+        Align events to timestamps stored in trial metadata.
+
+        The timestamp in the selected column becomes time zero for each trial.
+        Events before that timestamp have negative times,
+        and events after it have positive times.
+
+        Parameters
+        ----------
+        column : str
+            Trial metadata column containing absolute timestamps in seconds.
+            Each timestamp must be finite and lie within its original trial.
+
+        Returns
+        -------
+        TsTrials
+            Events and window boundaries expressed relative to the selected
+            timestamps. Trial membership, durations, and metadata are retained.
+            The original object is unchanged.
+
+        Raises
+        ------
+        KeyError
+            If the metadata column does not exist.
+        TypeError
+            If the column does not contain numeric timestamps.
+        ValueError
+            If a timestamp is missing, non-finite, or outside its trial.
+
+        Notes
+        -----
+        Metadata timestamps use the original recording time reference, not
+        the current aligned time reference.
+
+        Calling this method again aligns to the newly selected column;
+        it does not accumulate alignment offsets.
+
+        Alignment does not restore events removed by :meth:`get`.
+
+        Examples
+        --------
+        Align two trials to a cue occurring 0.5 seconds after each start:
+
+        >>> import pynapple as nap
+        >>> support = nap.IntervalSet(start=0.0, end=4.0)
+        >>> source = nap.TsGroup(
+        ...     {10: nap.Ts(t=[0.25, 0.75, 2.25], time_support=support)},
+        ...     time_support=support,
+        ... )
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0],
+        ...     end=[1.0, 3.0],
+        ...     metadata={"cue": [0.5, 2.5]},
+        ... )
+        >>> trials = nap.TsTrials(source, intervals)
+        >>> aligned = trials.realign_to("cue")
+        >>> aligned[0, 0].t
+        array([-0.25,  0.25])
+
+        The trial boundaries move into the same reference frame:
+
+        >>> aligned.window_starts
+        array([-0.5, -0.5])
+        >>> aligned.window_ends
+        array([0.5, 0.5])
+
+        The original alignment is unchanged:
+
+        >>> trials[0, 0].t
+        array([0.25, 0.75])
+        """
+
         if column not in self.trials.metadata_columns:
             raise KeyError(f"Unknown trial metadata column: {column!r}")
 
@@ -678,7 +846,77 @@ class TsTrials(_TrialMetadataMixin):
         )
 
     def to_tsdframe(self) -> TsdFrame:
-        """Return all aligned spikes as a two-column event table."""
+        """
+        Convert aligned events to a two-column time series.
+
+        Each row represents one event. Its timestamp is the aligned event
+        time, and its values identify the trial and unit.
+
+        Returns
+        -------
+        TsdFrame
+            Events sorted by aligned time, with columns ``"trial"`` and
+            ``"unit"`` containing trial identifiers and unit keys.
+
+        Notes
+        -----
+        The identifiers are labels from ``trial_ids`` and ``unit_keys``,
+        not positional indices from ``trial_index`` and ``neuron_index``.
+
+        Events from different trials share the same aligned time reference,
+        so the returned object may contain repeated timestamps. Trials or
+        units without events have no rows.
+
+        The time support spans the earliest current window start through
+        the latest current window end. Trial and unit metadata tables are
+        not attached to the returned object.
+
+        Examples
+        --------
+        Combine events from two trials into one table:
+
+        >>> import pynapple as nap
+        >>> support = nap.IntervalSet(start=0.0, end=4.0)
+        >>> source = nap.TsGroup(
+        ...     {10: nap.Ts(t=[0.25, 0.75, 2.5], time_support=support)},
+        ...     time_support=support,
+        ... )
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0], end=[1.0, 3.0]
+        ... )
+        >>> trials = nap.TsTrials(source, intervals)
+        >>> events = trials.to_tsdframe()
+        >>> events.t
+        array([0.25, 0.5 , 0.75])
+        >>> list(events.columns)
+        ['trial', 'unit']
+
+        The event at aligned time 0.5 belongs to the second trial:
+
+        >>> events.d.tolist()
+        [[0, 10], [1, 10], [0, 10]]
+
+        This representation is useful for raster plots. Select one unit by
+        position, then plot its aligned spike times against trial identifiers.
+        Each vertical mark represents one spike:
+
+        >>> import matplotlib.pyplot as plt
+        >>> events = trials[:, 0].to_tsdframe()
+        >>> fig, ax = plt.subplots()
+        >>> _ = ax.plot(
+        ...     events.t,
+        ...     events["trial"].d,
+        ...     marker="|",
+        ...     linestyle="none",
+        ... )
+        >>> _ = ax.set(
+        ...     xlabel="Time from trial start (s)",
+        ...     ylabel="Trial",
+        ...     yticks=trials.trial_ids,
+        ... )
+        >>> plt.show()
+        """
+
         order = np.argsort(self.spikes, kind="stable")
         values = np.column_stack(
             [
@@ -703,7 +941,71 @@ class TsTrials(_TrialMetadataMixin):
         )
 
     def get(self, start: float, end: float) -> TsTrials:
-        """Return data within an aligned time window."""
+        """
+        Select events within an aligned time window across all trials.
+
+        Events at both ``start`` and ``end`` are included. 
+        The window is intersected with each trial's current window.
+
+        Parameters
+        ----------
+        start : float
+            Window start in seconds, relative to the current alignment.
+        end : float
+            Window end in seconds, relative to the current alignment.
+            Must be greater than ``start``.
+
+        Returns
+        -------
+        TsTrials
+            Selected events with updated window boundaries and durations.
+
+        Raises
+        ------
+        ValueError
+            If either boundary is non-finite or ``start >= end``.
+
+        Notes
+        -----
+        Selection uses the inclusive interval ``[start, end]``. Events must
+        lie within both the requested window and the trial's current window.
+        Trials without overlap contain no events.
+
+        Event times retain their current reference: selecting a window does
+        not move its start to zero. Use :meth:`realign_to` to change the
+        alignment reference.
+
+        The original intervals and metadata in ``trials`` are unchanged.
+        The selected boundaries are stored in ``window_starts`` and
+        ``window_ends``. Trials without overlap have zero window duration.
+
+        Examples
+        --------
+        Select events between 0.5 and 1.0 seconds after trial onset:
+
+        >>> import pynapple as nap
+        >>> support = nap.IntervalSet(start=0.0, end=2.0)
+        >>> source = nap.TsGroup(
+        ...     {10: nap.Ts(t=[0.25, 0.5, 0.75, 1.0], time_support=support)},
+        ...     time_support=support,
+        ... )
+        >>> trials = nap.TsTrials(
+        ...     source, nap.IntervalSet(start=0.0, end=1.5)
+        ... )
+        >>> selected = trials.get(0.5, 1.0)
+        >>> selected[0, 0].t
+        array([0.5 , 0.75, 1.  ])
+
+        Both boundary events are included, and time zero remains the original trial start:
+
+        >>> selected.window_starts
+        array([0.5])
+        >>> selected.window_ends
+        array([1.])
+        >>> selected.durations
+        array([0.5])
+        """
+
         start = float(start)
         end = float(end)
 
@@ -725,7 +1027,12 @@ class TsTrials(_TrialMetadataMixin):
 
         event_starts = window_starts[self.trial_index]
         event_ends = window_ends[self.trial_index]
-        selected = (self.spikes >= event_starts) & (self.spikes < event_ends)
+        selected = (
+            (self.spikes >= start)
+            & (self.spikes <= end)
+            & (self.spikes >= event_starts)
+            & (self.spikes <= event_ends)
+        )
 
         return self._from_events(
             spikes=self.spikes[selected],
@@ -748,7 +1055,92 @@ class TsTrials(_TrialMetadataMixin):
         time_units: str = "s",
         dtype: np.dtype | type = np.float64,
     ) -> TsdTrials:
-        """Count aligned spikes in fixed-width bins."""
+        """
+        Count events in fixed-width bins for each trial and unit.
+
+        All trials share a bin grid in aligned time. Only bins fully contained
+        in a trial's current window are valid. Valid bins without events
+        contain zero; invalid bins contain NaN.
+
+        Parameters
+        ----------
+        bin_size : float
+            Positive bin width, expressed in ``time_units``.
+        time_units : {"s", "ms", "us"}, optional
+            Units of ``bin_size``. Default is ``"s"``.
+        dtype : numpy.dtype or type, optional
+            Floating-point output dtype. Default is ``numpy.float64``.
+            Integer dtypes are not supported because invalid bins contain NaN.
+
+        Returns
+        -------
+        TsdTrials
+            Event counts with axes ``(trial, time, unit)``. The time axis
+            contains bin centers in seconds. Trial metadata, unit metadata,
+            alignment, and window boundaries are retained.
+
+        Raises
+        ------
+        TypeError
+            If ``bin_size`` is not an int or float, or ``dtype`` is not
+            floating-point.
+        ValueError
+            If ``bin_size`` is nonpositive or rounds to less than one
+            nanosecond.
+
+        Notes
+        -----
+        Bin edges are integer multiples of the bin width relative to aligned
+        time zero. Bins use the half-open convention ``[left, right)``:
+        an event on a bin edge belongs to the bin on its right.
+
+        Partial bins at trial boundaries are invalid rather than counted
+        over a shorter duration. An event at the final right edge is therefore
+        not included in the preceding bin.
+
+        Times and bin widths are rounded to integer nanoseconds for counting.
+        The returned values are counts, not firing rates. Divide by the
+        returned ``bin_size`` in seconds to obtain rates in events per second.
+
+        Examples
+        --------
+        Count events in two trials with different durations:
+
+        >>> import pynapple as nap
+        >>> support = nap.IntervalSet(start=0.0, end=4.0)
+        >>> source = nap.TsGroup(
+        ...     {10: nap.Ts(t=[0.25, 0.75, 2.25, 2.5], time_support=support)},
+        ...     time_support=support,
+        ... )
+        >>> intervals = nap.IntervalSet(
+        ...     start=[0.0, 2.0], end=[1.0, 2.75]
+        ... )
+        >>> trials = nap.TsTrials(source, intervals)
+        >>> counts = trials.count(0.5)
+        >>> counts.t
+        array([0.25, 0.75])
+        >>> counts.d[:, :, 0]
+        array([[ 1.,  1.],
+               [ 1., nan]])
+
+        The second bin is not fully contained in the shorter trial:
+
+        >>> counts.valid
+        array([[ True,  True],
+               [ True, False]])
+
+        Express the same bin width in milliseconds:
+
+        >>> counts = trials.count(500, time_units="ms")
+
+        Convert counts to rates, or average across trials while ignoring
+        invalid bins:
+
+        >>> import numpy as np
+        >>> rates = counts / counts.bin_size
+        >>> mean_rate = np.nanmean(rates, axis=0)
+        """
+
         if not isinstance(bin_size, (int, float)):
             raise TypeError("bin_size must be an int or float.")
         if bin_size <= 0:
