@@ -315,11 +315,28 @@ class TestTsTrials:
         np.testing.assert_allclose(result.window_ends, [1.5, 1.5, 1.5])
         np.testing.assert_allclose(result.durations, [1.0, 1.0, 1.0])
         np.testing.assert_allclose(result[0, 0].t, [0.5, 1.0])
-        np.testing.assert_allclose(result[1, 0].t, [0.5])
+        np.testing.assert_allclose(result[1, 0].t, [0.5, 1.5])
         assert np.all(result.spikes >= 0.5)
-        assert np.all(result.spikes < 1.5)
+        assert np.all(result.spikes <= 1.5)
 
-    def test_get_inclusive_endpoint(self) -> None:
+    @pytest.mark.parametrize(
+        "start, end, expected",
+        [
+            (0.0, 1.0, [0.2, 1.0]),
+            (0.0, 2.0, [0.2, 1.0]),
+            (0.2, 1.0, [0.2, 1.0]),
+            (0.0, 0.2, [0.2]),
+            (1.0, 2.0, [1.0]),
+            (2.0, 3.0, []),
+            (-2.0, -1.0, []),
+        ],
+    )
+    def test_get_inclusive_endpoint(
+        self,
+        start: float,
+        end: float,
+        expected: list[float],
+    ) -> None:
         support = nap.IntervalSet(0.0, 5.0)
         source = nap.TsGroup(
             {0: nap.Ts(t=[0.2, 1.0], time_support=support)},
@@ -327,9 +344,11 @@ class TestTsTrials:
         )
         trials = nap.TsTrials(source, nap.IntervalSet(0.0, 1.0))
 
-        np.testing.assert_array_equal(trials.get(0.0, 1.0).spikes, [0.2, 1.0])
-        np.testing.assert_array_equal(trials.get(0.0, 2.0).spikes, [0.2, 1.0])
-        assert trials.get(2.0, 3.0).spikes.size == 0
+        result = trials.get(start, end)
+
+        np.testing.assert_array_equal(result.spikes, expected)
+        assert result.shape == trials.shape
+        np.testing.assert_array_equal(trials.spikes, [0.2, 1.0])
 
     def test_get_no_overlap(self, ts_trials: nap.TsTrials) -> None:
         result = ts_trials.get(20.0, 21.0)
@@ -1304,7 +1323,9 @@ class TestTsdTrialsReductions:
         axes = (
             tuple(range(tsd_trials.ndim))
             if axis is None
-            else axis if isinstance(axis, tuple) else (axis,)
+            else axis
+            if isinstance(axis, tuple)
+            else (axis,)
         )
         if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
             pytest.skip("Axis is not present in scalar trial data.")
