@@ -438,24 +438,74 @@ class TestTsdTrials:
         intervals: nap.IntervalSet,
     ) -> None:
         assert len(tsd_trials) == 3
-        assert tsd_trials.shape[:2] == (3, 12)
+        assert tsd_trials.shape[:2] == (3, 13)
         assert tsd_trials.sample_period == pytest.approx(0.25)
         assert tsd_trials.bin_size is None
         assert tsd_trials.data_kind == "continuous"
         assert tsd_trials.alignment == "start"
 
-        np.testing.assert_allclose(tsd_trials.t, np.arange(12) / 4)
+        np.testing.assert_allclose(tsd_trials.t, np.arange(13) / 4)
         np.testing.assert_allclose(tsd_trials.durations, [2.0, 1.5, 3.0])
-        np.testing.assert_array_equal(tsd_trials.valid.sum(axis=1), [8, 6, 12])
+        np.testing.assert_array_equal(
+            tsd_trials.valid.sum(axis=1),
+            [9, 7, 13],
+        )
 
         for trial, (start, end) in enumerate(zip(intervals.start, intervals.end)):
-            selected = (sampled_source.t >= start) & (sampled_source.t < end)
+            selected = (sampled_source.t >= start) & (sampled_source.t <= end)
             np.testing.assert_allclose(
                 tsd_trials.d[trial, tsd_trials.valid[trial]],
                 sampled_source.d[selected],
             )
 
         assert np.isnan(tsd_trials.d[~tsd_trials.valid]).all()
+
+    def test_single_trial(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials[1]
+        expected_type = nap.Tsd if tsd_trials.ndim == 2 else nap.TsdFrame
+
+        assert isinstance(result, expected_type)
+        np.testing.assert_allclose(result.t, tsd_trials.t[:7])
+        np.testing.assert_allclose(result.d, tsd_trials.d[1, :7])
+        np.testing.assert_allclose(result.time_support.start, [0.0])
+        np.testing.assert_allclose(result.time_support.end, [1.5])
+
+        if isinstance(result, nap.TsdFrame):
+            np.testing.assert_array_equal(result.columns, ["x", "y"])
+            np.testing.assert_array_equal(result["region"], ["ca1", "ca3"])
+
+    def test_feature_selection(self, tsd_trials: nap.TsdTrials) -> None:
+        if tsd_trials.ndim == 2:
+            return
+
+        scalar = tsd_trials[:, :, 1]
+        frame = tsd_trials[:, :, [1]]
+
+        assert scalar.ndim == 2
+        assert scalar.feature_names is None
+        np.testing.assert_allclose(
+            scalar.d,
+            tsd_trials.d[:, :, 1],
+            equal_nan=True,
+        )
+
+        assert frame.shape == (3, 13, 1)
+        np.testing.assert_array_equal(frame.columns, ["y"])
+        np.testing.assert_array_equal(frame.feature_metadata["region"], ["ca3"])
+        assert isinstance(tsd_trials[0, :, 1], nap.Tsd)
+
+    def test_get(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials.get(0.5, 1.5)
+
+        np.testing.assert_allclose(result.t, [0.5, 0.75, 1.0, 1.25, 1.5])
+        np.testing.assert_allclose(
+            result.d,
+            tsd_trials.d[:, 2:7],
+            equal_nan=True,
+        )
+        np.testing.assert_allclose(result.window_starts, [0.5, 0.5, 0.5])
+        np.testing.assert_allclose(result.window_ends, [1.5, 1.5, 1.5])
+        np.testing.assert_allclose(result.durations, [1.0, 1.0, 1.0])
 
     def test_columns(self, tsd_trials: nap.TsdTrials) -> None:
         if tsd_trials.ndim == 2:
@@ -468,19 +518,20 @@ class TestTsdTrials:
                 ["ca1", "ca3"],
             )
 
-    def test_single_trial(self, tsd_trials: nap.TsdTrials) -> None:
-        result = tsd_trials[1]
-        expected_type = nap.Tsd if tsd_trials.ndim == 2 else nap.TsdFrame
+    def test_ellipsis_last_axis(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials[..., 0]
+        expected = tsd_trials.d[..., 0]
+        actual = result.d if isinstance(result, nap.TsdTrials) else result
 
-        assert isinstance(result, expected_type)
-        np.testing.assert_allclose(result.t, tsd_trials.t[:6])
-        np.testing.assert_allclose(result.d, tsd_trials.d[1, :6])
-        np.testing.assert_allclose(result.time_support.start, [0.0])
-        np.testing.assert_allclose(result.time_support.end, [1.5])
+        np.testing.assert_array_equal(actual, expected)
 
-        if isinstance(result, nap.TsdFrame):
-            np.testing.assert_array_equal(result.columns, ["x", "y"])
-            np.testing.assert_array_equal(result["region"], ["ca1", "ca3"])
+        if tsd_trials.ndim == 3:
+            assert isinstance(result, nap.TsdTrials)
+            assert_same_axes(result, tsd_trials[:, :, 0])
+
+    def test_multiple_ellipses(self, tsd_trials: nap.TsdTrials) -> None:
+        with pytest.raises(IndexError, match="one ellipsis"):
+            tsd_trials[..., ...]
 
     def test_orthogonal_selection(self, tsd_trials: nap.TsdTrials) -> None:
         trial_positions = [0, 2]
@@ -527,38 +578,25 @@ class TestTsdTrials:
         np.testing.assert_array_equal(tsd_trials[:, 0], tsd_trials.d[:, 0])
         np.testing.assert_array_equal(tsd_trials[0, 0], tsd_trials.d[0, 0])
 
-    def test_feature_selection(self, tsd_trials: nap.TsdTrials) -> None:
-        if tsd_trials.ndim == 2:
-            return
+    def test_inclusive_endpoints(self) -> None:
+        time = np.arange(6000) / 100
+        source = nap.Tsd(t=time, d=np.arange(6000, dtype=float))
+        intervals = nap.IntervalSet(start=[0.0], end=[59.0])
 
-        scalar = tsd_trials[:, :, 1]
-        frame = tsd_trials[:, :, [1]]
+        trials = nap.TsdTrials(source, intervals)
 
-        assert scalar.ndim == 2
-        assert scalar.feature_names is None
-        np.testing.assert_allclose(
-            scalar.d,
-            tsd_trials.d[:, :, 1],
-            equal_nan=True,
-        )
+        assert trials.shape == (1, 5901)
+        assert trials.d[0, -1] == 5900.0
+        assert trials.valid.all()
 
-        assert frame.shape == (3, 12, 1)
-        np.testing.assert_array_equal(frame.columns, ["y"])
-        np.testing.assert_array_equal(frame.feature_metadata["region"], ["ca3"])
-        assert isinstance(tsd_trials[0, :, 1], nap.Tsd)
+        result = trials.get(10.0, 11.0)
+        expected = source.get(10.0, 11.0)
 
-    def test_get(self, tsd_trials: nap.TsdTrials) -> None:
-        result = tsd_trials.get(0.5, 1.5)
-
-        np.testing.assert_allclose(result.t, [0.5, 0.75, 1.0, 1.25])
-        np.testing.assert_allclose(
-            result.d,
-            tsd_trials.d[:, 2:6],
-            equal_nan=True,
-        )
-        np.testing.assert_allclose(result.window_starts, [0.5, 0.5, 0.5])
-        np.testing.assert_allclose(result.window_ends, [1.5, 1.5, 1.5])
-        np.testing.assert_allclose(result.durations, [1.0, 1.0, 1.0])
+        assert result.shape == (1, 101)
+        np.testing.assert_allclose(result.t, expected.t, rtol=0, atol=1e-8)
+        np.testing.assert_array_equal(result.d[0], expected.d)
+        np.testing.assert_array_equal(result.d[0, [0, -1]], [1000.0, 1100.0])
+        assert result.valid.all()
 
     def test_array_conversion(self, tsd_trials: nap.TsdTrials) -> None:
         np.testing.assert_allclose(
@@ -993,7 +1031,7 @@ def test_invalid_constructor_types(
         ([0.0], 0.0, 1.0, "at least two samples"),
         ([0.0, 1.0, 2.5], 0.0, 1.0, "uniformly sampled"),
         ([0.0, 1.0, 2.0], 0.5, 1.5, "sampling grid"),
-        ([0.0, 1.0, 2.0], -1.0, 1.0, "source time range"),
+        ([0.0, 1.0, 2.0], -1.0, 1.0, "must align"),
         ([0.0, 1.0, 2.0], 0.0, 4.0, "source time range"),
     ],
 )
@@ -1254,7 +1292,9 @@ class TestTsdTrialsReductions:
         axes = (
             tuple(range(tsd_trials.ndim))
             if axis is None
-            else axis if isinstance(axis, tuple) else (axis,)
+            else axis
+            if isinstance(axis, tuple)
+            else (axis,)
         )
         if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
             pytest.skip("Axis is not present in scalar trial data.")

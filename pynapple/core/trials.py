@@ -27,9 +27,6 @@ def _normalize_positions(
     axis_name: str,
 ) -> tuple[np.ndarray, bool]:
     """Normalize a positional index."""
-    if key is Ellipsis:
-        key = slice(None)
-
     if isinstance(key, (int, np.integer)):
         position = int(key)
         if position < 0:
@@ -220,6 +217,25 @@ def _copy_metadata(obj, *, drop: tuple[str, ...] = ()):
             metadata.drop(column)
 
     return metadata
+
+
+def _expand_key(key: object, ndim: int) -> tuple[object, ...]:
+    """Expand ellipsis and fill omitted axes."""
+    keys = key if isinstance(key, tuple) else (key,)
+    ellipses = sum(item is Ellipsis for item in keys)
+
+    if ellipses > 1:
+        raise IndexError("An index can only have one ellipsis.")
+
+    missing = ndim - (len(keys) - ellipses)
+    if missing < 0:
+        raise IndexError(f"Too many indices for {ndim}-dimensional data.")
+
+    if ellipses:
+        position = next(i for i, item in enumerate(keys) if item is Ellipsis)
+        return keys[:position] + (slice(None),) * missing + keys[position + 1 :]
+
+    return keys + (slice(None),) * missing
 
 
 class _TrialMetadataMixin:
@@ -523,18 +539,9 @@ class TsTrials(_TrialMetadataMixin):
         )
 
     @staticmethod
-    def _split_key(key) -> tuple[object, object]:
-        if not isinstance(key, tuple):
-            return key, slice(None)
-
-        if len(key) > 2:
-            raise IndexError("TsTrials supports trial and unit axes only.")
-        if not key:
-            return slice(None), slice(None)
-        if len(key) == 1:
-            return key[0], slice(None)
-
-        return key
+    def _split_key(key: object) -> tuple[object, object]:
+        trial_key, unit_key = _expand_key(key, 2)
+        return trial_key, unit_key
 
     def _get_spike_train(self, trial: int, unit: int) -> Ts:
         selected = (self.trial_index == trial) & (self.neuron_index == unit)
@@ -567,12 +574,7 @@ class TsTrials(_TrialMetadataMixin):
         if metadata.shape[1] == 0:
             metadata = None
 
-        return TsGroup(
-            data,
-            time_support=support,
-            bypass_check=True,
-            metadata=metadata,
-        )
+        return TsGroup(data, time_support=support, metadata=metadata)
 
     def _subset(
         self,
@@ -1077,13 +1079,13 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     ) -> tuple[np.ndarray, TsIndex, np.ndarray]:
         """Align uniformly sampled data to trial starts."""
         n_trials = len(starts)
-        sample_counts = np.ceil(
-            np.maximum(durations - tolerance, 0.0) / sample_period
-        ).astype(int)
+        sample_counts = (
+            np.floor((durations + tolerance) / sample_period).astype(int) + 1
+        )
         max_samples = int(sample_counts.max()) if len(sample_counts) else 0
 
         time = np.arange(max_samples) * sample_period
-        valid = time[None, :] < durations[:, None] - tolerance
+        valid = time[None, :] <= durations[:, None] + tolerance
 
         trailing_shape = source_values.shape[1:]
         values = np.full(
@@ -1092,18 +1094,18 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             dtype=np.result_type(source_values.dtype, float),
         )
 
-        source_origin = timestamps[0]
-
         for trial, start in enumerate(starts):
-            grid_position = (start - source_origin) / sample_period
-            start_index = int(round(grid_position))
+            insertion = np.searchsorted(timestamps, start)
+            candidates = np.clip(
+                [insertion - 1, insertion],
+                0,
+                len(timestamps) - 1,
+            )
+            start_index = int(
+                candidates[np.argmin(np.abs(timestamps[candidates] - start))]
+            )
 
-            if not np.isclose(
-                grid_position,
-                start_index,
-                rtol=0.0,
-                atol=1e-6,
-            ):
+            if abs(timestamps[start_index] - start) > tolerance:
                 raise ValueError(
                     "Trial starts must align with the source sampling grid."
                 )
@@ -1111,7 +1113,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             count = int(valid[trial].sum())
             stop_index = start_index + count
 
-            if start_index < 0 or stop_index > len(timestamps):
+            if stop_index > len(timestamps):
                 raise ValueError(
                     "Trial intervals must be contained within the source time range."
                 )
@@ -1374,22 +1376,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             alignment=self.alignment,
         )
 
-    def _split_key(
-        self,
-        key,
-    ) -> tuple[object, object, object]:
-        if not isinstance(key, tuple):
-            return key, slice(None), slice(None)
-
-        if len(key) > self.ndim:
-            raise IndexError(f"TsdTrials has {self.ndim} dimensions.")
-
-        keys = key + (slice(None),) * (self.ndim - len(key))
-
+    def _split_key(self, key: object) -> tuple[object, object, object]:
+        keys = _expand_key(key, self.ndim)
         if self.ndim == 2:
             return keys[0], keys[1], slice(None)
-
-        return keys
+        return keys[0], keys[1], keys[2]
 
     def _single_trial(
         self,
@@ -1504,7 +1495,10 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         if start >= end:
             raise ValueError("start must be less than end.")
 
-        tolerance = np.finfo(float).eps * 16
+        tolerance = max(
+            abs(self.sample_period) * 1e-6 if self.sample_period is not None else 0.0,
+            np.finfo(float).eps * 32,
+        )
 
         if self.data_kind == "count":
             half_bin = self.bin_size / 2
@@ -1512,7 +1506,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 self.t + half_bin <= end + tolerance
             )
         else:
-            selected = (self.t >= start - tolerance) & (self.t < end - tolerance)
+            selected = (self.t >= start - tolerance) & (self.t <= end + tolerance)
 
         time_positions = np.flatnonzero(selected)
         time = self.t[time_positions]
@@ -1537,7 +1531,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             ) & (time[None, :] + half_bin <= window_ends[:, None] + tolerance)
         else:
             valid &= (time[None, :] >= window_starts[:, None] - tolerance) & (
-                time[None, :] < window_ends[:, None] - tolerance
+                time[None, :] <= window_ends[:, None] + tolerance
             )
 
         if values.ndim == 3:
