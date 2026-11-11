@@ -248,6 +248,7 @@ class _TrialMetadataMixin:
 
     @property
     def trial_ids(self) -> np.ndarray:
+        """Trial identifiers from the interval index."""
         return self.trials.index
 
     def groupby(self, by: str):
@@ -699,6 +700,7 @@ class TsTrials(_TrialMetadataMixin):
 
     @property
     def shape(self) -> tuple[int, int]:
+        """Number of trials and units, ordered as ``(trial, unit)``."""
         return len(self.trial_ids), len(self.unit_keys)
 
     def __len__(self) -> int:
@@ -2382,10 +2384,10 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         ----------
         axes : int, tuple of int, or None, optional
             Axes over which to compute the mean and standard deviation:
-            0 for trials, 1 for time, and 2 for units or features when
-            present. The default, (0, 1), standardises each unit or feature
-            across trials and time. Use None to standardise all values
-            together.
+            ``0`` for trials, ``1`` for time, and ``2`` for units or
+            features when present. The default, ``(0, 1)``, standardizes
+            each unit or feature across trials and time. Use ``None``
+            to standardize all values together.
 
         Returns
         -------
@@ -2395,9 +2397,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         Notes
         -----
-        Invalid bins and NaNs are excluded from the statistics and remain
-        NaN in the result. Constant groups become zero. The standard
-        deviation is calculated with ddof=0.
+        Invalid samples and NaNs are excluded from the statistics and
+        remain NaN in the result. Constant groups become zero. The
+        standard deviation is calculated with ``ddof=0``.
 
         Examples
         --------
