@@ -42,7 +42,7 @@ Input to both decoding functions always includes:
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
 ## Bayesian decoding
-When using Bayesian decoding, users can additionally set `uniform_prior=False` to use the occupancy as a prior over the feature distribution. 
+When using Bayesian decoding, users can additionally set `uniform_prior=False` to use the occupancy as a prior over the feature distribution.
 By default `uniform_prior=True`, and a uniform prior is used.
 
 :::{important}
@@ -86,10 +86,10 @@ First, we compute the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
-    tsgroup, 
-    feature, 
-    bins=60, 
-    range=(0, 2 * np.pi), 
+    tsgroup,
+    feature,
+    bins=60,
+    range=(0, 2 * np.pi),
     feature_names=["Circular feature"]
 )
 ```
@@ -104,7 +104,7 @@ plt.show()
 
 We can then use [`decode_bayes`](pynapple.process.decoding.decode_bayes) for Bayesian decoding.
 We will use the `sliding_window_size` argument to additionally smooth the
-spike counts with a uniform convolution window (i.e. use a sliding window), which often helps with decoding. 
+spike counts with a uniform convolution window (i.e. use a sliding window), which often helps with decoding.
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
@@ -251,7 +251,7 @@ ax3.set_title("Combined")
 plt.show()
 ```
 
-## Template matching 
+## Template matching
 If you do not have spike data, or if you do not want to use the Poisson assumption, Pynapple also supports decoding using template matching, which makes no assumption on the modality of your data.
 Instead of computing a probability distribution, `compute_template` computes a distance matrix between the samples and the tuning curves (smaller is better).
 In addition to the default arguments, users can set `metric` to choose the used distance metric. By default `metric="correlation"`.
@@ -292,10 +292,10 @@ First, we compute the tuning curves (here we'll use spikes as neural data):
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
-    tsgroup, 
-    feature, 
-    bins=61, 
-    range=(0, 2 * np.pi), 
+    tsgroup,
+    feature,
+    bins=61,
+    range=(0, 2 * np.pi),
     feature_names=["Circular feature"]
 )
 ```
@@ -455,5 +455,5 @@ ax3.set_title("Combined")
 plt.show()
 ```
 
-Take a look at the [tutorial on calcium imaging](../examples/tutorial_calcium_imaging.md) 
+Take a look at the [tutorial on calcium imaging](../examples/tutorial_calcium_imaging.md)
 for an application of template matching with real data and a comparison of various distance metrics!

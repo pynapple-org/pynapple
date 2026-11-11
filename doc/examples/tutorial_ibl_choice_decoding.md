@@ -256,5 +256,3 @@ Charlie Windolf
 
 [Wolf De Wulf](https://wulfdewolf.github.io)
 :::
-
-

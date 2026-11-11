@@ -23,12 +23,12 @@ pynapple: python neural analysis package
    .. grid-item::
 
       Pynapple is a light-weight python library for
-      neurophysiological data analysis. 
+      neurophysiological data analysis.
 
-      The goal is to offer a versatile set of tools to 
-      study typical data in the field, i.e. time series 
-      (spike times, behavioral events, etc.) and time intervals 
-      (trials, brain states, etc.). 
+      The goal is to offer a versatile set of tools to
+      study typical data in the field, i.e. time series
+      (spike times, behavioral events, etc.) and time intervals
+      (trials, brain states, etc.).
 
       It also provides users with generic functions for
       neuroscience such as tuning curves, cross-correlograms
@@ -177,4 +177,3 @@ This package is supported by the Center for Computational Neuroscience, in the F
    :width: 200px
    :class: only-dark
    :target: https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/
-

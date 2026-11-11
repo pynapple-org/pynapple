@@ -330,7 +330,7 @@ ax.legend()
 
 Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
 in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
-can lead to a low spatial or temporal resolution. 
+can lead to a low spatial or temporal resolution.
 
 
 
@@ -501,13 +501,13 @@ Let's compare two wavelet decomposition, each generated with a different normali
 
 ```{code-cell} ipython3
 mwt_l1 = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, 
-    gaussian_width=7.5, window_length=2.0, 
+    sig, fs=Fs, freqs=freqs,
+    gaussian_width=7.5, window_length=2.0,
     norm="l1"
 )
 mwt_l2 = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, 
-    gaussian_width=7.5, window_length=2.0, 
+    sig, fs=Fs, freqs=freqs,
+    gaussian_width=7.5, window_length=2.0,
     norm="l2"
 )
 ```
@@ -578,4 +578,3 @@ Kipp Freud](https://kippfreud.com/)
 Guillaume Viejo
 
 :::
-

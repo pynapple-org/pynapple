@@ -86,7 +86,7 @@
 
 ### 0.10.0 (2025-10-27)
 
-- Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and 
+- Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and
   work for any dimension of data.
 - `nap.compute_1d_tuning_curve`, `nap.compute_2d_tuning_curve`, `nap.compute_1d_tuning_curve_continuous`, `nap.compute_2d_tuning_curve_continuous`
   are being deprecated in favor of the general `nap.compute_tuning_curves`.
@@ -105,7 +105,7 @@
 - Implement `time_diff` method for time series objects
 - Implement `nap.compute_isi_distribution`, which uses `time_diff` to compute the distribution of inter spike intervals
 - Fix IntervalSet and TsGroup `__repr__`
-- Fix backward compatibility for loading old npz files. 
+- Fix backward compatibility for loading old npz files.
 
 ### 0.9.1 (2025-06-04)
 
@@ -116,7 +116,7 @@
 - New private class: `_MetadataMixin` and `_Metadata(UserDict)` (core/metadata_class.py). Can be inherited by:
     - IntervalSet
     - TsdFrame
-    - TsGroup 
+    - TsGroup
   This class assumes that whatever is inheriting it has the private property `self._initialized`.
   `metadata`: public read-only view of metadata
 - Add a decimate method to _BaseTsd.
@@ -132,10 +132,10 @@
 
 ### 0.8.4 (2025-02-07)
 
-- Fix value printing of IntervalSet when rows are collapsed 
+- Fix value printing of IntervalSet when rows are collapsed
 - Backward compatibility fix for loading npz files with TsGroup
 - Fix indexing of IntervalSet to be able to use -1
-- Add column names for compute_wavelet_transform 
+- Add column names for compute_wavelet_transform
 
 ### 0.8.3 (2025-01-24)
 
@@ -148,12 +148,12 @@
 
 ### 0.8.1 (2025-01-17)
 
-- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method 
+- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method
 
 ### 0.8.0 (2025-01-15)
 
 - New private class: `_MetadataMixin` (core/metadata_class.py). Can be inherited by `IntervalSet`, `TsdFrame` and `TsGroup`.
-- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input. 
+- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input.
 
 ### 0.7.1 (2024-09-24)
 
@@ -269,7 +269,7 @@
 - 	`count` can take IntervalSet
 -	Saving to npz functions for all objects.
 - 	`tsd.value_from` can take TsdFrame
-- 	Warning message for deprecating current IO. 
+- 	Warning message for deprecating current IO.
 
 
 ### 0.3.3 (2023-04-17)

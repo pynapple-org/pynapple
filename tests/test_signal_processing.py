@@ -84,7 +84,7 @@ def test_generate_morlet_filterbank():
         fz = power.index
         factor = np.pi**0.25 * gaussian_width**0.25
         morlet_ft = factor * np.exp(
-            -np.pi**2 * gaussian_width * (window_length * (fz - f) / f) ** 2
+            -(np.pi**2) * gaussian_width * (window_length * (fz - f) / f) ** 2
         )
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
@@ -104,7 +104,7 @@ def test_generate_morlet_filterbank():
         fz = power.index
         factor = np.pi**0.25 * gaussian_width**0.25
         morlet_ft = factor * np.exp(
-            -np.pi**2 * gaussian_width * (window_length * (fz - f) / f) ** 2
+            -(np.pi**2) * gaussian_width * (window_length * (fz - f) / f) ** 2
         )
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
@@ -124,7 +124,7 @@ def test_generate_morlet_filterbank():
         fz = power.index
         factor = np.pi**0.25 * gaussian_width**0.25
         morlet_ft = factor * np.exp(
-            -np.pi**2 * gaussian_width * (window_length * (fz - f) / f) ** 2
+            -(np.pi**2) * gaussian_width * (window_length * (fz - f) / f) ** 2
         )
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
@@ -144,7 +144,7 @@ def test_generate_morlet_filterbank():
         fz = power.index
         factor = np.pi**0.25 * gaussian_width**0.25
         morlet_ft = factor * np.exp(
-            -np.pi**2 * gaussian_width * (window_length * (fz - f) / f) ** 2
+            -(np.pi**2) * gaussian_width * (window_length * (fz - f) / f) ** 2
         )
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
@@ -164,7 +164,7 @@ def test_generate_morlet_filterbank():
         fz = power.index
         factor = np.pi**0.25 * gaussian_width**0.25
         morlet_ft = factor * np.exp(
-            -np.pi**2 * gaussian_width * (window_length * (fz - f) / f) ** 2
+            -(np.pi**2) * gaussian_width * (window_length * (fz - f) / f) ** 2
         )
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),

@@ -13,7 +13,7 @@ kernelspec:
 
 # Perievent / Spike-triggered average
 
-The perievent module allows for aligning timeseries and timestamps data around events, 
+The perievent module allows for aligning timeseries and timestamps data around events,
 as well as computing event-triggered averages (e.g. spike-triggered averages).
 
 ```{contents}
@@ -104,7 +104,7 @@ def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes, color=None):
     ax_mean.set_xlabel("time from event (s)")
     ax_spikes.set_ylabel("event")
     ax_spikes.axvline(0.0, color="gray", linestyle="--")
-    
+
 
 fig, (ax_spikes, ax_mean) = plt.subplots(
     2, 1, sharex=True, height_ratios=[1, 0.3], figsize=(6, 6), gridspec_kw={"hspace": 0.3}
@@ -179,7 +179,7 @@ Hence, when given a `Tsd`, `TsdFrame` or even a `TsdTensor`, it will know what t
 
 
 ```{admonition} Note
-[`compute_perievent`](pynapple.process.perievent.compute_perievent) only works with regularly 
+[`compute_perievent`](pynapple.process.perievent.compute_perievent) only works with regularly
 sampled continuous data. If your data is irregularly sampled, try padding it with `nan` first.
 ```
 

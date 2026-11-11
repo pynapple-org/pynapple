@@ -31,7 +31,6 @@ tsd.d[tsd.values > 0.9] = np.nan
     ],
 )
 class Test_Time_Series_1:
-
     def test_ufuncs(self, tsd):
         a = []
         for ufunc in ufuncs.values():
@@ -346,7 +345,6 @@ class Test_Time_Series_1:
 
     def test_searching(self, tsd):
         for func in [np.argmax, np.nanargmax, np.argmin, np.nanargmin]:
-
             a = func(tsd)
             assert a == func(tsd.values)
 
