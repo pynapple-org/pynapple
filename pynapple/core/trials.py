@@ -473,6 +473,15 @@ class TsTrials(_TrialMetadataMixin):
     Each interval defines a trial. Events within a trial are expressed
     relative to its start, so time zero marks the beginning of each trial.
 
+    ::
+
+                  ┌─ 1 ────────────────┐
+        trial ↗ ┌─ 0 ────────────────┐ │
+                │ unit ↓  time →     │ │
+                │ 10      0.25  0.75 │ │
+                │ 20      0.5        │─┘
+                └────────────────────┘
+
     Parameters
     ----------
     source : TsGroup
@@ -1375,6 +1384,17 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     Data are stored with axes ``(trial, time)`` for a scalar signal or
     ``(trial, time, feature)`` for multiple signals.
     Shorter trials are padded with NaN.
+
+    ::
+
+                  ┌─ 1 ─────────────┐
+        trial ↗ ┌─ 0 ─────────────┐ │
+                │ feature →  0  1 │ │
+                │ time ↓          │ │
+                │ 0.0        0  1 │ │
+                │ 0.5        2  3 │ │
+                │ 1.0        4  5 │─┘
+                └─────────────────┘
 
     Parameters
     ----------
