@@ -383,11 +383,95 @@ def get_features_n(n, fs=10.0):
             {"return_counts": False},
             does_not_raise(),
         ),
+        # min_occupancy
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"min_occupancy": "0.1"},
+            pytest.raises(
+                TypeError,
+                match="min_occupancy should be a number",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"min_occupancy": True},
+            pytest.raises(
+                TypeError,
+                match="min_occupancy should be a number",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"min_occupancy": -1.0},
+            pytest.raises(
+                ValueError,
+                match="min_occupancy should be non-negative.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"min_occupancy": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"min_occupancy": 0.5},
+            does_not_raise(),
+        ),
     ],
 )
 def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
     with expectation:
         nap.compute_tuning_curves(data, features, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param(get_group_n(1), id="spikes"),
+        pytest.param(get_group_n(1).count(1.0), id="rates"),
+    ],
+)
+@pytest.mark.parametrize("return_counts", [False, True])
+def test_compute_tuning_curves_min_occupancy(data, return_counts):
+    # feature spends 1 s in bin 0 and 9 s in bin 1 (fs = 10 Hz)
+    t = np.arange(0, 10, 0.1)
+    features = nap.Tsd(t=t, d=(t >= 1.0).astype(float))
+    kwargs = dict(bins=2, fs=10.0, return_counts=return_counts)
+
+    reference = nap.compute_tuning_curves(data, features, **kwargs)
+    assert reference.attrs["occupancy"].tolist() == [10.0, 90.0]
+
+    # default and threshold below both bins keep everything
+    for min_occupancy in [None, 0.5]:
+        tcs = nap.compute_tuning_curves(
+            data, features, min_occupancy=min_occupancy, **kwargs
+        )
+        xr.testing.assert_allclose(tcs, reference)
+        np.testing.assert_array_equal(
+            tcs.attrs["occupancy"], reference.attrs["occupancy"]
+        )
+
+    # threshold between the two bins drops only the rare one
+    tcs = nap.compute_tuning_curves(data, features, min_occupancy=2.0, **kwargs)
+    assert np.all(np.isnan(tcs.values[:, 0]))
+    np.testing.assert_allclose(tcs.values[:, 1], reference.values[:, 1])
+    np.testing.assert_array_equal(tcs.attrs["occupancy"], [0.0, 90.0])
+
+    # threshold equal to the occupancy keeps the bin
+    tcs = nap.compute_tuning_curves(data, features, min_occupancy=1.0, **kwargs)
+    xr.testing.assert_allclose(tcs, reference)
+
+    # dropped bins are ignored by compute_mutual_information
+    if isinstance(data, nap.TsGroup) and not return_counts:
+        tcs = nap.compute_tuning_curves(data, features, min_occupancy=2.0, **kwargs)
+        mi = nap.compute_mutual_information(tcs)
+        assert np.all(np.isfinite(mi.values))
 
 
 @pytest.mark.parametrize(
