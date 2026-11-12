@@ -19,7 +19,7 @@ Pynapple provides two objects for organizing time series into trials:
 - [`TsdTrials`](pynapple.TsdTrials) for sampled values, such as calcium traces or EEG.
 
 Both combine a source time series with an [`IntervalSet`](pynapple.IntervalSet)
-defining the trials. 
+defining the trials.
 By default, time is expressed relative to each trial's start.
 Trial metadata can be used to select trials or align them to another event.
 
@@ -35,7 +35,7 @@ import pynapple as nap
 
 ## Defining trials
 
-We will use three one-second trials. 
+We will use three one-second trials.
 Their boundaries are expressed in seconds on the original recording's time axis.
 
 Metadata describe each trial: `target` identifies the trial condition, and
@@ -57,7 +57,7 @@ trials
 
 ### Creating a TsTrials object
 
-First, create a [`TsGroup`](pynapple.TsGroup) containing two synthetic spike trains. 
+First, create a [`TsGroup`](pynapple.TsGroup) containing two synthetic spike trains.
 The spike times are expressed in recording time.
 
 ```{code-cell} ipython3
@@ -72,7 +72,7 @@ spike_trials = nap.TsTrials(source=units, trials=trials)
 spike_trials
 ```
 
-`TsTrials` organizes these timestamps by trial and unit. 
+`TsTrials` organizes these timestamps by trial and unit.
 Each trial initially starts at time zero.
 
 ### Selecting trials and units
@@ -121,7 +121,7 @@ windowed_spikes
 
 ### Plotting a raster
 
-For one unit, `to_tsdframe` provides a tabular time-series representation with a `trial` column. 
+For one unit, `to_tsdframe` provides a tabular time-series representation with a `trial` column.
 Plotting that column produces a raster:
 
 ```{code-cell} ipython3
@@ -203,7 +203,7 @@ first_signal
 This returns a [`TsdTrials`](pynapple.TsdTrials) object, but with a subset of the signals.
 
 ### Extracting a time window
-Time is expressed relative to each trial's start. 
+Time is expressed relative to each trial's start.
 Use `get` to get a window on this relative time axis:
 ```{code-cell} ipython3
 windowed_signals = signal_trials.get(start=0.2, end=0.8)
@@ -264,7 +264,7 @@ No edge correction is applied, so values near trial boundaries may be
 attenuated. Invalid samples remain `NaN`.
 
 ### Normalizing
-Use `normalize` to normalize each signal across trials and time. 
+Use `normalize` to normalize each signal across trials and time.
 The `axes` argument specifies which dimensions to normalize over: axis `0` is trials,
 and axis `1` is time.
 
