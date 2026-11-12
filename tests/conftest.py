@@ -54,8 +54,7 @@ class TsGroupSpy:
                 continue
             if self.entry[id(obj)]:
                 found.append(
-                    f"{name} got attributes before `_init_state`: "
-                    f"{self.entry[id(obj)]}"
+                    f"{name} got attributes before `_init_state`: {self.entry[id(obj)]}"
                 )
             if id(obj) in self.exit:
                 late = keys - self.exit[id(obj)] - _cached_property_names(type(obj))
