@@ -781,7 +781,7 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
         window is longer than the number of samples of one of the epochs. `windowsize` and
         `size_factor` can be decreased to reduce the size of the window.
 
-        See the scipy documentation for the [gaussian window](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html)
+        See the scipy documentation for the `gaussian window <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html>`_
 
         Parameters
         ----------
