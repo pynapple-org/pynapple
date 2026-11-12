@@ -127,5 +127,3 @@ Analysis modules
     tuning_curves
     wavelets
     warping
-
-

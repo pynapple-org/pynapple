@@ -2,6 +2,14 @@
 
 ### Unreleased
 
+- `TsGroup` now stores all its timestamps in one sorted array (with the key of each timestamp, and values for `Tsd` elements) instead of one object per element. Operations over the whole group run once instead of once per element. At 1000 units x 2000 spikes: `count` 217 ms -> 42 ms, `restrict` on a fragmented support 71 ms -> 15 ms, `value_from` 253 ms -> 45 ms, `to_tsd` 162 ms -> 25 ms, `get` 45 ms -> 2.3 ms, `subsample` 108 ms -> 64 ms. In return, building a `TsGroup` sorts every timestamp (40 ms -> 190 ms), selecting a few units out of many scans the whole group (`tsgroup[[0, 1, 2, 3, 4]]` 0.5 ms -> 8 ms), and indexing an element builds a new `Ts`/`Tsd` on each call.
+- `TsGroup` elements that hold values must have the same shape after the time axis, and their values are cast to a common dtype. `TsdFrame` elements share one set of column names. `TsGroup` no longer subclasses `UserDict`: `isinstance(tsgroup, UserDict)` is now `False`, and the inherited `pop`, `popitem`, `clear`, `setdefault`, `update` and `fromkeys` are gone (`pop`, `popitem` and `clear` used to remove elements while leaving the index and metadata unchanged). `TsGroup.data` is now a read-only mapping instead of a `dict`. `tsgroup1 == tsgroup2` now compares content (keys, time support, timestamps, values and metadata) instead of member identity; `TsGroup` stays unhashable. The `bypass_check` argument of `TsGroup` is removed: elements are always restricted to the time support, which now takes a single pass over all timestamps (passing it raises a `TypeError`). Metadata can no longer be passed to `TsGroup` as keyword arguments (deprecated since 0.8): use `metadata=` instead.
+- `data["units"]` of an NWB file no longer reads the spike times. It reads only the index of the units table and the first and last spike of each unit, so the keys, metadata, rates and time support are available without a spike read (1000 units x 2000 spikes: 181 ms -> 17 ms). The group never keeps spike times in memory: each operation reads only what it needs from the file. A selection of units (`units[[0, 1]]`, `getby_*`) reads only those units. `restrict`, `get` and the operations with an epoch argument (`count`, `value_from`, `time_diff`, tuning curves, correlograms) read only the units that have spikes in the span of the epochs, then keep the spikes in the epochs. The other operations (e.g. `count` without `ep`, `to_tsd`) read all the spikes each time they run (`count(0.1)` at 1000 units: 185 ms). A selection gives a regular `TsGroup` in memory. After `NWBFile.close()`, an operation that reads spikes raises a `RuntimeError`. With `lazy_loading=False`, `data["units"]` is a regular `TsGroup`, as before.
+- Fixed `TsGroup.time_diff` crashing when an element has no timestamps.
+- Fixed `get` and `get_slice` dropping duplicates of the `end` timestamp for `Ts`, `Tsd`, `TsdFrame` and `TsdTensor`. `time_diff` with `epochs` had the same bug.
+- Fixed the number of bins of `compute_autocorrelogram`, `compute_crosscorrelogram` and `compute_eventcorrelogram`. A floating-point error could remove one bin on each side of the window (e.g. `windowsize=0.3` and `binsize=0.1` stopped at ±0.2). Results for these windows now have 2 more bins.
+- Fixed the `TypeError` of `compute_autocorrelogram`, `compute_crosscorrelogram` and `compute_eventcorrelogram` for `TsGroup` inputs with an explicit `ep=None`.
+- `TsGroup` now checks the full index of `metadata`. A `DataFrame` index must be equal to the keys, in the same order, and a `Series` in a metadata `dict` must have a default index or an index equal to the keys. These inputs raise a `ValueError`. Before, one matching label was enough, and the index of a `Series` in a `dict` was ignored.
 
 ### 0.11.4 (2026-08-19)
 
@@ -78,7 +86,7 @@
 
 ### 0.10.0 (2025-10-27)
 
-- Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and 
+- Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and
   work for any dimension of data.
 - `nap.compute_1d_tuning_curve`, `nap.compute_2d_tuning_curve`, `nap.compute_1d_tuning_curve_continuous`, `nap.compute_2d_tuning_curve_continuous`
   are being deprecated in favor of the general `nap.compute_tuning_curves`.
@@ -97,7 +105,7 @@
 - Implement `time_diff` method for time series objects
 - Implement `nap.compute_isi_distribution`, which uses `time_diff` to compute the distribution of inter spike intervals
 - Fix IntervalSet and TsGroup `__repr__`
-- Fix backward compatibility for loading old npz files. 
+- Fix backward compatibility for loading old npz files.
 
 ### 0.9.1 (2025-06-04)
 
@@ -108,7 +116,7 @@
 - New private class: `_MetadataMixin` and `_Metadata(UserDict)` (core/metadata_class.py). Can be inherited by:
     - IntervalSet
     - TsdFrame
-    - TsGroup 
+    - TsGroup
   This class assumes that whatever is inheriting it has the private property `self._initialized`.
   `metadata`: public read-only view of metadata
 - Add a decimate method to _BaseTsd.
@@ -124,10 +132,10 @@
 
 ### 0.8.4 (2025-02-07)
 
-- Fix value printing of IntervalSet when rows are collapsed 
+- Fix value printing of IntervalSet when rows are collapsed
 - Backward compatibility fix for loading npz files with TsGroup
 - Fix indexing of IntervalSet to be able to use -1
-- Add column names for compute_wavelet_transform 
+- Add column names for compute_wavelet_transform
 
 ### 0.8.3 (2025-01-24)
 
@@ -140,12 +148,12 @@
 
 ### 0.8.1 (2025-01-17)
 
-- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method 
+- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method
 
 ### 0.8.0 (2025-01-15)
 
 - New private class: `_MetadataMixin` (core/metadata_class.py). Can be inherited by `IntervalSet`, `TsdFrame` and `TsGroup`.
-- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input. 
+- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input.
 
 ### 0.7.1 (2024-09-24)
 
@@ -261,7 +269,7 @@
 - 	`count` can take IntervalSet
 -	Saving to npz functions for all objects.
 - 	`tsd.value_from` can take TsdFrame
-- 	Warning message for deprecating current IO. 
+- 	Warning message for deprecating current IO.
 
 
 ### 0.3.3 (2023-04-17)

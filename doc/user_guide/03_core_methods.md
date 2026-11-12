@@ -27,7 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 custom_params = {"axes.spines.right": False, "axes.spines.top": False, "figure.figsize": (8, 4)}
-sns.set_context("paper") 
+sns.set_context("paper")
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.3, rc=custom_params)
 ```
 ## Time series methods
@@ -50,7 +50,7 @@ tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 [`restrict`](pynapple.Tsd.restrict) is used to get time points within an `IntervalSet`. This method is available for `TsGroup`, `Tsd`, `TsdFrame`, `TsdTensor` and `Ts` objects.
 
 ```{code-cell} ipython3
-tsdframe.restrict(epochs) 
+tsdframe.restrict(epochs)
 ```
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -63,11 +63,11 @@ plt.xlim(0, 100)
 plt.show()
 ```
 
-This operation update the time support attribute accordingly. 
+This operation update the time support attribute accordingly.
 
 ```{code-cell} ipython3
 print(epochs)
-print(tsdframe.restrict(epochs).time_support) 
+print(tsdframe.restrict(epochs).time_support)
 ```
 
 ### `in_interval`
@@ -75,7 +75,7 @@ print(tsdframe.restrict(epochs).time_support)
 [`in_interval`](pynapple.Tsd.in_interval) is similar to [`restrict`](pynapple.Tsd.restrict), except instead of returning the restricted time series, it returns a `Tsd` of booleans for each time point indicating whether or not it falls within the intervals of an `IntervalSet`.
 
 ```{code-cell} ipython3
-tsdframe.in_interval(epochs) 
+tsdframe.in_interval(epochs)
 ```
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -102,7 +102,7 @@ This method is available for `TsGroup`, `Tsd`, `TsdFrame`, `TsdTensor` and `Ts` 
 With a defined bin size:
 ```{code-cell} ipython3
 count = tsgroup.count(bin_size=1.0, time_units='s')
-print(count) 
+print(count)
 ```
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -126,10 +126,10 @@ print(count_ep)
 
 ### `trial_count`
 
-`TsGroup` and `Ts` objects each have the method `trial_count`, which builds a trial-based count tensor from an `IntervalSet` object. 
-Similar to `count`, this function requires a `bin_size` parameter which determines the number of time bins within each trial. 
-The resulting tensor has shape (number of group elements, number of trials, number of time bins) for `TsGroup` objects, 
-or (number of trials, number of time bins) for `Ts` objects. 
+`TsGroup` and `Ts` objects each have the method `trial_count`, which builds a trial-based count tensor from an `IntervalSet` object.
+Similar to `count`, this function requires a `bin_size` parameter which determines the number of time bins within each trial.
+The resulting tensor has shape (number of group elements, number of trials, number of time bins) for `TsGroup` objects,
+or (number of trials, number of time bins) for `Ts` objects.
 
 ```{code-cell} ipython3
 ep = nap.IntervalSet([5, 17, 30, 50], metadata={'trials':[1, 2]})
@@ -159,7 +159,7 @@ for i in range(3):
     plt.subplot(gs[2-i,1])
     cmap = LinearSegmentedColormap.from_list("fade", ["lightgrey", color_cycle[i]])
     plt.pcolormesh(np.arange(0, tensor.shape[-1]), [1, 2], tensor[i], cmap=cmap)
-    if i == 1: plt.ylabel("Trials")    
+    if i == 1: plt.ylabel("Trials")
     if i == 2: plt.title("tsgroup.trial_cout(ep, bin_size=2)")
     if i == 0: plt.xlabel("Trial time")
     plt.text(1, 0.5, f"tensor[{i}]", transform=plt.gca().transAxes)
@@ -168,8 +168,8 @@ plt.show()
 ```
 
 
-The array is padded with NaNs when the trials have uneven durations, 
-The padding value can be controlled using the parameter `padding_value`. 
+The array is padded with NaNs when the trials have uneven durations,
+The padding value can be controlled using the parameter `padding_value`.
 Additionally, the parameter `align` can change whether the count is aligned to the "start" or "end" of each trial.
 
 ```{code-cell} ipython3
@@ -270,11 +270,11 @@ tsd = nap.Tsd(t=np.arange(100), d=noisy_data, time_support=nap.IntervalSet(0, 10
 new_tsd = tsd.decimate(down=4)
 ```
 
-The original time series was sampled at 1Hz. The new time series has a rate of 0.25 Hz. 
+The original time series was sampled at 1Hz. The new time series has a rate of 0.25 Hz.
 
 ```{code-cell} ipython3
 print(f"Original rate : {tsd.rate}")
-print(f"New rate : {new_tsd.rate}") 
+print(f"New rate : {new_tsd.rate}")
 ```
 
 ```{code-cell} ipython3
@@ -348,7 +348,7 @@ plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
 plt.show()
 ```
 
-The argument `mode` can control if the nearest target time is taken before or 
+The argument `mode` can control if the nearest target time is taken before or
 after the reference time.
 
 ```{code-cell} ipython3
@@ -434,8 +434,8 @@ plt.show()
 
 ### `find_peaks`
 
-The [`find_peaks`](pynapple.Tsd.find_peaks) method detects local maxima in a `Tsd` or `TsdFrame`. 
-It wraps [`scipy.signal.find_peaks`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html) 
+The [`find_peaks`](pynapple.Tsd.find_peaks) method detects local maxima in a `Tsd` or `TsdFrame`.
+It wraps [`scipy.signal.find_peaks`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html)
 and returns the time points and values of the detected peaks.
 
 ```{code-cell} ipython3
@@ -641,7 +641,7 @@ for ax, (conv, title) in zip(axes, [(conv_both, "tsd.convolve(kernel, trim='both
     ax.plot(conv, 'o-', label="convolved")
     ax.set_xlabel("Time (s)")
     ax.set_title(title)
-    if ax == axes[0]: ax.legend()    
+    if ax == axes[0]: ax.legend()
 plt.tight_layout()
 plt.show()
 ```
@@ -662,10 +662,10 @@ print(smoothed_frame)
 
 ### `to_trial_tensor`
 
-`Tsd`, `TsdFrame`, and `TsdTensor` all have the method [`to_trial_tensor`](pynapple.Tsd.to_trial_tensor), which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
+`Tsd`, `TsdFrame`, and `TsdTensor` all have the method [`to_trial_tensor`](pynapple.Tsd.to_trial_tensor), which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object.
 
 ```{code-cell} ipython3
-tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1))) 
+tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 ep = nap.IntervalSet([0, 10, 30, 50, 70, 75], metadata={'trials':[1, 2, 3]})
 print(ep)
 ```
@@ -685,7 +685,7 @@ plt.figure()
 plt.subplot(121)
 plt.plot(tsd, '-', label="tsd")
 for i in range(len(ep)):
-    plt.plot(tsd.get(ep[i,0], ep[i,1]), 'o-', color=color_cycle[i]) 
+    plt.plot(tsd.get(ep[i,0], ep[i,1]), 'o-', color=color_cycle[i])
     plt.axvspan(ep[i,0], ep[i,1], alpha=0.2)
 plt.legend(loc="lower right")
 plt.xlabel("Time (s)")
@@ -721,7 +721,7 @@ plt.figure()
 plt.subplot(121)
 plt.plot(tsd, '-', label="tsd")
 for i in range(len(ep)):
-    plt.plot(tsd.get(ep[i,0], ep[i,1]), 'o-', color=color_cycle[i]) 
+    plt.plot(tsd.get(ep[i,0], ep[i,1]), 'o-', color=color_cycle[i])
     plt.axvspan(ep[i,0], ep[i,1], alpha=0.2)
 plt.legend(loc="lower right")
 plt.xlabel("Time (s)")
@@ -735,10 +735,10 @@ plt.show()
 
 ### `time_diff`
 
-`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints. 
+`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints.
 For example, if a `Ts` object contained a set of spike times, `time_diff` would compute the inter-spike interval (ISI).
 
-This method returns a new `Tsd` object, with values being each time difference, and time indices being their reference time point. 
+This method returns a new `Tsd` object, with values being each time difference, and time indices being their reference time point.
 Passing `epochs` restricts the computation to the given epochs.
 The reference time point can be adjusted by the optional `align` parameter, which can be set to  `"start"`, `"center"`, or `"end"` (the default being `"center"`).
 
@@ -786,7 +786,7 @@ print(tsd)
 The object `tsd` contains all the timestamps of the `tsgroup` with
 the associated value being the index of the unit in the `TsGroup`.
 
-The method [`to_tsgroup`](pynapple.Tsd.to_tsgroup) converts the `Tsd` object back to the original `TsGroup`. 
+The method [`to_tsgroup`](pynapple.Tsd.to_tsgroup) converts the `Tsd` object back to the original `TsGroup`.
 
 ```{code-cell} ipython3
 back_to_tsgroup = tsd.to_tsgroup()
@@ -832,7 +832,7 @@ plt.show()
 
 For users that are familiar with pandas, [`TsdFrame`](pynapple.TsdFrame) is the closest object to a [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), but there are distinctive behavior when slicing the object. `TsdFrame` behaves primarily like a numpy array. This section lists all the possible ways of slicing `TsdFrame`.
 
-#### 1. If not column labels are passed 
+#### 1. If not column labels are passed
 
 ```{code-cell} ipython3
 tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3))
@@ -856,7 +856,7 @@ tsdframe[:, [0, 2]]
 #### 2. If column labels are passed as integers
 
 The typical case is channel mapping. The order of the columns on disk are different from the order of the columns on the
-recording device it corresponds to. 
+recording device it corresponds to.
 
 ```{code-cell} ipython3
 tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,4), columns = [3, 2, 0, 1])
@@ -867,7 +867,7 @@ In this case, indexing like numpy still has priority which can led to confusing 
 ```{code-cell} ipython3
 tsdframe[:, [0, 2]]
 ```
-Note how this corresponds to column labels 3 and 0.  
+Note how this corresponds to column labels 3 and 0.
 
 To slice using column labels only, the `TsdFrame` object has the [`loc`](pynapple.TsdFrame.loc) method similar to Pandas:
 
@@ -889,7 +889,7 @@ When the column labels are all strings, it is possible to use either direct brac
 
 ```{code-cell} ipython3
 print(tsdframe['kiwi'])
-print(tsdframe.loc['kiwi']) 
+print(tsdframe.loc['kiwi'])
 ```
 
 #### 4. If column labels are mixed type
@@ -917,10 +917,10 @@ In general, it is probably a bad idea to mix types when labelling columns.
 
 
 ## Interval sets methods
- 
-### Interaction between epochs 
 
-Intervals can be combined in different ways. 
+### Interaction between epochs
+
+Intervals can be combined in different ways.
 
 ```{code-cell} ipython3
 epoch1 = nap.IntervalSet(start=[0, 40], end=[10, 50])  # no time units passed. Default is us.
@@ -1047,5 +1047,3 @@ print(
     epoch.merge_close_intervals(threshold=2.0)
     )
 ```
-
-

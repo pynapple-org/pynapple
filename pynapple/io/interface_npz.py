@@ -17,7 +17,6 @@ EXPECTED_ENTRIES = {
 
 def _find_class_from_variables(file_variables, data_ndims=None):
     if data_ndims is not None:
-
         assert EXPECTED_ENTRIES["Tsd"].issubset(file_variables)
 
         if data_ndims == 1:

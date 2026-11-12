@@ -313,9 +313,9 @@ def _assert_slice_reads_only(dataset, fn):
         out = fn()
 
     assert keys, "the lazy target was never read"
-    assert all(
-        isinstance(key, slice) for key in keys
-    ), f"lazy target read with a non-slice index: {keys}"
+    assert all(isinstance(key, slice) for key in keys), (
+        f"lazy target read with a non-slice index: {keys}"
+    )
     return out
 
 
@@ -422,9 +422,9 @@ def test_lazy_load_hdf5_restrict_reads_contiguous_slices(tmp_path):
         out_lazy = lazy.restrict(ep)
 
     assert keys, "the lazy target was never read"
-    assert all(
-        isinstance(key, slice) for key in keys
-    ), f"lazy target read with a non-slice index: {keys}"
+    assert all(isinstance(key, slice) for key in keys), (
+        f"lazy target read with a non-slice index: {keys}"
+    )
 
     out_eager = eager.restrict(ep)
     np.testing.assert_array_equal(out_lazy.t, out_eager.t)
@@ -453,9 +453,9 @@ def test_lazy_load_hdf5_value_from_reads_contiguous_slices(tmp_path):
         ts.value_from(lazy, ep=nap.IntervalSet([0, 10], [4, 19]))
 
     assert keys, "the lazy target was never read"
-    assert all(
-        isinstance(key, slice) for key in keys
-    ), f"lazy target read with a non-slice index: {keys}"
+    assert all(isinstance(key, slice) for key in keys), (
+        f"lazy target read with a non-slice index: {keys}"
+    )
 
 
 @pytest.mark.parametrize(
@@ -536,7 +536,6 @@ def test_tsgroup_no_warnings(tmp_path):  # default fixture
         with h5py.File(file_path, "w") as f:
             f.create_dataset("spks", data=np.sort(np.random.uniform(0, 10, size=20)))
     with warnings.catch_warnings(record=True) as w:
-
         nwbfile = mock_NWBFile()
 
         for k in range(n_units):

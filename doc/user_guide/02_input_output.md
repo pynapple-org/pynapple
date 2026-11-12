@@ -13,7 +13,7 @@ kernelspec:
 
 # Input-output & lazy-loading
 
-Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw data can be loaded through the NEO library. 
+Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw data can be loaded through the NEO library.
 
 Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a Pynapple-specific structure and loaded as a `npz`.
 
@@ -26,9 +26,9 @@ In addition, the `Folder` class helps you walk through a set of nested folders t
 
 ## NWB
 
-When loading a NWB file, pynapple will walk through it and test the compatibility of each data structure with a 
-pynapple objects. If the data structure is incompatible, pynapple will ignore it. The class that deals with reading 
-NWB file is [`nap.NWBFile`](pynapple.io.interface_nwb.NWBFile). You can pass the path to a NWB file or directly an opened NWB file. Alternatively 
+When loading a NWB file, pynapple will walk through it and test the compatibility of each data structure with a
+pynapple objects. If the data structure is incompatible, pynapple will ignore it. The class that deals with reading
+NWB file is [`nap.NWBFile`](pynapple.io.interface_nwb.NWBFile). You can pass the path to a NWB file or directly an opened NWB file. Alternatively
 you can use the function [`nap.load_file`](pynapple.io.misc.load_file).
 
 :::{note}
@@ -127,6 +127,22 @@ Carefulness should still apply when calling any pynapple function on a memory ma
 :::
 
 
+Spike times of a units table (`data['units']`) are lazy-loaded as well. Accessing `data['units']` reads only what is needed for the keys, the metadata, the time support and the rates. The group never keeps the spike times in memory. Each operation reads only what it needs from the file:
+
+- A selection of units (e.g. `data['units'][[0, 1]]`) reads only those units.
+- `restrict(ep)`, `get(start, end)` and the operations with an epoch argument (e.g. `count(bin_size, ep)`) read each full unit that has spikes in the span of the epochs. Then they keep only the spikes in the epochs.
+- The other operations (e.g. `count(bin_size)` without `ep`) read all the spikes, each time they run.
+
+A selection gives a regular `TsGroup` in memory. To work several times on the same units or the same epochs, select them once and keep the result:
+
+```python
+units = data['units']
+spikes = units[[0, 1]]  # reads only units 0 and 1
+spikes_ep = units.restrict(ep)  # keeps only the spikes in ep
+```
+
+After `data.close()`, the metadata, rates and time support of `data['units']` still work, but an operation that reads spikes raises an error. A selection made before `close()` stays usable.
+
 To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
 
 
@@ -153,14 +169,14 @@ import pynapple as nap
 data = nap.EphysReader("path_to_your_file")
 ```
 
-Let us look at a couple of examples where we load LFP and spike data from different formats. 
-The `EphysReader` class will automatically detect the format of the data and load it accordingly. 
-To help the detection, you can also pass the format of the data with the argument `format`. 
+Let us look at a couple of examples where we load LFP and spike data from different formats.
+The `EphysReader` class will automatically detect the format of the data and load it accordingly.
+To help the detection, you can also pass the format of the data with the argument `format`.
 The format should be one of the supported formats of NEO. For example, if you have a binary file recorded with Neuroscope, you can pass `format="NeuroscopeIO"`.
 
 ### Neuroscope / Binary file
 
-If you have a session recorded as binary files with Neuroscope, you can load it with the `EphysReader` class or directly 
+If you have a session recorded as binary files with Neuroscope, you can load it with the `EphysReader` class or directly
 with the function [`nap.load_binary_file`](pynapple.io.misc.load_binary_file).
 
 ```
@@ -247,7 +263,7 @@ A typical OpenEphys dataset has the following structure:
                 ┗ 📄 timestamps.npy
 ```
 
-This is a recording from a Neuropixel 2.0 probe, which does not have dedicated LFP channels. 
+This is a recording from a Neuropixel 2.0 probe, which does not have dedicated LFP channels.
 Instead, we can visualize the raw data directly, using `EphysReader` as follows:
 
 ```
@@ -263,7 +279,7 @@ Instead, we can visualize the raw data directly, using `EphysReader` as follows:
     │ 0:Messages                                              │ Ts       │
     │ 1:Neuropixels PXI Sync                                  │ Ts       │
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
-    
+
 >>> data["0:Record Node 109#Neuropix-PXI-103.ProbeA"]
     Time (s)             0        1         2         3         4  ...
     ------------  --------  -------  --------  --------  --------  -----
@@ -275,7 +291,7 @@ Instead, we can visualize the raw data directly, using `EphysReader` as follows:
     68.606066667    35.88    56.55     45.045   -35.88     -1.56   ...
     68.6061         32.76    61.815    51.87    -33.54      7.605  ...
     dtype: int16, shape: (1816853, 384)
-    
+
 ```
 
 ### Plexon file
@@ -326,7 +342,7 @@ plt.show()
 
 ## Saving as NPZ
 
-Pynapple objects have [`save`](pynapple.Tsd.save) methods to save them as npz files. 
+Pynapple objects have [`save`](pynapple.Tsd.save) methods to save them as npz files.
 
 ```{code-cell} ipython3
 tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
@@ -482,8 +498,8 @@ project = nap.load_folder(project_path)
 print(project)
 ```
 
-The pynapple IO offers a convenient way of visualizing and navigating a folder 
-based dataset. To visualize the whole hierarchy of Folders, you can call the 
+The pynapple IO offers a convenient way of visualizing and navigating a folder
+based dataset. To visualize the whole hierarchy of Folders, you can call the
 view property or the expand function.
 
 ```{code-cell} ipython3
@@ -492,14 +508,14 @@ project.view
 
 ```
 
-Here it shows all the subjects (in this case only A2929), 
-all the sessions and all of the derivatives folders. 
-It shows as well all the NPZ files that contains a pynapple object 
+Here it shows all the subjects (in this case only A2929),
+all the sessions and all of the derivatives folders.
+It shows as well all the NPZ files that contains a pynapple object
 and the NWB files.
 
-The object project behaves like a nested dictionary. 
-It is then easy to loop and navigate through a hierarchy of folders 
-when doing analyses. In this case, we are gonna take only the 
+The object project behaves like a nested dictionary.
+It is then easy to loop and navigate through a hierarchy of folders
+when doing analyses. In this case, we are gonna take only the
 session A2929-200711.
 
 ```{code-cell} ipython3
@@ -514,9 +530,9 @@ print(project["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"])
 ```
 ### JSON sidecar file
 
-A good practice for sharing datasets is to write as many 
-metainformation as possible. Following 
-[BIDS](https://bids.neuroimaging.io/getting_started/index.html) 
+A good practice for sharing datasets is to write as many
+metainformation as possible. Following
+[BIDS](https://bids.neuroimaging.io/getting_started/index.html)
 specifications, any data files should be accompanied by a JSON sidecar file.
 
 This is possible using the `Folder` class of pynapple with the argument `description`.

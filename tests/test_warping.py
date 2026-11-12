@@ -447,3 +447,96 @@ def test_warp_tensor_tsd_with_empty_slice():
     assert not np.all(np.isnan(tensor[0]))
     assert not np.all(np.isnan(tensor[1]))
     assert np.all(np.isnan(tensor[2]))
+
+
+############################################################
+# warp_tensor for TsGroup and Ts: same counts as one count per trial
+############################################################
+def warp_by_loop(data, epochs, num_bins):
+    """The previous implementation: one call of ``count`` for each trial."""
+    if isinstance(data, nap.Ts):
+        output = np.zeros(shape=(1, len(epochs), num_bins))
+    else:
+        output = np.zeros(shape=(len(data), len(epochs), num_bins))
+    bin_sizes = (epochs.end - epochs.start) / num_bins
+    for i in range(len(epochs)):
+        output[:, i, :] = np.transpose(data.count(bin_sizes[i], epochs[i]).values)
+    return output[0] if isinstance(data, nap.Ts) else output
+
+
+def random_spikes(rng, grid):
+    """Sorted spike times in [0, 100]. On a grid, many spikes fall on bin edges
+    and on trial ends."""
+    t = rng.uniform(0, 100, rng.integers(0, 200))
+    if grid is not None:
+        t = np.round(t / grid) * grid
+    return nap.Ts(t=np.sort(t))
+
+
+def random_trials(rng):
+    """Trials of unequal lengths, from very short to 5 s, that do not touch."""
+    starts = np.sort(
+        rng.choice(np.arange(0, 95, 0.5), rng.integers(1, 30), replace=False)
+    )
+    lengths = rng.choice([0.1, 1.0, 2.5, rng.uniform(0.01, 5)], len(starts))
+    ends = np.minimum(starts + lengths, np.append(starts[1:] - 0.01, 100))
+    return nap.IntervalSet(start=starts, end=ends)
+
+
+@pytest.mark.parametrize("seed", range(10))
+@pytest.mark.parametrize("grid", [None, 0.1, 0.25])
+@pytest.mark.parametrize("num_bins", [1, 4, 10, 50])
+def test_warp_tensor_same_as_loop(seed, grid, num_bins):
+    rng = np.random.default_rng(seed)
+    # sparse keys, and empty units
+    keys = rng.choice(10**9, rng.integers(1, 20), replace=False)
+    group = nap.TsGroup(
+        {int(k): random_spikes(rng, grid) for k in keys},
+        time_support=nap.IntervalSet(0, 100),
+    )
+    ts = random_spikes(rng, grid)
+    epochs = random_trials(rng)
+
+    for data in (group, ts):
+        expected = warp_by_loop(data, epochs, num_bins)
+        tensor = nap.warp_tensor(data, epochs, num_bins)
+        assert tensor.shape == expected.shape
+        np.testing.assert_array_equal(tensor, expected)
+
+
+@pytest.mark.parametrize("num_bins", [1, 2, 5, 10, 20])
+def test_warp_tensor_spikes_on_edges(num_bins):
+    # Each trial ends on a spike, and the spikes of unit 0 fall on bin edges
+    group = nap.TsGroup(
+        {0: nap.Ts(t=np.arange(0, 100, 0.1)), 3: nap.Ts(t=np.arange(0, 100, 1.0))}
+    )
+    epochs = nap.IntervalSet(
+        start=np.arange(10, 90, 10.0), end=np.arange(10, 90, 10.0) + np.arange(1, 9)
+    )
+    np.testing.assert_array_equal(
+        nap.warp_tensor(group, epochs, num_bins),
+        warp_by_loop(group, epochs, num_bins),
+    )
+
+
+def test_warp_tensor_spike_at_trial_end():
+    # A bin includes its left edge and excludes its right edge: the spike at
+    # the end of the trial is not counted
+    ts = nap.Ts(t=[0.0, 0.5, 1.0])
+    tensor = nap.warp_tensor(ts, nap.IntervalSet(0, 1), num_bins=2)
+    np.testing.assert_array_equal(tensor, [[1.0, 1.0]])
+
+
+def test_warp_tensor_empty():
+    epochs = nap.IntervalSet(start=[0, 10], end=[5, 15])
+    # a group without spike in the trials
+    group = nap.TsGroup(
+        {0: nap.Ts(t=[20.0]), 4: nap.Ts(t=np.array([]))},
+        time_support=nap.IntervalSet(0, 20),
+    )
+    np.testing.assert_array_equal(
+        nap.warp_tensor(group, epochs, 3), np.zeros((2, 2, 3))
+    )
+    # an empty Ts
+    ts = nap.Ts(t=np.array([]), time_support=nap.IntervalSet(0, 20))
+    np.testing.assert_array_equal(nap.warp_tensor(ts, epochs, 3), np.zeros((2, 3)))

@@ -13,7 +13,7 @@ kernelspec:
 
 # Introduction to pynapple
 
-The goal of this tutorial is to quickly learn enough about pynapple to get started with data analysis. This tutorial assumes familiarity with the basics functionalities of numpy. 
+The goal of this tutorial is to quickly learn enough about pynapple to get started with data analysis. This tutorial assumes familiarity with the basics functionalities of numpy.
 
 You can check how to install pynapple [here](../installing.md).
 
@@ -132,6 +132,14 @@ tsgroup = nap.TsGroup(data)
 print(tsgroup, "\n")
 ```
 
+:::{note}
+Internally, a `TsGroup` does not keep one object per element. All timestamps are merged into a single sorted array, together with the key of the element each timestamp belongs to. Operations over the whole group (`count`, `restrict`, `value_from`, `time_diff`, `to_tsd`, ...) therefore run once over all elements rather than once per element, which makes them much faster for large groups. In return:
+
+- Building a `TsGroup` sorts every timestamp once.
+- Indexing an element (`tsgroup[0]`) builds a new `Ts`/`Tsd` each time it is called.
+- Values of `Tsd`, `TsdFrame` or `TsdTensor` elements are stored in one shared array: they must have the same shape after the time axis, and are cast to a common dtype.
+:::
+
 
 ***
 Interaction between pynapple objects
@@ -164,19 +172,19 @@ With time support :
 
 print(
     nap.Tsd(
-        t=[0, 1, 2, 3, 4], d=[0, 1, 2, 3, 4], 
+        t=[0, 1, 2, 3, 4], d=[0, 1, 2, 3, 4],
         time_support = time_support
         )
     )
 
 ```
 
-The time support object has become an attribute of the time series. Depending on the operation applied to the time series, it will be updated. 
+The time support object has become an attribute of the time series. Depending on the operation applied to the time series, it will be updated.
 
 ```{code-cell} ipython3
 
 tsd = nap.Tsd(
-    t=np.arange(10), d=np.random.randn(10), 
+    t=np.arange(10), d=np.random.randn(10),
     time_support = time_support
     )
 
@@ -224,7 +232,7 @@ Pynapple relies on numpy to store the data. Pynapple objects behave very similar
 tsdtensor = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3, 4))
 ```
 
-If a numpy function preserves the time axis, a pynapple object is returned. 
+If a numpy function preserves the time axis, a pynapple object is returned.
 
 In this example, averaging a `TsdTensor` along the second dimension returns a `TsdFrame`:
 
@@ -307,7 +315,7 @@ print(tsdframe.loc[3])
 
 ### Slicing TsGroup
 
-`TsGroup` object can be indexed to return directly the timestamp object or sliced to return a new `TsGroup`. 
+`TsGroup` object can be indexed to return directly the timestamp object or sliced to return a new `TsGroup`.
 
 Indexing:
 
@@ -388,7 +396,7 @@ See [here](02_input_output.md) for more details about loading data.
 
 ### Loading NWB
 
-Pynapple supports by default the [NWB standard](https://pynwb.readthedocs.io/en/latest/). 
+Pynapple supports by default the [NWB standard](https://pynwb.readthedocs.io/en/latest/).
 
 NWB files can be loaded with :
 
@@ -466,7 +474,7 @@ Tuning curves of neurons based on spiking or calcium activity can be computed.
 
 **[Wavelets](11_wavelets)**
 
-The wavelets module performs Morlet wavelets decomposition of a time series. 
+The wavelets module performs Morlet wavelets decomposition of a time series.
 
 **[Phases & envelopes](13_phases_and_envelopes)**
 
