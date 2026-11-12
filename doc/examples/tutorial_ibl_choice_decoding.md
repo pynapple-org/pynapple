@@ -70,8 +70,8 @@ io = NWBHDF5IO(file=h5py.File(fs.open(s3_url, "rb")), load_namespaces=True)
 nwb = nap.NWBFile(io.read())
 ```
 
-This NWB file, loaded into a pynapple object, contains neural activity, 
-behavioral data, and raw electrophysiological traces. 
+This NWB file, loaded into a pynapple object, contains neural activity,
+behavioral data, and raw electrophysiological traces.
 They're all lazily loaded, so only what we use will be downloaded.
 
 ```{code-cell} ipython3

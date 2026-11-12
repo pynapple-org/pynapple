@@ -13,11 +13,11 @@ kernelspec:
 
 # Trial-aligned population manifolds
 
-How does a population of neurons evolve during a movement? 
+How does a population of neurons evolve during a movement?
 Examining each neuron separately can reveal changes in firing rate, but it can be difficult to see how those changes are coordinated across the population.
 
-A complementary approach is to represent population activity as a trajectory through a high-dimensional space. 
-Each neuron contributes one coordinate, and each time point corresponds to one population activity pattern. 
+A complementary approach is to represent population activity as a trajectory through a high-dimensional space.
+Each neuron contributes one coordinate, and each time point corresponds to one population activity pattern.
 Dimensionality reduction lets us visualize some of the structure in these trajectories.
 
 In this tutorial, we will show you how to use Pynapple to:
@@ -28,7 +28,7 @@ In this tutorial, we will show you how to use Pynapple to:
 4. Use principal component analysis (PCA) to visualize population trajectories.
 5. Compare the average trajectories associated with different reach targets.
 
-This analysis introduces the population-trajectory perspective used in studies such as [Churchland et al. (2012)](https://www.nature.com/articles/nature11129). 
+This analysis introduces the population-trajectory perspective used in studies such as [Churchland et al. (2012)](https://www.nature.com/articles/nature11129).
 We will use ordinary PCA for visualization; we will not reproduce the paper’s rotational-dynamics analysis.
 
 ```{code-cell} ipython3
@@ -49,7 +49,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ## Loading data
 
 We will stream a recording from [dandiset 00688](https://dandiarchive.org/dandiset/000688?search=reaching+monkey&pos=4),
-which contains neural recordings from macaque primary motor cortex while they perform a center-out reaching task. 
+which contains neural recordings from macaque primary motor cortex while they perform a center-out reaching task.
 In this task, the animal reaches from a central position toward a peripheral target:
 
 ```{code-cell} ipython3
@@ -127,7 +127,7 @@ io = NWBHDF5IO(file=h5py.File(fs.open(s3_url, "rb")), load_namespaces=True)
 nwb = nap.NWBFile(io.read())
 ```
 
-The NWB file is now accessible through Pynapple. 
+The NWB file is now accessible through Pynapple.
 Data are loaded on demand, so we do not need to download the entire recording before starting the analysis.
 
 ```{code-cell} ipython3
@@ -148,10 +148,10 @@ trials
 ```
 
 ## Trial alignment
-Spike times are initially expressed on the recording's time axis. 
+Spike times are initially expressed on the recording's time axis.
 To compare repeated movements, we need to organize those spikes into trials.
 
-A [`TsTrials`](pynapple.TsTrials) object combines the spike trains with the trial intervals and metadata. 
+A [`TsTrials`](pynapple.TsTrials) object combines the spike trains with the trial intervals and metadata.
 This gives us a trial-based view of the recording while keeping the behavioral information associated with each trial.
 
 ```{code-cell} ipython3
@@ -167,7 +167,7 @@ The following selection removes trials for which that value is missing:
 trial_data = trial_data[~np.isnan(trial_data.trials["go_cue_time"])]
 trial_data
 ```
-Filtering through the trial object keeps the neural activity and trial metadata synchronized: 
+Filtering through the trial object keeps the neural activity and trial metadata synchronized:
 when we remove a trial, its associated activity is removed as well.
 
 ## Visualising aligned spikes
@@ -195,7 +195,7 @@ Patterns that repeat at a similar time across trials appear as regions of greate
 
 ## Aligning to the go cue
 
-Trial start is not always the most informative reference point. 
+Trial start is not always the most informative reference point.
 If the delay between trial start and the go cue varies, activity related to the go cue may appear spread out across trials.
 
 We can instead set each trial's go cue to time zero.
@@ -222,11 +222,11 @@ plt.show()
 ```
 Negative times occur before the go cue.
 Positive times occur after the go cue.
-The red line marks the go cue. 
+The red line marks the go cue.
 Comparing the two rasters can reveal whether activity is more consistently timed relative to trial start or to the go cue.
 
 ## Focussing on a window
-Trials can have different durations. 
+Trials can have different durations.
 For our comparison, we will focus on a common window from 200 ms before to 500 ms after the go cue.
 
 This gives us a view of population activity around the same behavioral event,
@@ -254,7 +254,7 @@ plt.show()
 
 ## Binning
 
-So far, the data consist of discrete spike times. 
+So far, the data consist of discrete spike times.
 PCA requires a matrix of numerical observations, so we first count the spikes in consecutive time bins.
 
 With a bin size of 0.02 seconds, each value is the number of spikes produced by one neuron during one 20 ms interval.
@@ -270,7 +270,7 @@ The bin size controls a trade-off:
 - Smaller bins preserve finer timing but usually produce noisier activity estimates.
 - Larger bins reduce variability but can obscure rapid changes.
 
-*Note:* These values are spike counts, not firing rates. 
+*Note:* These values are spike counts, not firing rates.
 Dividing by the bin duration in seconds would convert them to an average rate in spikes per second.
 
 ## Inspecting population activity
@@ -294,7 +294,7 @@ plt.xlabel('time from go cue (s)');
 plt.title(f"trial {example_trial}")
 plt.show()
 ```
-The heatmap shows the binned activity for one trial. 
+The heatmap shows the binned activity for one trial.
 Each row is a neuron, each column is a time bin, and color represents the spike count.
 Unlike the raster, which shows one neuron across many trials, this view shows many neurons within one trial.
 
@@ -304,13 +304,13 @@ These operations serve different purposes.
 
 ### Smoothing
 
-Spiking activity varies from bin to bin. 
+Spiking activity varies from bin to bin.
 Gaussian smoothing averages activity over nearby time bins, making broader temporal patterns easier to see.
-Here, we use a Gaussian standard deviation of 60 ms. 
+Here, we use a Gaussian standard deviation of 60 ms.
 This is wider than a single 20 ms bin, so neighboring bins contribute to the smoothed value.
 
-Smoothing reduces temporal detail as well as variability. 
-A wider smoothing kernel produces smoother trajectories, but it can blur sharp changes. 
+Smoothing reduces temporal detail as well as variability.
+A wider smoothing kernel produces smoother trajectories, but it can blur sharp changes.
 
 If you want to define your own smoothing kernel, you can use the [`convolve`](pynapple.TsdTrials.convolve) method.
 
@@ -320,10 +320,10 @@ smoothed = binned.smooth(smooth_sigma)
 ```
 
 ### Normalizing
-PCA is sensitive to the scale of its input features. 
+PCA is sensitive to the scale of its input features.
 Without normalization, neurons with larger activity fluctuations can dominate the result.
 
-We normalize the smoothed activity before fitting PCA. 
+We normalize the smoothed activity before fitting PCA.
 The intended effect is to compare population patterns without allowing differences in individual-neuron scale to dominate.
 
 ```{code-cell} ipython3
@@ -331,7 +331,7 @@ normalized = smoothed.normalize()
 ```
 
 ## Constructing the PCA input matrix
-At each time bin, the population activity is a vector with one value per neuron. 
+At each time bin, the population activity is a vector with one value per neuron.
 With `N` neurons, this vector is a point in an `N`-dimensional space.
 PCA expects a two-dimensional matrix of observations by features.
 
@@ -345,7 +345,7 @@ We therefore combine the trial and time dimensions while leaving the neuron dime
 n_trials, n_time, n_units = normalized.shape
 X = normalized.values.reshape(n_trials*n_time, n_units)
 ```
-This reshaping does not average trials or change the activity values. 
+This reshaping does not average trials or change the activity values.
 It only arranges the data into the format expected by [scikit-learn's](https://scikit-learn.org/stable/) [`PCA`](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 
 ## Finding shared population axes with PCA
@@ -355,7 +355,7 @@ PCA finds orthogonal directions that capture progressively smaller amounts of va
 - PC 2 captures the most remaining variance while being orthogonal to PC 1.
 - PC 3 captures the most remaining variance while being orthogonal to both.
 
-We fit one PCA model using all trial–time observations. 
+We fit one PCA model using all trial–time observations.
 This gives every trial a shared coordinate system, allowing us to compare trajectories across reach targets.
 
 ```{code-cell} ipython3
@@ -366,7 +366,7 @@ trajectories = pca.fit_transform(X).reshape(n_trials, n_time, 3)
 ```
 We restore the trial and time dimensions, replacing the neuron dimension with three principal components: `(n_trials, n_time, 3)`.
 Each trial is now a trajectory through a three-dimensional space rather than through a space with one dimension per neuron.
-The components are weighted combinations of neurons, not individual neurons. 
+The components are weighted combinations of neurons, not individual neurons.
 
 We can wrap the trajectories back in a [`TsdTrials`](pynapple.TsdTrials) object using the [`with_data`](pynapple.TsdTrials.with_data) method,
 which overwrites the data while keeping timepoints and metadata:
@@ -412,12 +412,12 @@ plt.show()
 The black marker indicates the first time bin.
 The gray marker indicates the last time bin.
 
-Low-dimensional projections help us see how neurons act together as a population. 
+Low-dimensional projections help us see how neurons act together as a population.
 Instead of examining each neuron separately, we can follow a trajectory that summarizes how their collective activity changes over time.
 This connects to the idea of a neural manifold: a lower-dimensional structure within the space of possible population activity patterns.
 For an accessible introduction to neural manifolds, see [Matthew Perich's article in The Transmitter](https://www.thetransmitter.org/neural-dynamics/neural-population-based-approaches-have-opened-new-windows-into-neural-computations-and-behavior/).
 
-Nonetheless, low-dimensional trajectories do not replace examining individual neurons. 
+Nonetheless, low-dimensional trajectories do not replace examining individual neurons.
 To connect the population-level view back to single-neuron activity,
 we can compare the mean activity for targets 1 and 6 (maximally different), with neurons sorted by their PC 3 loading.
 Using the same ordering in both panels allows to see how individual neurons contribute
@@ -461,10 +461,10 @@ axes[0].set_ylabel("Neuron rank by PC 3 loading")
 fig.colorbar(image, ax=axes, label="Normalized activity (z-score)", shrink=0.8)
 plt.show()
 ```
-Each panel shows the mean normalized neural activity across trials for one reach target. 
-Rows correspond to neurons and columns to time bins. 
+Each panel shows the mean normalized neural activity across trials for one reach target.
+Rows correspond to neurons and columns to time bins.
 Both panels use the same neuron ordering, from largest to smallest PC 3
-loading, and the same color scale. 
+loading, and the same color scale.
 
 :::{card}
 Authors
