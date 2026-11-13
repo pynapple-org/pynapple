@@ -141,7 +141,8 @@ units = nap.TsGroup(
     {
         0: nap.Ts(t=[1.2, 3.4, 5.6]),
         1: nap.Ts(t=[1.5, 3.7, 5.8]),
-    }
+    },
+    time_support=nap.IntervalSet(0, 7)
 )
 spike_trials = nap.TsTrials(source=units, trials=trials)
 spike_trials
@@ -325,7 +326,7 @@ print(signal_trials[0])  # First trial as a TsdFrame
 ```
 
 ```{code-cell} ipython3
-print(signal_trials[:, :, 0])  # First feature across all trials
+print(signal_trials[:, :, "sin"])  # First feature across all trials
 ```
 
 #### Like pandas DataFrame
