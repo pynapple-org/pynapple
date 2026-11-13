@@ -124,7 +124,7 @@ plt.show()
 ## Burst detection
 
 A burst is a group of spikes much closer to each other than to the spikes around them.
-[`detect_spike_bursts`](pynapple.process.isi.detect_spike_bursts) finds them with one of three
+[`detect_spike_bursts`](pynapple.process.isi.detect_spike_bursts) finds them with one of four
 methods and returns an `IntervalSet` from the first to the last spike of each burst, with the
 number of spikes as metadata.
 
@@ -239,11 +239,30 @@ bursts_mi = nap.detect_spike_bursts(
 len(bursts), len(bursts_mi)
 ```
 
+### Poisson surprise
+
+The `poisson_surprise` method (Legendy & Salcman, 1985 [3]) scores a group of spikes by how
+unlikely it would be if the spike train were a Poisson process at its mean firing rate. Bursts
+start at three spikes with ISIs below half the mean ISI and are extended and trimmed to maximise
+this surprise; bursts below `min_surprise` are discarded. For details, see [2] and [3].
+
+
+| Argument | Default | Meaning |
+|---|---|---|
+| `min_surprise` | 5 | Bursts with a lower surprise are discarded. |
+| `max_isi_burst` | `None` | ISI, in seconds, beyond which no more spikes are looked at when extending a burst. `None` uses twice the mean ISI. |
+
+```{code-cell} ipython3
+bursts_ps = nap.detect_spike_bursts(spikes, method="poisson_surprise")
+len(bursts_ps)
+```
+
+
 ### Instantaneous firing rate
 
 The `instantaneous_rate` method defines a burst as a run of spikes whose instantaneous firing
 rate (1 / ISI) stays above `rate_threshold`. This is the burst definition commonly used in the
-birdsong field, with 125 Hz as the default (see Leonardo & Fee, 2005 [3]). Runs with fewer than
+birdsong field, with 125 Hz as the default (see Leonardo & Fee, 2005 [4]). Runs with fewer than
 `min_spikes_in_burst` spikes are discarded:
 
 ```{code-cell} ipython3
@@ -252,6 +271,8 @@ bursts_ir = nap.detect_spike_bursts(
 )
 len(bursts_ir)
 ```
+
+
 
 With every method, a `TsGroup` is processed unit by unit and returns a dictionary of `IntervalSet`
 keyed by unit. Bursts are detected within each epoch of the time support, so a burst never spans
@@ -264,7 +285,10 @@ a gap in it.
    Neuroscience*, 29(1-2), 213-229. <https://doi.org/10.1007/s10827-009-0175-1>
 2. Cotterill, E., & Eglen, S. J. (2018). Burst detection methods. arXiv:1802.01287.
    <https://arxiv.org/abs/1802.01287>
-3. Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control in birdsong. *Journal of
+3. Legendy, C. R., & Salcman, M. (1985). Bursts and recurrences of bursts in the spike trains of
+   spontaneously active striate cortex neurons. *Journal of Neurophysiology*, 53(4), 926-939.
+   <https://doi.org/10.1152/jn.1985.53.4.926>
+4. Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control in birdsong. *Journal of
    Neuroscience*, 25(3), 652-661. <https://doi.org/10.1523/JNEUROSCI.3036-04.2005>
 
 :::{card}

@@ -59,7 +59,7 @@ def test_default_method_is_log_isi():
         ),
         (
             nap.Ts(t=[0.0, 1.0]),
-            "poisson_surprise",
+            "rank_surprise",
             {},
             pytest.raises(ValueError, match="`method` must be one of"),
         ),
@@ -201,7 +201,9 @@ def test_compute_log_isi_threshold_max_cutoff(max_cutoff, expectation):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("method", ["log_isi", "max_interval", "instantaneous_rate"])
+@pytest.mark.parametrize(
+    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+)
 def test_tsgroup_returns_dict_per_unit(method):
     t = np.concatenate([[0.0, 0.1, 0.2, 0.3], [2.0, 2.05, 2.1], [5.0]])
     group = nap.TsGroup({0: nap.Ts(t=t), 3: nap.Ts(t=t + 0.5)})
@@ -218,21 +220,33 @@ def test_tsgroup_returns_dict_per_unit(method):
         )
 
 
-@pytest.mark.parametrize("method", ["log_isi", "max_interval", "instantaneous_rate"])
+@pytest.mark.parametrize(
+    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+)
 def test_bursts_do_not_span_time_support_gaps(method):
     spikes = _regular_bursts(n_bursts=100, spikes_per_burst=6, intra=0.005)
     # cut the 50th burst in two: 3 spikes before the gap, 3 after
     cut = 49 * 1.5 + 0.0125
     epochs = nap.IntervalSet(start=[0.0, cut], end=[cut - 1e-6, 200.0])
     bursts = nap.detect_spike_bursts(spikes.restrict(epochs), method=method)
-    assert len(bursts) == 101
     assert np.all(bursts.end <= epochs.end.max())
     in_gap = (bursts.start < cut) & (bursts.end > cut)
     assert not np.any(in_gap)
-    assert np.sum(np.asarray(bursts.n_spikes) == 3) == 2
+    if method == "poisson_surprise":
+        # as in the R code, a burst cannot start at the last 3 spikes of a
+        # train, so only the 3 spikes after the gap form a burst
+        assert len(bursts) == 100
+        n_spikes = np.asarray(bursts.n_spikes)
+        assert np.sum(n_spikes == 3) == 1
+        assert bursts.start[n_spikes == 3][0] > cut
+    else:
+        assert len(bursts) == 101
+        assert np.sum(np.asarray(bursts.n_spikes) == 3) == 2
 
 
-@pytest.mark.parametrize("method", ["log_isi", "max_interval", "instantaneous_rate"])
+@pytest.mark.parametrize(
+    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+)
 @pytest.mark.parametrize("t", [[], [1.0], [1.0, 2.0, 3.0]])
 def test_no_bursts(method, t):
     bursts = nap.detect_spike_bursts(nap.Ts(t=np.array(t)), method=method)
@@ -428,3 +442,57 @@ def test_log_isi_histogram_uses_compute_isi_distribution():
     assert hist[0].sum() == len(isi_ms)
     # two populated bins: 10 ms and 1.46 s
     assert np.sum(hist[0].values > 0) == 2
+
+
+# ---------------------------------------------------------------------------
+# Poisson surprise
+# ---------------------------------------------------------------------------
+
+# fmt: off
+_PS_TRAIN = np.array([
+    0.268, 1.236, 2.159, 2.511, 3.531, 3.724, 4.034, 4.119, 4.243, 5, 5.01, 5.02,
+    5.03, 5.04, 5.05, 5.06, 5.07, 5.31, 5.344, 6.807, 7.442, 7.601, 7.648, 7.682,
+    7.722, 8.225, 9.642, 9.871, 9.954, 11.457, 11.991, 12, 12.02, 12.04, 12.06,
+    12.08, 12.1, 12.582, 13.033, 13.216, 13.369, 13.74, 14.352, 14.474, 15.397,
+    15.549, 15.885, 16.547, 17.394, 17.968, 18.164, 18.694, 18.894, 19.838,
+])
+# fmt: on
+
+
+def test_poisson_surprise_matches_r():
+    # PS.method() of Cotterill & Eglen (2018) on _PS_TRAIN gives spikes
+    # (1-based) 10-17, 22-25 and 31-37, with surprise 20.33, 5.38 and 14.15.
+    bursts = nap.detect_spike_bursts(nap.Ts(t=_PS_TRAIN), method="poisson_surprise")
+    _assert_bursts(
+        bursts,
+        _PS_TRAIN[[9, 21, 30]],
+        _PS_TRAIN[[16, 24, 36]],
+        [8, 4, 7],
+    )
+
+
+def test_poisson_surprise_min_surprise():
+    spikes = nap.Ts(t=_PS_TRAIN)
+    bursts = nap.detect_spike_bursts(
+        spikes, method="poisson_surprise", min_surprise=10
+    )
+    np.testing.assert_array_equal(np.asarray(bursts.n_spikes), [8, 7])
+    bursts = nap.detect_spike_bursts(spikes, method="poisson_surprise", min_surprise=0)
+    assert len(bursts) >= 3
+
+
+@pytest.mark.parametrize(
+    "params, expectation",
+    [
+        ({"min_surprise": -1}, pytest.raises(ValueError, match="`min_surprise`")),
+        ({"min_surprise": "a"}, pytest.raises(TypeError, match="`min_surprise`")),
+        ({"max_isi_burst": 0}, pytest.raises(ValueError, match="`max_isi_burst`")),
+        ({"max_isi_burst": 0.5}, does_not_raise()),
+        ({"max_cutoff": 0.1}, pytest.raises(TypeError, match="Unknown parameter")),
+    ],
+)
+def test_poisson_surprise_errors(params, expectation):
+    with expectation:
+        nap.detect_spike_bursts(
+            nap.Ts(t=_PS_TRAIN), method="poisson_surprise", **params
+        )

@@ -15,6 +15,7 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
+import scipy.special
 
 from .. import core as nap
 
@@ -477,12 +478,115 @@ def _detect_bursts_instantaneous_rate(
 
 
 # ---------------------------------------------------------------------------
+# Poisson surprise
+# ---------------------------------------------------------------------------
+
+
+def _poisson_surprise(times, first, n, mean_isi):
+    """
+    Surprise of the `n` spikes starting at index `first`: -log of the probability
+    that a Poisson process with the mean rate of the train has at least `n - 1`
+    spikes in their duration (sjemea's `surprise`, ``ppois(n - 2, upper)``).
+    """
+    lam = (times[first + n - 1] - times[first]) / mean_isi
+    with np.errstate(divide="ignore"):
+        return -np.log(scipy.special.pdtrc(n - 2, lam))
+
+
+def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
+    """
+    Bursts of the Poisson surprise method, translated from `PS_method.R` of
+    Cotterill & Eglen (2018) (`si.find.bursts.thresh` and
+    `si.find.burst.thresh2`), with 0-based indices. Returns (first, last, surprise).
+    """
+    n_total = len(times)
+    start_isi = mean_isi / 2
+    isi_thresh = 2 * mean_isi if max_isi_burst is None else max_isi_burst
+    bursts = []
+    n = 0
+    while n < n_total - 3:
+        if not (
+            times[n + 1] - times[n] < start_isi
+            and times[n + 2] - times[n + 1] < start_isi
+        ):
+            n += 1
+            continue
+
+        # Phase 1: add spikes to the end while the surprise increases, looking up
+        # to 10 spikes ahead, but not past an ISI longer than `isi_thresh`.
+        i = 3
+        s = _poisson_surprise(times, n, i, mean_isi)
+        while True:
+            i_cur = i
+            check = min(10, n_total - (i + n))
+            improved = False
+            while check > 0:
+                check -= 1
+                i += 1
+                s_new = _poisson_surprise(times, n, i, mean_isi)
+                if s_new > s:
+                    improved = True
+                    break
+                # As in the R code, this reads the ISI ending at spike `i` of the
+                # train, not spike `i` of the burst.
+                if times[i - 1] - times[i - 2] > isi_thresh:
+                    break
+            if not improved:
+                i = i_cur
+                break
+            s = s_new
+
+        # Phase 2: drop spikes from the start while the surprise increases.
+        while i > 3:
+            s_new = _poisson_surprise(times, n + 1, i - 1, mean_isi)
+            if not s_new > s:
+                break
+            n, i, s = n + 1, i - 1, s_new
+
+        bursts.append((n, n + i - 1, s))
+        n += i
+    return bursts
+
+
+def _poisson_surprise_single(spikes, min_surprise, max_isi_burst):
+    isi = _interspike_intervals(spikes)
+    if len(isi) == 0:
+        return _detect_per_epoch(spikes, lambda times: [])
+    mean_isi = isi.mean()
+
+    def find_bursts(times):
+        return [
+            (first, last)
+            for first, last, s in _poisson_surprise_bursts(
+                times, mean_isi, max_isi_burst
+            )
+            if s >= min_surprise
+        ]
+
+    return _detect_per_epoch(spikes, find_bursts)
+
+
+def _detect_bursts_poisson_surprise(spikes, min_surprise=5.0, max_isi_burst=None):
+    """Poisson surprise method of Legendy & Salcman (1985), see `detect_spike_bursts`."""
+    _check_positive("min_surprise", min_surprise, strict=False)
+    if max_isi_burst is not None:
+        _check_positive("max_isi_burst", max_isi_burst)
+    if isinstance(spikes, nap.TsGroup):
+        return {
+            k: _poisson_surprise_single(spikes[k], min_surprise, max_isi_burst)
+            for k in spikes
+        }
+    return _poisson_surprise_single(spikes, min_surprise, max_isi_burst)
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
 _BURST_METHODS = {
     "log_isi": _detect_bursts_log_isi,
     "max_interval": _detect_bursts_max_interval,
+    "poisson_surprise": _detect_bursts_poisson_surprise,
     "instantaneous_rate": _detect_bursts_instantaneous_rate,
 }
 
@@ -505,15 +609,22 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
     - `"max_interval"`: MaxInterval method [2]_ with fixed thresholds, in seconds:
       `max_isi_start` (default 0.17), `max_isi_burst` (0.3), `min_inter_burst_interval` (0.2),
       `min_burst_duration` (0.01) and `min_spikes_in_burst` (int, default 3).
+    - `"poisson_surprise"`: Poisson surprise method [3]_, as implemented by [2]_. A burst
+      starts at three spikes with ISIs below half the mean ISI and is grown, then trimmed,
+      to maximise its surprise: -log of the probability of that many spikes in that time
+      under a Poisson process at the mean rate of the train. Parameters: `min_surprise`
+      (float, default 5), the smallest surprise of a burst; `max_isi_burst` (float or None,
+      default None, i.e. twice the mean ISI), in seconds, the ISI beyond which spikes are
+      no longer added.
     - `"instantaneous_rate"`: runs of spikes whose instantaneous firing rate (1 / ISI) stays
-      above `rate_threshold` (float, default 125 Hz) [3]_, with at least `min_spikes_in_burst`
+      above `rate_threshold` (float, default 125 Hz) [4]_, with at least `min_spikes_in_burst`
       spikes (int, default 2).
 
     Parameters
     ----------
     spikes : Ts or TsGroup
         Spike times.
-    method : {"log_isi", "max_interval", "instantaneous_rate"}, optional
+    method : {"log_isi", "max_interval", "poisson_surprise", "instantaneous_rate"}, optional
         Detection method. Default is "log_isi".
     **params
         Parameters of the chosen method, listed above.
@@ -564,7 +675,11 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
        https://doi.org/10.1007/s10827-009-0175-1
     .. [2] Cotterill, E., & Eglen, S. J. (2018). Burst detection methods.
        arXiv:1802.01287. https://arxiv.org/abs/1802.01287
-    .. [3] Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control
+    .. [3] Legendy, C. R., & Salcman, M. (1985). Bursts and recurrences of bursts
+       in the spike trains of spontaneously active striate cortex neurons.
+       Journal of Neurophysiology, 53(4), 926-939.
+       https://doi.org/10.1152/jn.1985.53.4.926
+    .. [4] Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control
        in birdsong. Journal of Neuroscience, 25(3), 652-661.
        https://doi.org/10.1523/JNEUROSCI.3036-04.2005
     """
