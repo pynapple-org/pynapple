@@ -2253,6 +2253,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             Replacement data interpretation. If omitted, the current
             value is retained. Use ``"continuous"`` for transformed values
             that should be selected by timestamp rather than bin edges.
+            "count" requires an existing bin_size; setting this argument does not bin sampled data.
 
         Returns
         -------
@@ -2313,6 +2314,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> list(transformed.columns)
         ['value', 'squared']
         """
+        if data_kind == "count" and self.bin_size is None:
+            raise ValueError(
+                "data_kind='count' requires an existing bin_size. "
+                "Use TsTrials.count() to create binned counts."
+            )
 
         values = np.asarray(values)
         if values.ndim not in (2, 3) or values.shape[:2] != self.shape[:2]:

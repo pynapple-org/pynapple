@@ -823,6 +823,27 @@ class TestTsdTrials:
             equal_nan=True,
         )
 
+    def test_count_kind_requires_bin_size(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        with pytest.raises(ValueError, match="requires an existing bin_size"):
+            tsd_trials.replace_data(tsd_trials.d, data_kind="count")
+
+    def test_restore_count_kind(self, ts_trials: nap.TsTrials) -> None:
+        counts = ts_trials.count(0.5)
+        continuous = counts.replace_data(counts.d, data_kind="continuous")
+        restored = continuous.replace_data(
+            continuous.d,
+            data_kind="count",
+        )
+
+        assert_same_axes(restored, counts)
+        np.testing.assert_array_equal(
+            restored.get(0.2, 1.3).d,
+            counts.get(0.2, 1.3).d,
+        )
+
     def test_scalar_time(self, tsd_trials: nap.TsdTrials) -> None:
         np.testing.assert_array_equal(tsd_trials[:, 0], tsd_trials.d[:, 0])
         np.testing.assert_array_equal(tsd_trials[0, 0], tsd_trials.d[0, 0])
