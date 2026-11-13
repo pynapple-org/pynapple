@@ -368,10 +368,10 @@ We restore the trial and time dimensions, replacing the neuron dimension with th
 Each trial is now a trajectory through a three-dimensional space rather than through a space with one dimension per neuron.
 The components are weighted combinations of neurons, not individual neurons.
 
-We can wrap the trajectories back in a [`TsdTrials`](pynapple.TsdTrials) object using the [`with_data`](pynapple.TsdTrials.with_data) method,
+We can wrap the trajectories back in a [`TsdTrials`](pynapple.TsdTrials) object using the [`replace_data`](pynapple.TsdTrials.replace_data) method,
 which overwrites the data while keeping timepoints and metadata:
 ```{code-cell} ipython3
-trajectories = normalized.with_data(
+trajectories = normalized.replace_data(
     trajectories,
     columns=["PC 1", "PC 2", "PC 3"],
     data_kind="continuous",

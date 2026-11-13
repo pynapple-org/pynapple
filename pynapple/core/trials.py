@@ -1510,7 +1510,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     data_kind : str
         Data interpretation: ``"continuous"`` for sampled source data
         or ``"count"`` for data created by :meth:`TsTrials.count`.
-        Can be changed with :meth:`with_data`.
+        Can be changed with :meth:`replace_data`.
     alignment : str
         Time reference. Construction uses ``"start"``; data created by
         :meth:`TsTrials.count` inherit the timestamp object's alignment.
@@ -1556,7 +1556,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
       return NumPy results.
 
     Use ``np.asarray(data)`` to access the dense array for operations
-    that are not supported directly. Use :meth:`with_data` to attach
+    that are not supported directly. Use :meth:`replace_data` to attach
     transformed values to the existing trial and time axes.
 
     Examples
@@ -2203,7 +2203,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             alignment=self.alignment,
         )
 
-    def with_data(
+    def replace_data(
         self,
         values: np.ndarray,
         *,
@@ -2211,7 +2211,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         data_kind: str | None = None,
     ) -> TsdTrials:
         """
-        Return new data with the existing trial and time axes.
+        Return new `TsdTrials` object with the existing trial and time axes but the given values.
 
         Use this method to attach externally computed values, such as
         model predictions or dimensionality-reduction results, to the original trials.
@@ -2274,7 +2274,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         ...     start=[0.0, 2.0], end=[1.0, 3.0]
         ... )
         >>> data = nap.TsdTrials(source, intervals)
-        >>> squared = data.with_data(data.d ** 2)
+        >>> squared = data.replace_data(data.d ** 2)
         >>> squared.d
         array([[0.  , 0.25, 1.  ],
                [4.  , 6.25, 9.  ]])
@@ -2282,7 +2282,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Replace the scalar signal with two named features:
 
         >>> features = np.stack([data.d, data.d ** 2], axis=-1)
-        >>> transformed = data.with_data(
+        >>> transformed = data.replace_data(
         ...     features, columns=["value", "squared"]
         ... )
         >>> transformed.shape

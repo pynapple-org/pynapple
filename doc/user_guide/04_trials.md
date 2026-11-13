@@ -77,12 +77,13 @@ Each trial initially starts at time zero.
 
 ### Selecting trials and units
 
-Select trials by position:
+Select a trial by its original identifier:
 ```{code-cell} ipython3
 first_trial = spike_trials[0]
 first_trial
 ```
 This returns a [`TsGroup`](pynapple.TsGroup) object, containing the spikes for all units for this trial.
+
 
 Select trials by their metadata:
 ```{code-cell} ipython3
@@ -157,16 +158,34 @@ rates in spikes per second.
 
 `TsdTrials` can also organize an existing sampled time series into trials.
 
-Here, we create two synthetic signals sampled at 100Hz:
+We create two signals sampled at 100 Hz. Each trial contains a broad response near 0.5 seconds,
+fast fluctuations, and noise.
+Trials differ in baseline and response amplitude, while the two signals have different overall scales.
 
 ```{code-cell} ipython3
+rng = np.random.default_rng(42)
 t = np.arange(700) / 100
-values = np.column_stack(
-    (
-        np.sin(2 * np.pi * t),
-        np.cos(2 * np.pi * t),
+values = np.zeros((len(t), 2))
+
+for start, end, amplitude, offset in zip(
+    trials.start,
+    trials.end,
+    [0.7, 1.0, 1.4],
+    [-0.5, 0.0, 0.6],
+):
+    selected = (t >= start) & (t <= end)
+    relative_time = t[selected] - start
+
+    response = np.exp(-0.5 * ((relative_time - 0.5) / 0.08) ** 2)
+    fast = 0.3 * np.sin(2 * np.pi * 20 * relative_time)
+    noise = rng.normal(0, 0.15, size=(selected.sum(), 2))
+
+    values[selected, 0] = (
+        10 + 3 * (offset + amplitude * response + fast + noise[:, 0])
     )
-)
+    values[selected, 1] = (
+        100 + 20 * (offset + amplitude * response + fast + noise[:, 1])
+    )
 
 signals = nap.TsdFrame(
     t=t,
@@ -177,16 +196,17 @@ signal_trials = nap.TsdTrials(source=signals, trials=trials)
 signal_trials
 ```
 
-For this two-column source, the dimensions are `(trial, time, signal)`.
+For this two-column source, the dimensions are `(trial, time, feature)`.
 
 ### Selecting trials and signals
 
-Select a trial by position:
+Select a trial by its original identifier:
 ```{code-cell} ipython3
 first_trial = signal_trials[0]
 first_trial
 ```
-This returns a [`TsdFrame`](pynapple.TsGroup) object, containing the signals for this trial.
+This returns a [`TsdFrame`](pynapple.TsdFrame) object, containing the signals for this trial.
+
 
 Select trials using their metadata:
 ```{code-cell} ipython3
@@ -195,18 +215,21 @@ left_signals
 ```
 This returns a [`TsdTrials`](pynapple.TsdTrials) object, but with a subset of the trials.
 
-Use the second index to select a signal across trials:
+Use the third index to select a signal by its column name.
+The axes are `(trial, time, feature)`:
+
 ```{code-cell} ipython3
-first_signal = signal_trials[:, :, 0]
+first_signal = signal_trials[:, :, "signal_1"]
 first_signal
 ```
-This returns a [`TsdTrials`](pynapple.TsdTrials) object, but with a subset of the signals.
+This returns a scalar [`TsdTrials`](pynapple.TsdTrials) object with shape
+`(trial, time)`. Use `["signal_1"]` instead to retain the feature axis.
 
 ### Extracting a time window
 Time is expressed relative to each trial's start.
 Use `get` to get a window on this relative time axis:
 ```{code-cell} ipython3
-windowed_signals = signal_trials.get(start=0.2, end=0.8)
+windowed_signals = signal_trials.get(start=0.0, end=0.8)
 windowed_signals
 ```
 
@@ -245,6 +268,44 @@ smoothed = windowed_signals.smooth(0.03)
 smoothed
 ```
 
+```{code-cell} ipython3
+:tags: [hide-input]
+feature = windowed_signals.columns[0]
+before = windowed_signals[:, :, feature]
+after = smoothed[:, :, feature]
+vmin = min(np.nanmin(before.d), np.nanmin(after.d))
+vmax = max(np.nanmax(before.d), np.nanmax(after.d))
+half_step = windowed_signals.sample_period / 2
+extent = (
+    before.t[0] - half_step,
+    before.t[-1] + half_step,
+    len(before) - 0.5,
+    -0.5,
+)
+fig, axes = plt.subplots(
+    1, 2, figsize=(10, 4), sharex=True, sharey=True,
+    layout="constrained",
+)
+for ax, data, title in zip(
+    axes, (before, after), ("Before smoothing", "After smoothing")
+):
+    image = ax.imshow(
+        data.d,
+        aspect="auto",
+        interpolation="nearest",
+        extent=extent,
+        vmin=vmin,
+        vmax=vmax,
+        cmap="viridis",
+    )
+    ax.set(title=title, xlabel="Aligned time (s)")
+    ax.set_yticks(np.arange(len(data)), labels=data.trial_ids)
+axes[0].set_ylabel("Trial ID")
+fig.suptitle(f"Signal = {feature}")
+fig.colorbar(image, ax=axes, label="Signal")
+plt.show()
+```
+
 ### Convolving
 
 Use `convolve` to apply a custom one-dimensional kernel along time.
@@ -254,6 +315,44 @@ For example, a five-sample moving average:
 kernel = np.ones(5) / 5
 filtered = windowed_signals.convolve(kernel)
 filtered
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+feature = windowed_signals.columns[0]
+before = windowed_signals[:, :, feature]
+after = filtered[:, :, feature]
+vmin = min(np.nanmin(before.d), np.nanmin(after.d))
+vmax = max(np.nanmax(before.d), np.nanmax(after.d))
+half_step = windowed_signals.sample_period / 2
+extent = (
+    before.t[0] - half_step,
+    before.t[-1] + half_step,
+    len(before) - 0.5,
+    -0.5,
+)
+fig, axes = plt.subplots(
+    1, 2, figsize=(10, 4), sharex=True, sharey=True,
+    layout="constrained",
+)
+for ax, data, title in zip(
+    axes, (before, after), ("Before convolving", "After convolving")
+):
+    image = ax.imshow(
+        data.d,
+        aspect="auto",
+        interpolation="nearest",
+        extent=extent,
+        vmin=vmin,
+        vmax=vmax,
+        cmap="viridis",
+    )
+    ax.set(title=title, xlabel="Aligned time (s)")
+    ax.set_yticks(np.arange(len(data)), labels=data.trial_ids)
+axes[0].set_ylabel("Trial ID")
+fig.suptitle(f"Signal = {feature}")
+fig.colorbar(image, ax=axes, label="Signal")
+plt.show()
 ```
 
 Each trial and signal is processed independently. The output keeps the
@@ -272,8 +371,41 @@ and axis `1` is time.
 normalized = smoothed.normalize(axes=(0, 1))
 normalized
 ```
-Each signal is normalized independently because the signal axis (`2`) is
-not included.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axes = plt.subplots(
+    1, 2, figsize=(10, 4), sharex=True, layout="constrained"
+)
+
+for ax, data, title, ylabel in zip(
+    axes,
+    (smoothed, normalized),
+    ("Before normalizing", "After normalizing"),
+    ("Signal value", "Z-score"),
+):
+    trial_means = np.nanmean(data.d, axis=1)
+
+    for feature_position, feature in enumerate(data.columns):
+        ax.plot(
+            data.trial_ids,
+            trial_means[:, feature_position],
+            "o-",
+            label=feature,
+        )
+
+    ax.set(
+        title=title,
+        xlabel="Trial ID",
+        ylabel=ylabel,
+        xticks=data.trial_ids,
+    )
+    ax.legend()
+plt.show()
+```
+Before normalization, the signals have different baselines and scales.
+After normalization, their trial means are expressed in standard-deviation units.
+Between-trial differences remain because each signal uses the same normalization parameters for every trial.
 
 ### Using NumPy
 

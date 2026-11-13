@@ -897,7 +897,7 @@ class TestTsdTrials:
         values = np.arange(np.prod(trials.shape)).reshape(trials.shape)
         replacement = values.tolist() if as_list else values.copy()
 
-        result = trials.with_data(replacement)
+        result = trials.replace_data(replacement)
 
         assert isinstance(result, nap.TsdTrials)
         assert result is not trials
@@ -913,7 +913,7 @@ class TestTsdTrials:
         values = np.ones(tsd_trials.shape)
         values[0, 0] = np.nan
 
-        result = tsd_trials.with_data(values)
+        result = tsd_trials.replace_data(values)
 
         assert np.isnan(result.d[0, 0]).all()
         assert np.isnan(result.d[~result.valid]).all()
@@ -930,7 +930,7 @@ class TestTsdTrials:
             shape += (n_features,)
         values = np.ones(shape)
 
-        result = tsd_trials.with_data(values)
+        result = tsd_trials.replace_data(values)
 
         assert result.shape == shape
         np.testing.assert_array_equal(result.d[result.valid], 1.0)
@@ -985,7 +985,7 @@ class TestTsdTrials:
         )
         values = np.ones((*tsd_trials.shape[:2], 2))
 
-        result = tsd_trials.with_data(values, columns=columns)
+        result = tsd_trials.replace_data(values, columns=columns)
 
         pd.testing.assert_index_equal(result.columns, pd.Index(columns))
         pd.testing.assert_frame_equal(
@@ -1022,7 +1022,7 @@ class TestTsdTrials:
         shape: tuple[int, ...],
     ) -> None:
         with pytest.raises(ValueError, match="matching trial and time dimensions"):
-            tsd_trials.with_data(np.ones(shape))
+            tsd_trials.replace_data(np.ones(shape))
 
     def test_columns_without_feature_axis(
         self,
@@ -1031,7 +1031,7 @@ class TestTsdTrials:
         values = np.ones(tsd_trials.shape[:2])
 
         with pytest.raises(ValueError, match="no feature axis"):
-            tsd_trials.with_data(values, columns=["value"])
+            tsd_trials.replace_data(values, columns=["value"])
 
     @pytest.mark.parametrize("columns", [[], ["one"], ["one", "two", "three"]])
     def test_column_count_mismatch(
@@ -1042,10 +1042,10 @@ class TestTsdTrials:
         values = np.ones((*tsd_trials.shape[:2], 2))
 
         with pytest.raises(ValueError, match="columns must match"):
-            tsd_trials.with_data(values, columns=columns)
+            tsd_trials.replace_data(values, columns=columns)
 
     def test_data_kind_override(self, tsd_trials: nap.TsdTrials) -> None:
-        result = tsd_trials.with_data(tsd_trials.d, data_kind="transformed")
+        result = tsd_trials.replace_data(tsd_trials.d, data_kind="transformed")
 
         assert result.data_kind == "transformed"
         assert tsd_trials.data_kind == "continuous"
@@ -1056,7 +1056,7 @@ class TestTsdTrials:
         original = counts.d.copy()
         values = np.full(counts.shape, 7)
 
-        result = counts.with_data(values)
+        result = counts.replace_data(values)
 
         np.testing.assert_array_equal(result.d[result.valid], 7)
         assert np.isnan(result.d[~result.valid]).all()
@@ -1107,7 +1107,7 @@ class TestTsdTrials:
 
         for result in (
             subset + 1,
-            subset.with_data(subset.d),
+            subset.replace_data(subset.d),
             subset.normalize(),
             subset.smooth(0.25, windowsize=1.0),
             subset.convolve(np.ones(3) / 3),
