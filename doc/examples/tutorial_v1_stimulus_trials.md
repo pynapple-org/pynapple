@@ -219,12 +219,11 @@ We use it to make a raster of the two extreme drive levels:
 
 ```{code-cell} ipython3
 groups = trial_data.groupby("level")
-position = list(units.keys()).index(example_unit)
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True, sharey=True)
 for ax, level, title in zip(axes, [1, 5], ["lowest drive", "highest drive"]):
     ax.plot(
-        groups[level][:, position].to_tsdframe()["trial"],
+        groups[level][:, example_unit].to_tsdframe()["trial"],
         marker="|",
         linestyle="none",
         markersize=2,
@@ -259,7 +258,7 @@ plt.figure(figsize=(8, 4))
 for level, color in zip([1, 2, 3, 4, 5], colors):
     plt.plot(
         mean_counts[level].t,
-        mean_counts[level].values[:, position] / bin_size,
+        mean_counts[level].values[:, example_unit] / bin_size,
         color=color,
         label=f"level {level}",
     )
@@ -284,7 +283,7 @@ The mean rate for each drive level gives the input-output function of the neuron
 ```{code-cell} ipython3
 window = (0.05, 0.1)
 response = trial_data.get(*window).count(window[1] - window[0])
-rates = response.values[:, 0, position] / (window[1] - window[0])
+rates = response.values[:, 0, example_unit] / (window[1] - window[0])
 
 summary = pd.DataFrame(
     {"level": trials["level"], "drive": trials["drive"], "rate": rates}
