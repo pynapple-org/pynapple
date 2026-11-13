@@ -124,7 +124,7 @@ ignore-regex = '^\s*"image/\S+": ".*'
 # adn: Anterior Dorsal nucleus (neuroanatomy, see doc/examples/tutorial_HD_dataset.md)
 # countin: variable name in _jitted_functions.py meaning "count in"
 # nin: numpy ufunc attribute (ufunc.nin = number of inputs)
-ignore-words-list = 'adn,countin,nin'
+ignore-words-list = 'adn,countin,nin,thw'
 
 [tool.ruff]
 line-length = 88

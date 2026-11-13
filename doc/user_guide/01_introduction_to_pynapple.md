@@ -132,6 +132,36 @@ tsgroup = nap.TsGroup(data)
 print(tsgroup, "\n")
 ```
 
+### [`nap.TsTrials`](pynapple.TsTrials): group of trial-aligned timestamps
+
+Given sets of trials and timestamps, `TsTrials` aligns timestamps to the trial start:
+```{code-cell} ipython3
+trials = nap.IntervalSet(start=[1, 3, 5], end=[2, 4, 6])
+units = nap.TsGroup(
+    {
+        0: nap.Ts(t=[1.2, 3.4, 5.6]),
+        1: nap.Ts(t=[1.5, 3.7, 5.8]),
+    },
+    time_support=nap.IntervalSet(0, 7)
+)
+spike_trials = nap.TsTrials(source=units, trials=trials)
+spike_trials
+```
+
+### [`nap.TsdTrials`](pynapple.TsdTrials): n-dimensional trial-aligned time series
+
+Given sets of trials and time series, `TsdTrials` aligns time series to the trial start:
+```{code-cell} ipython3
+trials = nap.IntervalSet(start=[1, 3, 5], end=[2, 4, 6])
+t = np.arange(70) / 10
+signals = nap.TsdFrame(
+    t=t,
+    d=np.column_stack([np.sin(t), np.cos(t)]),
+    columns=["sin", "cos"],
+)
+signal_trials = nap.TsdTrials(source=signals, trials=trials)
+signal_trials
+```
 :::{note}
 Internally, a `TsGroup` does not keep one object per element. All timestamps are merged into a single sorted array, together with the key of the element each timestamp belongs to. Operations over the whole group (`count`, `restrict`, `value_from`, `time_diff`, `to_tsd`, ...) therefore run once over all elements rather than once per element, which makes them much faster for large groups. In return:
 
@@ -139,7 +169,6 @@ Internally, a `TsGroup` does not keep one object per element. All timestamps are
 - Indexing an element (`tsgroup[0]`) builds a new `Ts`/`Tsd` each time it is called.
 - Values of `Tsd`, `TsdFrame` or `TsdTensor` elements are stored in one shared array: they must have the same shape after the time axis, and are cast to a common dtype.
 :::
-
 
 ***
 Interaction between pynapple objects
@@ -284,6 +313,20 @@ print(ep[0:2])
 
 ```{code-cell} ipython3
 print(ep[1])
+```
+
+Trial-aligned data can also be sliced by position:
+
+```{code-cell} ipython3
+print(spike_trials[:2])  # First two trials
+```
+
+```{code-cell} ipython3
+print(signal_trials[0])  # First trial as a TsdFrame
+```
+
+```{code-cell} ipython3
+print(signal_trials[:, :, "sin"])  # First feature across all trials
 ```
 
 #### Like pandas DataFrame
