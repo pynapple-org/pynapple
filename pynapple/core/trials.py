@@ -958,8 +958,9 @@ class TsTrials(_TrialMetadataMixin):
         Parameters
         ----------
         column : str
-            Trial metadata column containing absolute timestamps in seconds.
-            Each timestamp must be finite and lie within its original trial.
+            Trial metadata column containing absolute timestamps in seconds,
+            or ``"start"`` to restore alignment to trial starts.
+            Metadata timestamps must be finite and lie within their original trial.
 
         Returns
         -------
@@ -1021,10 +1022,12 @@ class TsTrials(_TrialMetadataMixin):
 
         """
 
-        if column not in self.trials.metadata_columns:
+        if column == "start":
+            alignment = np.asarray(self.trials.start)
+        elif column in self.trials.metadata_columns:
+            alignment = np.asarray(self.trials[column])
+        else:
             raise KeyError(f"Unknown trial metadata column: {column!r}")
-
-        alignment = np.asarray(self.trials[column])
 
         if not np.issubdtype(alignment.dtype, np.number) or np.issubdtype(
             alignment.dtype, np.bool_
@@ -2022,10 +2025,13 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 if (
                     value.shape != self.shape
                     or not np.array_equal(value.t, self.t)
-                    or not np.array_equal(
-                        value.valid,
-                        self.valid,
-                    )
+                    or not np.array_equal(value.valid, self.valid)
+                    or not np.array_equal(value.trial_ids, self.trial_ids)
+                    or not np.array_equal(value.trials.values, self.trials.values)
+                    or not np.array_equal(value.feature_names, self.feature_names)
+                    or value.alignment != self.alignment
+                    or not np.array_equal(value.window_starts, self.window_starts)
+                    or not np.array_equal(value.window_ends, self.window_ends)
                 ):
                     return NotImplemented
 
@@ -2037,6 +2043,10 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         if not isinstance(result, np.ndarray) or result.shape != self.shape:
             return result
+
+        if not self.valid.all():
+            valid = self.valid[..., None] if self.ndim == 3 else self.valid
+            result = np.where(valid, result, np.nan)
 
         return self._new(values=result)
 

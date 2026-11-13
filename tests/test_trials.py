@@ -354,6 +354,27 @@ class TestTsTrials:
                     ts_trials[trial_id, unit_key].t - shifts[position],
                 )
 
+    @pytest.mark.parametrize("windowed", [False, True])
+    def test_realign_to_start(
+        self,
+        ts_trials: nap.TsTrials,
+        windowed: bool,
+    ) -> None:
+        original = ts_trials[[2, 0]]
+        if windowed:
+            original = original.get(0.25, 1.5)
+
+        restored = original.realign_to("cue").realign_to("start")
+
+        assert restored.alignment == "start"
+        assert restored._windowed == original._windowed
+        np.testing.assert_allclose(restored.t, original.t)
+        np.testing.assert_array_equal(restored.d, original.d)
+        np.testing.assert_array_equal(restored.trial_ids, original.trial_ids)
+        np.testing.assert_allclose(restored.window_starts, original.window_starts)
+        np.testing.assert_allclose(restored.window_ends, original.window_ends)
+        np.testing.assert_array_equal(restored.durations, original.durations)
+
     @pytest.mark.parametrize(
         "values, error, message",
         [
@@ -882,10 +903,46 @@ class TestTsdTrials:
         original = tsd_trials.d.copy()
         result = operation(tsd_trials)
 
+        valid = (
+            tsd_trials.valid[..., None] if tsd_trials.ndim == 3 else tsd_trials.valid
+        )
+        expected = np.where(valid, operation(original), np.nan)
+
         assert isinstance(result, nap.TsdTrials)
-        np.testing.assert_array_equal(result.d, operation(original))
+        np.testing.assert_array_equal(result.d, expected)
         np.testing.assert_array_equal(tsd_trials.d, original)
         assert_same_axes(result, tsd_trials)
+
+    @pytest.mark.parametrize(
+        "operation",
+        [
+            pytest.param(lambda x: x >= 0, id="greater-equal"),
+            pytest.param(lambda x: x != -1, id="not-equal"),
+            pytest.param(np.isfinite, id="isfinite"),
+        ],
+    )
+    @pytest.mark.parametrize("kind", ["sampled", "counts"])
+    def test_comparison_preserves_padding(
+        self,
+        tsd_trials: nap.TsdTrials,
+        ts_trials: nap.TsTrials,
+        operation: Any,
+        kind: str,
+    ) -> None:
+        trials = tsd_trials if kind == "sampled" else ts_trials.count(0.5)
+        trials = trials.replace_data(np.ones(trials.shape))
+
+        result = operation(trials)
+
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(result.d[result.valid], 1.0)
+        assert_same_axes(result, trials)
+
+        proportion = np.nanmean(result, axis=0)
+        np.testing.assert_array_equal(
+            proportion.d,
+            np.ones_like(proportion.d),
+        )
 
     def test_binary_trials(self, tsd_trials: nap.TsdTrials) -> None:
         result = tsd_trials + tsd_trials
@@ -893,6 +950,59 @@ class TestTsdTrials:
         np.testing.assert_allclose(
             result.d,
             tsd_trials.d * 2,
+            equal_nan=True,
+        )
+        assert_same_axes(result, tsd_trials)
+
+    def test_binary_trials_different_intervals(self) -> None:
+        time = np.arange(20) / 10
+        source = nap.Tsd(t=time, d=np.arange(20.0))
+        left = nap.TsdTrials(source, nap.IntervalSet(0.0, 0.5))
+        right = nap.TsdTrials(source, nap.IntervalSet(1.0, 1.5))
+
+        np.testing.assert_array_equal(left.trial_ids, right.trial_ids)
+        np.testing.assert_array_equal(left.t, right.t)
+        np.testing.assert_array_equal(left.valid, right.valid)
+
+        with pytest.raises(TypeError):
+            left + right
+
+    @pytest.mark.parametrize(
+        "columns",
+        [
+            ["c", "d"],
+            ["b", "a"],
+        ],
+    )
+    def test_binary_trials_different_columns(
+        self,
+        columns: list[str],
+    ) -> None:
+        time = np.arange(10) / 10
+        values = np.zeros((len(time), 2))
+        intervals = nap.IntervalSet(0.0, 0.5)
+        left = nap.TsdTrials(
+            nap.TsdFrame(t=time, d=values, columns=["a", "b"]),
+            intervals,
+        )
+        right = nap.TsdTrials(
+            nap.TsdFrame(t=time, d=values, columns=columns),
+            intervals,
+        )
+
+        with pytest.raises(TypeError):
+            left + right
+
+    def test_binary_trials_matching_axes(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        right = tsd_trials.replace_data(tsd_trials.d * 2)
+        result = tsd_trials + right
+
+        np.testing.assert_allclose(
+            result.d,
+            tsd_trials.d * 3,
             equal_nan=True,
         )
         assert_same_axes(result, tsd_trials)
