@@ -65,7 +65,8 @@ units = nap.TsGroup(
     {
         0: nap.Ts(t=[1.1, 1.4, 1.5, 3.2, 3.4, 3.7, 5.1, 5.4, 5.8]),
         1: nap.Ts(t=[1.2, 1.6, 1.8, 3.1, 3.5, 3.9, 5.2, 5.5, 5.7]),
-    }
+    },
+    time_support=nap.IntervalSet(0, 6)
 )
 
 spike_trials = nap.TsTrials(source=units, trials=trials)
