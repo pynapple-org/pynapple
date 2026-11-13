@@ -440,9 +440,13 @@ Overview of advanced analysis
 
 The `process` module of pynapple contains submodules that group methods that can be applied for high level analysis. All of the method are directly available from the `nap` namespace.
 
-**[Discrete correlograms & ISI](05_correlograms_isi)**
+**[Discrete correlograms](05_correlograms)**
 
-This module analyses discrete events, specifically correlograms (for example by computing the cross-correlograms of a population of neurons) and interspike interval (ISI) distributions.
+This module contains functions for computing correlograms of discrete events, such as the cross-correlograms of a population of neurons.
+
+**[ISI & burst detection](15_isi_bursts)**
+
+This module contains functions for computing ISI distributions and detecting bursts in spike trains.
 
 **[Bayesian decoding](07_decoding)**
 
