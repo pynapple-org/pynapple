@@ -442,11 +442,11 @@ The `process` module of pynapple contains submodules that group methods that can
 
 **[Discrete correlograms](05_correlograms)**
 
-This module analyses discrete events, specifically correlograms (for example by computing the cross-correlograms of a population of neurons).
+This module contains functions for computing correlograms of discrete events, such as the cross-correlograms of a population of neurons.
 
 **[ISI & burst detection](15_isi_bursts)**
 
-This module computes interspike interval (ISI) distributions and detects bursts in spike trains.
+This module contains functions for computing ISI distributions and detecting bursts in spike trains.
 
 **[Bayesian decoding](07_decoding)**
 

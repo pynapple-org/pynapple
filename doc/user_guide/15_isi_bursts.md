@@ -35,7 +35,7 @@ ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
 ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
 epoch = nap.IntervalSet(start=0, end=1000, time_units="s")
 ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
-print(ts_group)
+ts_group
 ```
 
 ## Interspike interval (ISI) distribution
@@ -48,7 +48,7 @@ The output will be a dataframe with the bin centres as index and containing the 
 isi_distribution = nap.compute_isi_distribution(
     data=ts_group, bins=10, epochs=epoch
     )
-print(isi_distribution)
+isi_distribution
 ```
 
 ```{code-cell} ipython3
@@ -74,7 +74,7 @@ The `bins` argument allows for choosing either the number of bins as an integer 
 isi_distribution = nap.compute_isi_distribution(
     data=ts_group, bins=np.linspace(0, 3, 10), epochs=epoch
     )
-print(isi_distribution)
+isi_distribution
 ```
 
 ```{code-cell} ipython3
@@ -100,7 +100,7 @@ The `log_scale` argument allows for applying the log-transform to the ISIs:
 isi_distribution = nap.compute_isi_distribution(
     data=ts_group, bins=10, log_scale=True, epochs=epoch
     )
-print(isi_distribution)
+isi_distribution
 ```
 
 ```{code-cell} ipython3
@@ -174,7 +174,7 @@ edge of the lowest bin between the two peaks:
 
 ```{code-cell} ipython3
 threshold = nap.compute_log_isi_threshold(spikes)
-print(threshold)
+threshold
 ```
 
 ```{code-cell} ipython3
@@ -236,7 +236,7 @@ bursts they are usually too loose and need to be tuned:
 bursts_mi = nap.detect_spike_bursts(
     spikes, method="max_interval", max_isi_start=0.02, max_isi_burst=0.02
 )
-print(len(bursts), len(bursts_mi))
+len(bursts), len(bursts_mi)
 ```
 
 ### Instantaneous firing rate
@@ -250,7 +250,7 @@ birdsong field, with 125 Hz as the default (see Leonardo & Fee, 2005 [3]). Runs 
 bursts_ir = nap.detect_spike_bursts(
     spikes, method="instantaneous_rate", rate_threshold=50, min_spikes_in_burst=3
 )
-print(len(bursts_ir))
+len(bursts_ir)
 ```
 
 With every method, a `TsGroup` is processed unit by unit and returns a dictionary of `IntervalSet`
