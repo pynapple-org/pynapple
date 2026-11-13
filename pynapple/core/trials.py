@@ -1647,7 +1647,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             raise ValueError("source must contain at least two samples.")
 
         differences = np.diff(timestamps)
-        sample_period = float(np.median(differences))
+        sample_period = float((timestamps[-1] - timestamps[0]) / (len(timestamps) - 1))
+
         tolerance = max(
             abs(sample_period) * 1e-6,
             np.finfo(float).eps * 32,

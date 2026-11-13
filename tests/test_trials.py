@@ -738,6 +738,32 @@ class TestTsdTrials:
         np.testing.assert_array_equal(result.d[0, [0, -1]], [1000.0, 1100.0])
         assert result.valid.all()
 
+    def test_get_long_recording_endpoints(self) -> None:
+        fs = 1000
+        duration = 2000
+        time = np.arange(fs * duration) / fs
+        source = nap.Tsd(
+            t=time,
+            d=np.arange(len(time), dtype=float),
+        )
+        trials = nap.TsdTrials(
+            source,
+            nap.IntervalSet(start=0.0, end=duration - 1.0),
+        )
+
+        for start in (43.0, 1500.0, 1998.0):
+            expected = source.get(start, start + 1.0)
+            result = trials.get(start, start + 1.0)
+
+            assert result.shape == (1, fs + 1)
+            np.testing.assert_array_equal(result.d[0], expected.d)
+            np.testing.assert_allclose(
+                result.t,
+                expected.t,
+                rtol=0,
+                atol=1e-9,
+            )
+
     def test_array_conversion(self, tsd_trials: nap.TsdTrials) -> None:
         np.testing.assert_allclose(
             np.asarray(tsd_trials),
