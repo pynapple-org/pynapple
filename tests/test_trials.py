@@ -173,6 +173,45 @@ class TestTsTrials:
         )
         assert "rate" not in ts_trials.unit_metadata.columns
 
+    @pytest.mark.parametrize(
+        "start, end",
+        [
+            (-1.0, 1.0),
+            (4.0, 8.0),
+            (4.0, 11.0),
+            (6.0, 7.0),
+        ],
+    )
+    def test_trials_outside_source_support(
+        self,
+        start: float,
+        end: float,
+    ) -> None:
+        support = nap.IntervalSet(
+            start=[0.0, 10.0],
+            end=[5.0, 15.0],
+        )
+        source = nap.TsGroup(
+            {10: nap.Ts(t=[0.5, 4.5, 10.5], time_support=support)},
+            time_support=support,
+        )
+
+        with pytest.raises(ValueError, match="source time-support interval"):
+            nap.TsTrials(source, nap.IntervalSet(start, end))
+
+    def test_supported_silence_is_valid(self) -> None:
+        support = nap.IntervalSet(0.0, 5.0)
+        source = nap.TsGroup(
+            {10: nap.Ts(t=[0.5], time_support=support)},
+            time_support=support,
+        )
+        trials = nap.TsTrials(source, nap.IntervalSet(4.0, 5.0))
+
+        counts = trials.count(0.5)
+
+        assert counts.valid.all()
+        np.testing.assert_array_equal(counts.d, np.zeros((1, 2, 1)))
+
     @pytest.mark.parametrize("trial", [0, 2, np.int64(1)])
     @pytest.mark.parametrize("unit", [10, np.int64(20)])
     def test_scalar_selection(
@@ -704,6 +743,55 @@ class TestTsdTrials:
                 result.trials[column],
                 np.asarray(tsd_trials.trials[column])[trial_positions],
             )
+
+    @pytest.mark.parametrize("kind", ["sampled", "counts"])
+    @pytest.mark.parametrize(
+        "time_key",
+        [
+            slice(None, None, -1),
+            slice(None, None, -2),
+            [3, 1],
+            [-1, 1],
+        ],
+    )
+    def test_time_selection_order(
+        self,
+        tsd_trials: nap.TsdTrials,
+        ts_trials: nap.TsTrials,
+        kind: str,
+        time_key: Any,
+    ) -> None:
+        trials = tsd_trials if kind == "sampled" else ts_trials.count(0.5)
+        positions = np.sort(np.arange(trials.shape[1])[time_key])
+        original = trials.d.copy()
+
+        result = trials[:, time_key]
+
+        assert isinstance(result, nap.TsdTrials)
+        np.testing.assert_array_equal(result.t, trials.t[positions])
+        np.testing.assert_array_equal(result.d, trials.d[:, positions])
+        np.testing.assert_array_equal(result.valid, trials.valid[:, positions])
+        np.testing.assert_array_equal(result.trial_ids, trials.trial_ids)
+
+        for trial_position, trial_id in enumerate(trials.trial_ids):
+            single = trials[trial_id, time_key]
+            valid = trials.valid[trial_position, positions]
+            expected_type = nap.Tsd if trials.ndim == 2 else nap.TsdFrame
+
+            assert isinstance(single, expected_type)
+            np.testing.assert_array_equal(
+                single.t,
+                trials.t[positions][valid],
+            )
+            np.testing.assert_array_equal(
+                single.d,
+                trials.d[trial_position, positions][valid],
+            )
+
+            if isinstance(single, nap.TsdFrame):
+                np.testing.assert_array_equal(single.columns, trials.columns)
+
+        np.testing.assert_array_equal(trials.d, original)
 
     def test_boolean_selection(self, tsd_trials: nap.TsdTrials) -> None:
         result = tsd_trials[[True, False, True]]

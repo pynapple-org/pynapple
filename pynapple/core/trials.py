@@ -646,6 +646,17 @@ class TsTrials(_TrialMetadataMixin):
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
 
+        support = source.time_support
+        support_positions = np.searchsorted(support.start, starts, side="right") - 1
+
+        if len(starts) and (
+            np.any(support_positions < 0)
+            or np.any(ends > support.end[support_positions])
+        ):
+            raise ValueError(
+                "Each trial must be fully contained within a source time-support interval."
+            )
+
         self.alignment = "start"
         self.window_starts = np.zeros(len(trials), dtype=float)
         self.window_ends = ends - starts
@@ -2044,6 +2055,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             self.shape[1],
             "time",
         )
+        time_positions = np.sort(time_positions)
 
         if self.ndim == 3:
             feature_positions, feature_scalar = _normalize_labels(

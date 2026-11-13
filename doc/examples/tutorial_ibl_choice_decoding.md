@@ -115,7 +115,7 @@ trial_data
 
 We can select an example unit and visualize its trial-aligned spikes:
 ```{code-cell} ipython3
-example_unit = 22
+example_unit = 18
 plt.plot(
     trial_data[:, example_unit].to_tsdframe()["trial"],
     marker="|",
@@ -214,11 +214,11 @@ y
 
 And the design matrix:
 ```{code-cell} ipython3
-X = binned.values
-# standardize per neuron + trial
-X = (X - X.mean(2, keepdims=True)) / X.std(2, keepdims=True).clip(min=1e-6)
+X = binned
+# standardize each neuron independently within each trial
+X = binned.normalize(axes=1)
 # reshape to n_trials x n_features
-X = X.reshape(len(X), -1)
+X = X.values.reshape(len(X), -1)
 X
 ```
 
