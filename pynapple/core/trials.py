@@ -45,6 +45,36 @@ def _normalize_positions(
     return positions.astype(int, copy=False), False
 
 
+def _normalize_labels(
+    key: object,
+    labels: np.ndarray | pd.Index,
+    axis_name: str,
+) -> tuple[np.ndarray, bool]:
+    """Resolve labels, positional slices, or boolean masks."""
+    if isinstance(key, slice):
+        return _normalize_positions(key, len(labels), axis_name)
+
+    scalar = np.isscalar(key)
+    keys = np.asarray([key] if scalar else key)
+
+    if keys.ndim != 1:
+        raise IndexError(f"{axis_name} indices must be one-dimensional.")
+
+    if keys.dtype == np.bool_ and not scalar:
+        return _normalize_positions(keys, len(labels), axis_name)
+
+    positions = pd.Index(labels).get_indexer(keys)
+
+    missing = positions < 0
+    if missing.any():
+        raise KeyError(f"Unknown {axis_name} labels: {keys[missing].tolist()}")
+
+    if len(np.unique(positions)) != len(positions):
+        raise ValueError(f"Repeated {axis_name} labels are not supported.")
+
+    return positions, scalar
+
+
 def _format_preview(
     preview: pd.DataFrame,
     *,
@@ -240,6 +270,7 @@ def _expand_key(key: object, ndim: int) -> tuple[object, ...]:
 
 class _TrialMetadataMixin:
     trials: IntervalSet
+    _trial_ids: np.ndarray
     durations: np.ndarray
     alignment: str
     window_starts: np.ndarray
@@ -248,8 +279,8 @@ class _TrialMetadataMixin:
 
     @property
     def trial_ids(self) -> np.ndarray:
-        """Trial identifiers from the interval index."""
-        return self.trials.index
+        """Original identifiers of the selected trials."""
+        return self._trial_ids
 
     def groupby(self, by: str):
         """
@@ -439,29 +470,29 @@ class _TrialMetadataMixin:
 
 
 @njit(cache=True)
-def _count_spikes(
-    spike_times_ns: np.ndarray,
+def _count_timestamps(
+    times_ns: np.ndarray,
     trial_index: np.ndarray,
-    neuron_index: np.ndarray,
+    unit_index: np.ndarray,
     first_edge_ns: int,
     bin_size_ns: int,
     valid: np.ndarray,
     n_units: int,
 ) -> np.ndarray:
-    """Count spikes using integer bin indices."""
+    """Count timestamps using integer bin indices."""
     n_trials, n_bins = valid.shape
     counts = np.zeros(
         (n_trials, n_bins, n_units),
         dtype=np.int64,
     )
 
-    for event in range(len(spike_times_ns)):
+    for event in range(len(times_ns)):
         trial = trial_index[event]
-        neuron = neuron_index[event]
-        bin_index = (spike_times_ns[event] - first_edge_ns) // bin_size_ns
+        unit = unit_index[event]
+        bin_index = (times_ns[event] - first_edge_ns) // bin_size_ns
 
         if 0 <= bin_index < n_bins and valid[trial, bin_index]:
-            counts[trial, bin_index, neuron] += 1
+            counts[trial, bin_index, unit] += 1
 
     return counts
 
@@ -496,17 +527,22 @@ class TsTrials(_TrialMetadataMixin):
     trials : IntervalSet
         Original trial intervals and their metadata.
     trial_ids : numpy.ndarray
-        Trial identifiers from the interval index.
+        Original trial identifiers, preserved through selection.
     unit_keys : numpy.ndarray
         Unit identifiers from the source :class:`~pynapple.TsGroup`.
     unit_metadata : metadata table
         Metadata associated with the units.
-    spikes : numpy.ndarray
+    timestamps : numpy.ndarray
         Aligned event times in seconds.
+    t : numpy.ndarray
+        Alias for ``timestamps``.
     trial_index : numpy.ndarray
-        Positional trial index for each event.
-    neuron_index : numpy.ndarray
-        Positional unit index for each event.
+        Original trial identifier for each event.
+    unit_index : numpy.ndarray
+        Original unit key for each event.
+    d : numpy.ndarray
+        Array of shape ``(n_events, 2)`` with columns ``trial`` and ``unit``,
+        containing the identifiers associated with each timestamp.
     shape : tuple of int
         Number of trials and units, ordered as ``(trial, unit)``.
     alignment : str
@@ -519,15 +555,18 @@ class TsTrials(_TrialMetadataMixin):
 
     Notes
     -----
-    Indexing follows the axis order ``(trial, unit)`` and uses positions,
-    not trial identifiers or unit keys.
+    Indexing follows the axis order (trial, unit).
+    Scalar and list selectors use original trial identifiers and unit keys.
+    Slices are positional, with an exclusive stop.
+    Boolean masks follow the current axis order.
+    Selected trials are always returned chronologically, regardless of selector order.
 
     Selecting one trial returns a :class:`~pynapple.TsGroup`. Selecting
     one trial and one unit returns a :class:`~pynapple.Ts`. Keeping the
     trial axis with a slice or list returns a :class:`TsTrials` object.
 
-    The event arrays are parallel: ``spikes[i]``, ``trial_index[i]``, and
-    ``neuron_index[i]`` describe the same event. Events are not guaranteed
+    The timestamp arrays are parallel: ``timestamps[i]``, ``trial_index[i]``, and
+    ``unit_index[i]`` describe the same event. Timestamps are not guaranteed
     to be globally sorted by aligned time.
 
     Use :meth:`realign_to` to express times relative to an event stored
@@ -557,11 +596,11 @@ class TsTrials(_TrialMetadataMixin):
     >>> trials.shape
     (2, 2)
 
-    Select the first unit by position. Its source key is ``10``:
+    Select unit ``10`` by its original key:
 
-    >>> trials[0, 0].t
+    >>> trials[0, 10].t
     array([0.25, 0.75])
-    >>> trials[1, 0].t
+    >>> trials[1, 10].t
     array([0.25])
 
     Keep the trial axis when selecting a subset:
@@ -569,12 +608,12 @@ class TsTrials(_TrialMetadataMixin):
     >>> trials[:1].shape
     (1, 2)
 
-    Align events to the cue timestamp in each trial with
-    :meth:`realign_to`:
+    Align events to the cue timestamp in each trial:
 
     >>> aligned = trials.realign_to("cue")
-    >>> aligned[0, 0].t
+    >>> aligned[0, 10].t
     array([-0.25,  0.25])
+
 
     Count events in 0.5-second bins with :meth:`count`:
 
@@ -603,6 +642,7 @@ class TsTrials(_TrialMetadataMixin):
             raise TypeError("TsTrials requires a TsGroup containing Ts entries.")
 
         self.trials = trials
+        self._trial_ids = np.asarray(trials.index).copy()
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
 
@@ -615,40 +655,42 @@ class TsTrials(_TrialMetadataMixin):
         self.unit_metadata = _copy_metadata(source, drop=("rate",))
 
         (
-            self.spikes,
-            self.trial_index,
-            self.neuron_index,
+            self.timestamps,
+            self._trial_positions,
+            self._unit_positions,
         ) = self._pack(source, trials, self.unit_keys)
 
     @classmethod
     def _from_events(
         cls,
         *,
-        spikes: np.ndarray,
+        timestamps: np.ndarray,
         trial_index: np.ndarray,
-        neuron_index: np.ndarray,
+        unit_index: np.ndarray,
         durations: np.ndarray,
         window_starts: np.ndarray,
         window_ends: np.ndarray,
         trials: IntervalSet,
+        trial_ids: np.ndarray,
         unit_keys: np.ndarray,
         unit_metadata,
         alignment: str,
         windowed: bool = False,
     ) -> TsTrials:
-        spikes = np.asarray(spikes)
+        timestamps = np.asarray(timestamps)
         trial_index = np.asarray(trial_index, dtype=np.int64)
-        neuron_index = np.asarray(neuron_index, dtype=np.int64)
+        unit_index = np.asarray(unit_index, dtype=np.int64)
 
         obj = cls.__new__(cls)
-        obj.spikes = spikes
-        obj.trial_index = trial_index
-        obj.neuron_index = neuron_index
+        obj.timestamps = timestamps
+        obj._trial_positions = trial_index
+        obj._unit_positions = unit_index
         obj.durations = np.asarray(durations, dtype=float)
         obj.window_starts = np.asarray(window_starts, dtype=float)
         obj.window_ends = np.asarray(window_ends, dtype=float)
         obj._windowed = windowed
         obj.trials = trials
+        obj._trial_ids = np.asarray(trial_ids).copy()
         obj.unit_keys = np.asarray(unit_keys)
         obj.unit_metadata = unit_metadata
         obj.alignment = alignment
@@ -662,15 +704,15 @@ class TsTrials(_TrialMetadataMixin):
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create aligned event arrays."""
         time_chunks = []
-        neuron_chunks = []
+        unit_chunks = []
 
-        for neuron, key in enumerate(unit_keys):
+        for unit, key in enumerate(unit_keys):
             times = np.asarray(source[key].t, dtype=float)
             if not len(times):
                 continue
 
             time_chunks.append(times)
-            neuron_chunks.append(np.full(len(times), neuron, dtype=np.int64))
+            unit_chunks.append(np.full(len(times), unit, dtype=np.int64))
 
         if not time_chunks:
             return (
@@ -680,7 +722,7 @@ class TsTrials(_TrialMetadataMixin):
             )
 
         absolute_times = np.concatenate(time_chunks)
-        neuron_index = np.concatenate(neuron_chunks)
+        unit_index = np.concatenate(unit_chunks)
 
         trial_starts = np.asarray(trials.start, dtype=float)
         trial_ends = np.asarray(trials.end, dtype=float)
@@ -700,36 +742,58 @@ class TsTrials(_TrialMetadataMixin):
         )
 
         absolute_times = absolute_times[inside]
-        neuron_index = neuron_index[inside]
+        unit_index = unit_index[inside]
         trial_index = trial_index[inside]
 
-        spikes = absolute_times - trial_starts[trial_index]
+        timestamps = absolute_times - trial_starts[trial_index]
 
-        return (spikes, trial_index.astype(np.int64, copy=False), neuron_index)
+        return (timestamps, trial_index.astype(np.int64, copy=False), unit_index)
 
     @property
     def shape(self) -> tuple[int, int]:
         """Number of trials and units, ordered as ``(trial, unit)``."""
         return len(self.trial_ids), len(self.unit_keys)
 
+    @property
+    def t(self) -> np.ndarray:
+        """Aligned event timestamps in seconds."""
+        return self.timestamps
+
+    @property
+    def trial_index(self) -> np.ndarray:
+        """Original trial identifier for each event."""
+        return self.trial_ids[self._trial_positions]
+
+    @property
+    def unit_index(self) -> np.ndarray:
+        """Original unit key for each event."""
+        return self.unit_keys[self._unit_positions]
+
+    @property
+    def d(self) -> np.ndarray:
+        """Event identifiers with columns ``trial`` and ``unit``."""
+        return np.column_stack((self.trial_index, self.unit_index))
+
     def __len__(self) -> int:
         return self.shape[0]
 
     def __repr__(self) -> str:
-        """Return per-unit spike previews and a trial summary."""
-        selected = self.trial_index == 0
-        times = self.spikes[selected]
-        neurons = self.neuron_index[selected]
+        """Return per-unit timestamp previews and a trial summary."""
+        selected = self._trial_positions == 0
+        times = self.timestamps[selected]
+        units = self._unit_positions[selected]
         rows = []
 
         for unit in range(len(self.unit_keys)):
-            spikes = np.sort(times[neurons == unit])
-            if len(spikes) > 3:
-                timestamps = f"{spikes[0]:.3f}  {spikes[1]:.3f}  …  {spikes[-1]:.3f}"
+            timestamps = np.sort(times[units == unit])
+            if len(timestamps) > 3:
+                formatted = (
+                    f"{timestamps[0]:.3f}  {timestamps[1]:.3f}  …  {timestamps[-1]:.3f}"
+                )
             else:
-                timestamps = "  ".join(f"{time:.3f}" for time in spikes)
+                formatted = "  ".join(f"{time:.3f}" for time in timestamps)
 
-            rows.append((len(spikes), timestamps))
+            rows.append((len(timestamps), formatted))
 
         preview = pd.DataFrame(
             rows,
@@ -738,36 +802,36 @@ class TsTrials(_TrialMetadataMixin):
         )
         stack = _format_trial_stack(preview, self.trial_ids)
 
-        size = self.spikes.nbytes + self.trial_index.nbytes + self.neuron_index.nbytes
+        size = (
+            self.timestamps.nbytes
+            + self._trial_positions.nbytes
+            + self._unit_positions.nbytes
+        )
 
         return (
             f"{stack}\n\n"
             f"align: {self.alignment!r}, "
             f"{self._window_label()}: {self._window_summary()}\n"
             f"unbinned, shape: (trial: {self.shape[0]}, unit: {self.shape[1]}), "
-            f"{len(self.spikes)} spikes, size: {_format_bytes(size)}"
+            f"{len(self.timestamps)} timestamps, size: {_format_bytes(size)}"
         )
 
     def __getitem__(self, key):
-        """Select trials and units by position."""
+        """Select trial and unit labels, with positional slices."""
         trial_key, unit_key = self._split_key(key)
 
-        trial_positions, trial_scalar = _normalize_positions(
-            trial_key,
-            self.shape[0],
-            "trial",
+        trial_positions, trial_scalar = _normalize_labels(
+            trial_key, self.trial_ids, "trial"
         )
-        unit_positions, unit_scalar = _normalize_positions(
-            unit_key,
-            self.shape[1],
-            "unit",
+        unit_positions, unit_scalar = _normalize_labels(
+            unit_key, self.unit_keys, "unit"
         )
 
         if trial_scalar:
             trial = trial_positions[0]
 
             if unit_scalar:
-                return self._get_spike_train(
+                return self._get_timestamps(
                     trial,
                     unit_positions[0],
                 )
@@ -787,11 +851,11 @@ class TsTrials(_TrialMetadataMixin):
         trial_key, unit_key = _expand_key(key, 2)
         return trial_key, unit_key
 
-    def _get_spike_train(self, trial: int, unit: int) -> Ts:
-        selected = (self.trial_index == trial) & (self.neuron_index == unit)
+    def _get_timestamps(self, trial: int, unit: int) -> Ts:
+        selected = (self._trial_positions == trial) & (self._unit_positions == unit)
 
         return Ts(
-            t=self.spikes[selected],
+            t=self.timestamps[selected],
             time_support=IntervalSet(
                 start=self.window_starts[trial],
                 end=self.window_ends[trial],
@@ -810,7 +874,7 @@ class TsTrials(_TrialMetadataMixin):
         selected_keys = self.unit_keys[unit_positions]
 
         data = {
-            key: self._get_spike_train(trial, unit)
+            key: self._get_timestamps(trial, unit)
             for unit, key in zip(unit_positions, selected_keys)
         }
 
@@ -825,7 +889,9 @@ class TsTrials(_TrialMetadataMixin):
         trial_positions: np.ndarray,
         unit_positions: np.ndarray,
     ) -> TsTrials:
-        """Create a subset with remapped event indices."""
+        """Select trials chronologically and units in the requested order."""
+        trial_positions = np.sort(trial_positions)
+
         trial_map = np.full(self.shape[0], -1, dtype=np.int64)
         unit_map = np.full(self.shape[1], -1, dtype=np.int64)
 
@@ -838,23 +904,24 @@ class TsTrials(_TrialMetadataMixin):
             dtype=np.int64,
         )
 
-        trial_index = trial_map[self.trial_index]
-        neuron_index = unit_map[self.neuron_index]
-        selected = (trial_index >= 0) & (neuron_index >= 0)
+        trial_index = trial_map[self._trial_positions]
+        unit_index = unit_map[self._unit_positions]
+        selected = (trial_index >= 0) & (unit_index >= 0)
 
         trials = self.trials[trial_positions]
         unit_keys = self.unit_keys[unit_positions]
         unit_metadata = self.unit_metadata.loc[unit_keys].copy()
 
         return self._from_events(
-            spikes=self.spikes[selected],
+            timestamps=self.timestamps[selected],
             trial_index=trial_index[selected],
-            neuron_index=neuron_index[selected],
+            unit_index=unit_index[selected],
             durations=self.durations[trial_positions],
             window_starts=self.window_starts[trial_positions],
             window_ends=self.window_ends[trial_positions],
             windowed=self._windowed,
             trials=trials,
+            trial_ids=self.trial_ids[trial_positions],
             unit_keys=unit_keys,
             unit_metadata=unit_metadata,
             alignment=self.alignment,
@@ -926,7 +993,7 @@ class TsTrials(_TrialMetadataMixin):
         ... )
         >>> trials = nap.TsTrials(source, intervals)
         >>> aligned = trials.realign_to("cue")
-        >>> aligned[0, 0].t
+        >>> aligned[0, 10].t
         array([-0.25,  0.25])
 
         The trial boundaries move into the same reference frame:
@@ -938,8 +1005,9 @@ class TsTrials(_TrialMetadataMixin):
 
         The original alignment is unchanged:
 
-        >>> trials[0, 0].t
+        >>> trials[0, 10].t
         array([0.25, 0.75])
+
         """
 
         if column not in self.trials.metadata_columns:
@@ -979,14 +1047,15 @@ class TsTrials(_TrialMetadataMixin):
         shifts = target_offset - current_offset
 
         return self._from_events(
-            spikes=self.spikes - shifts[self.trial_index],
-            trial_index=self.trial_index.copy(),
-            neuron_index=self.neuron_index.copy(),
+            timestamps=self.timestamps - shifts[self._trial_positions],
+            trial_index=self._trial_positions.copy(),
+            unit_index=self._unit_positions.copy(),
             durations=self.durations.copy(),
             window_starts=self.window_starts - shifts,
             window_ends=self.window_ends - shifts,
             windowed=self._windowed,
             trials=self.trials,
+            trial_ids=self.trial_ids,
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=column,
@@ -1007,8 +1076,8 @@ class TsTrials(_TrialMetadataMixin):
 
         Notes
         -----
-        The identifiers are labels from ``trial_ids`` and ``unit_keys``,
-        not positional indices from ``trial_index`` and ``neuron_index``.
+        The columns contain the original trial identifiers and unit keys,
+        matching ``trial_index`` and ``unit_index``.
 
         Events from different trials share the same aligned time reference,
         so the returned object may contain repeated timestamps. Trials or
@@ -1044,13 +1113,8 @@ class TsTrials(_TrialMetadataMixin):
         [[0, 10], [1, 10], [0, 10]]
         """
 
-        order = np.argsort(self.spikes, kind="stable")
-        values = np.column_stack(
-            [
-                self.trial_ids[self.trial_index[order]],
-                self.unit_keys[self.neuron_index[order]],
-            ]
-        )
+        order = np.argsort(self.t, kind="stable")
+        values = self.d[order]
 
         if len(self.durations):
             support = IntervalSet(
@@ -1061,7 +1125,7 @@ class TsTrials(_TrialMetadataMixin):
             support = IntervalSet([], [])
 
         return TsdFrame(
-            t=self.spikes[order],
+            t=self.timestamps[order],
             d=values,
             columns=["trial", "unit"],
             time_support=support,
@@ -1120,7 +1184,7 @@ class TsTrials(_TrialMetadataMixin):
         ...     source, nap.IntervalSet(start=0.0, end=1.5)
         ... )
         >>> selected = trials.get(0.5, 1.0)
-        >>> selected[0, 0].t
+        >>> selected[0, 10].t
         array([0.5 , 0.75, 1.  ])
 
         Both boundary events are included, and time zero remains the original trial start:
@@ -1152,24 +1216,25 @@ class TsTrials(_TrialMetadataMixin):
             self.window_ends,
         )
 
-        event_starts = window_starts[self.trial_index]
-        event_ends = window_ends[self.trial_index]
+        event_starts = window_starts[self._trial_positions]
+        event_ends = window_ends[self._trial_positions]
         selected = (
-            (self.spikes >= start)
-            & (self.spikes <= end)
-            & (self.spikes >= event_starts)
-            & (self.spikes <= event_ends)
+            (self.timestamps >= start)
+            & (self.timestamps <= end)
+            & (self.timestamps >= event_starts)
+            & (self.timestamps <= event_ends)
         )
 
         return self._from_events(
-            spikes=self.spikes[selected],
-            trial_index=self.trial_index[selected],
-            neuron_index=self.neuron_index[selected],
+            timestamps=self.timestamps[selected],
+            trial_index=self._trial_positions[selected],
+            unit_index=self._unit_positions[selected],
             durations=window_ends - window_starts,
             window_starts=window_starts,
             window_ends=window_ends,
             windowed=True,
             trials=self.trials,
+            trial_ids=self.trial_ids,
             unit_keys=self.unit_keys.copy(),
             unit_metadata=self.unit_metadata.copy(),
             alignment=self.alignment,
@@ -1226,7 +1291,7 @@ class TsTrials(_TrialMetadataMixin):
         not included in the preceding bin.
 
         Times and bin widths are rounded to integer nanoseconds for counting.
-        The returned values are counts, not firing rates. Divide by the
+        The returned values are counts, not rates. Divide by the
         returned ``bin_size`` in seconds to obtain rates in events per second.
 
         Examples
@@ -1298,6 +1363,7 @@ class TsTrials(_TrialMetadataMixin):
                 window_ends=np.array([], dtype=float),
                 windowed=self._windowed,
                 trials=self.trials,
+                trial_ids=self.trial_ids,
                 feature_names=pd.Index(self.unit_keys),
                 feature_metadata=self.unit_metadata,
                 sample_period=bin_size,
@@ -1316,7 +1382,7 @@ class TsTrials(_TrialMetadataMixin):
 
         window_starts_ns = np.rint(self.window_starts * nanoseconds).astype(np.int64)
         window_ends_ns = np.rint(self.window_ends * nanoseconds).astype(np.int64)
-        spike_times_ns = np.rint(self.spikes * nanoseconds).astype(np.int64)
+        times_ns = np.rint(self.timestamps * nanoseconds).astype(np.int64)
 
         first_bin = int(
             np.floor_divide(
@@ -1345,10 +1411,10 @@ class TsTrials(_TrialMetadataMixin):
             edges_ns[1:][None, :] <= window_ends_ns[:, None]
         )
 
-        counts = _count_spikes(
-            spike_times_ns,
-            self.trial_index,
-            self.neuron_index,
+        counts = _count_timestamps(
+            times_ns,
+            self._trial_positions,
+            self._unit_positions,
             first_edge_ns,
             bin_size_ns,
             valid,
@@ -1367,6 +1433,7 @@ class TsTrials(_TrialMetadataMixin):
             window_ends=self.window_ends.copy(),
             windowed=self._windowed,
             trials=self.trials,
+            trial_ids=self.trial_ids,
             feature_names=pd.Index(self.unit_keys),
             feature_metadata=self.unit_metadata.copy(),
             sample_period=bin_size,
@@ -1413,7 +1480,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     trials : IntervalSet
         Original trial intervals and their metadata.
     trial_ids : numpy.ndarray
-        Trial identifiers from the interval index.
+        Original trial identifiers, preserved through selection.
     values : numpy.ndarray
         Dense data with axes ``(trial, time)`` or
         ``(trial, time, feature)``.
@@ -1464,7 +1531,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     Use ``np.nanmean`` rather than ``np.mean`` when NaN padding should
     be excluded from an average.
 
-    Indexing uses positions, not trial identifiers or feature names.
+    Indexing follows the axis order (trial, time, feature), with the feature axis omitted for scalar data.
+    Trial and feature scalar/list selectors use original identifiers and column names.
+    Time indexing and all slices are positional.
+    Selected trials are always returned chronologically.
+
     Selecting one trial returns a :class:`~pynapple.Tsd` or
     :class:`~pynapple.TsdFrame`, with invalid samples removed.
     Keeping both trial and time axes returns a :class:`TsdTrials`.
@@ -1549,7 +1620,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     Select the first feature across all trials and times:
 
-    >>> population[..., 0].shape
+    >>> population[..., "x"].shape
     (2, 3)
 
     Select an inclusive time window with :meth:`get`:
@@ -1596,6 +1667,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         self.alignment = "start"
         self.trials = trials
+        self._trial_ids = np.asarray(trials.index).copy()
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
 
@@ -1636,6 +1708,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         window_starts: np.ndarray,
         window_ends: np.ndarray,
         trials: IntervalSet,
+        trial_ids: np.ndarray,
         feature_names: pd.Index | None,
         feature_metadata,
         sample_period: float | None,
@@ -1653,6 +1726,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         obj.window_ends = np.asarray(window_ends, dtype=float)
         obj._windowed = windowed
         obj.trials = trials
+        obj._trial_ids = np.asarray(trial_ids).copy()
         obj.feature_names = feature_names
         obj.feature_metadata = feature_metadata
         obj.sample_period = sample_period
@@ -1956,14 +2030,14 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     def __getitem__(self, key):
         ## TODO: decide what to do with nonequal sampling
-        """Select trials, times and features by position."""
+        """Select trial/feature labels, positional times, and positional slices."""
         trial_key, time_key, feature_key = self._split_key(key)
 
-        trial_positions, trial_scalar = _normalize_positions(
-            trial_key,
-            self.shape[0],
-            "trial",
+        trial_positions, trial_scalar = _normalize_labels(
+            trial_key, self.trial_ids, "trial"
         )
+        trial_positions = np.sort(trial_positions)
+
         time_positions, time_scalar = _normalize_positions(
             time_key,
             self.shape[1],
@@ -1971,13 +2045,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         )
 
         if self.ndim == 3:
-            (
-                feature_positions,
-                feature_scalar,
-            ) = _normalize_positions(
-                feature_key,
-                self.shape[2],
-                "feature",
+            feature_positions, feature_scalar = _normalize_labels(
+                feature_key, self.feature_names, "feature"
             )
         else:
             if feature_key != slice(None):
@@ -2058,6 +2127,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_ends=self.window_ends[trial_positions],
             windowed=self._windowed,
             trials=self.trials[trial_positions],
+            trial_ids=self.trial_ids[trial_positions],
             feature_names=feature_names,
             feature_metadata=feature_metadata,
             sample_period=self.sample_period,
@@ -2112,7 +2182,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         self,
         positions: np.ndarray,
     ) -> TsdTrials:
-        return self[positions]
+        return self[self.trial_ids[positions]]
 
     def _new(self, *, values: np.ndarray) -> TsdTrials:
         return self._from_arrays(
@@ -2124,6 +2194,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_ends=self.window_ends,
             windowed=self._windowed,
             trials=self.trials,
+            trial_ids=self.trial_ids,
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
             sample_period=self.sample_period,
@@ -2385,6 +2456,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             window_ends=window_ends,
             windowed=True,
             trials=self.trials,
+            trial_ids=self.trial_ids,
             feature_names=self.feature_names,
             feature_metadata=self.feature_metadata,
             sample_period=self.sample_period,
