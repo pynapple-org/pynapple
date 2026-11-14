@@ -51,7 +51,7 @@ autocorrs = nap.compute_autocorrelogram(
 )
 print(autocorrs)
 ```
-The variable `autocorrs` is a pandas DataFrame with the center of the bins 
+The variable `autocorrs` is a pandas DataFrame with the center of the bins
 for the index and each column is an autocorrelogram of one unit in the `TsGroup`.
 
 ## Cross-correlograms
@@ -143,7 +143,7 @@ plt.show()
 
 ## Event-correlograms
 
-Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object. 
+Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object.
 
 ```{code-cell} ipython3
 eventcorrs = nap.compute_eventcorrelogram(

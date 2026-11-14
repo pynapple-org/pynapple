@@ -80,4 +80,3 @@ Building trial-based tensors <user_guide/14_warping>
 ```
 
 :::
-

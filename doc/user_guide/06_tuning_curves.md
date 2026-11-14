@@ -15,7 +15,7 @@ kernelspec:
 
 With Pynapple you can easily compute n-dimensional tuning curves
 (for example, firing rate as a function of 1D angular direction or firing rate as a function of 2D position).
-It is also possible to compute average firing rate for different epochs 
+It is also possible to compute average firing rate for different epochs
 (for example, firing rate for different epochs of stimulus presentation).
 
 ```{contents}
@@ -36,7 +36,7 @@ xr.set_options(display_expand_attrs=False);
 ```
 
 ## From timestamps or continuous activity
-  
+
 Computing tuning curves is done using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
 
 When computing from general time-series, mandatory arguments are:
@@ -46,7 +46,7 @@ When computing from general time-series, mandatory arguments are:
 By default, 10 bins are used for all features, but you can specify the number of bins,
 or the bin edges explicitly, using the `bins` argument.
 
-The min and max of the tuning curves are by default the minima and maxima of the features. 
+The min and max of the tuning curves are by default the minima and maxima of the features.
 This can be tweaked with the `range` argument.
 
 If an `IntervalSet` is passed with `epochs`, everything is restricted to `epochs`,
@@ -55,13 +55,13 @@ otherwise the time support of the features is used.
 If you do not want the sampling rate of the features to be estimated from the timestamps,
 you can pass it explicitly using the `fs` argument.
 
-You can further also pass a list of strings to label each dimension via `feature_names` 
+You can further also pass a list of strings to label each dimension via `feature_names`
 (by default the columns of the features are used).
 
 The output is an `xarray.DataArray` in which the first dimension represents the units and further dimensions represent the features.
 The occupancy and bin edges are stored as attributes.
 
-If you explicitly want a `pd.DataFrame` as output (which is only possible when you have just the one feature), 
+If you explicitly want a `pd.DataFrame` as output (which is only possible when you have just the one feature),
 you can set `return_pandas=True`. Note that this will not return the occupancy and bin edges.
 
 ### 1D tuning curves from spikes
@@ -101,7 +101,7 @@ We now have all the ingredients to compute tuning curves:
 tuning_curves_1d = nap.compute_tuning_curves(
     data=tsgroup_1d,
     features=feature,
-    bins=120, 
+    bins=120,
     range=(0, 2*np.pi),
     feature_names=["feature"]
     )
@@ -131,7 +131,7 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.ylabel("firing rate [Hz]");
 ```
 
-You can either customize the plot labels yourself using [`matplotlib`](https://matplotlib.org/stable/index.html), 
+You can either customize the plot labels yourself using [`matplotlib`](https://matplotlib.org/stable/index.html),
 or you can set them in the tuning curve object:
 ```{code-cell} ipython3
 tuning_curves_1d.name = "firing rate"
@@ -169,7 +169,7 @@ The output is also a `xarray.DataArray` with the same dimensions as the tuning c
 spike_counts = nap.compute_tuning_curves(
     data=tsgroup_1d,
     features=feature,
-    bins=30, 
+    bins=30,
     range=(0, 2*np.pi),
     feature_names=["feature"],
     return_counts=True
@@ -241,7 +241,7 @@ tsgroup_2d = nap.TsGroup(
 If you pass more than 1 feature, a multi-dimensional tuning curve is computed:
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    data=tsgroup_2d, 
+    data=tsgroup_2d,
     features=features,
     bins=(5,5),
     range=[(-1, 1), (-1, 1)],
@@ -250,7 +250,7 @@ tuning_curves_2d = nap.compute_tuning_curves(
 tuning_curves_2d
 ```
 
-`tuning_curve_2d` is a again an `xarray.DataArray` but now with three dimensions: 
+`tuning_curve_2d` is a again an `xarray.DataArray` but now with three dimensions:
 one for the units of `TsGroup` and 2 for the features, the coordinates contain the centers of the bins.
 Bins that have never been visited by the feature have been assigned a NaN value.
 
@@ -262,7 +262,7 @@ tuning_curves_2d.attrs["unit"]="Hz"
 tuning_curves_2d.plot(col="unit", col_wrap=3);
 ```
 
-Verifying the accuracy of the tuning curves can once more be done by displaying the spikes aligned 
+Verifying the accuracy of the tuning curves can once more be done by displaying the spikes aligned
 to the features with the function `value_from` which assign to each spikes the corresponding features value for unit 0.
 
 ```{code-cell} ipython3
@@ -301,7 +301,7 @@ plt.tight_layout()
 
 ### 1D tuning curves from continuous activity
 
-We do not always have spikes. 
+We do not always have spikes.
 Sometimes we are analysing continuous firing rates or calcium intensities.
 As an example, we will simulate noisy continuous activity for some units modulated by the 1D variable:
 ```{code-cell} ipython3
@@ -428,8 +428,8 @@ tuning_curves_per_split = [
 ]
 ```
 
-To make things easier down the line, we advise combining these into one big 
-`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html) 
+To make things easier down the line, we advise combining these into one big
+`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html)
 , adding a dimension for the splits:
 
 ```{code-cell} ipython3
@@ -486,7 +486,7 @@ def compute_tuning_curves_with_error_bars(
 
     # Return mean and standard deviation
     return (
-        tuning_curves_per_split.mean(dim="split"), 
+        tuning_curves_per_split.mean(dim="split"),
         tuning_curves_per_split.std(dim="split")
     )
 ```
@@ -509,8 +509,8 @@ epochs_tuning_curves_per_presentation = [
 ]
 ```
 
-To make things easier down the line, we advise combining these into one big 
-`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html) 
+To make things easier down the line, we advise combining these into one big
+`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html)
 , adding a dimension for the presentations:
 
 ```{code-cell} ipython3
@@ -572,5 +572,3 @@ MI = nap.compute_mutual_information(tuning_curves_2d)
 MI
 ```
 Take a look at the tutorial on [head direction cells](../examples/tutorial_HD_dataset.md) for a realistic example.
-
-

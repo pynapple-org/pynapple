@@ -20,5 +20,3 @@ Here is a ready-made BibTex entry:
   publisher={eLife Sciences Publications Limited}
 }
 ```
-
-

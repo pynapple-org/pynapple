@@ -28,7 +28,7 @@ import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests, os
-import xarray as xr 
+import xarray as xr
 
 # some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
@@ -105,9 +105,9 @@ To do this in Pynapple, all you need is a single line of code!
 
 ```{code-cell} ipython3
 tuning_curves = nap.compute_tuning_curves(
-    data=spikes_adn, 
-    features=angle, 
-    bins=61, 
+    data=spikes_adn,
+    features=angle,
+    bins=61,
     epochs=epochs[epochs.tags == "wake"],
     range=(0, 2 * np.pi),
     feature_names=["head_direction"]
@@ -159,7 +159,7 @@ norm = plt.Normalize()
 # Assigns a color in the HSV colormap for each value of preferred angle
 color = plt.cm.hsv(norm([i / (2 * np.pi) for i in pref_ang.values]))
 color = xr.DataArray(
-    color, 
+    color,
     dims=("unit", "color"),
     coords={"unit": pref_ang.unit}
 )
@@ -169,9 +169,9 @@ To make the tuning curves look nice, we will smooth them before plotting:
 
 ```{code-cell} ipython3
 tuning_curves.values = scipy.ndimage.gaussian_filter1d(
-    tuning_curves.values, 
-    sigma=3, 
-    axis=1, 
+    tuning_curves.values,
+    sigma=3,
+    axis=1,
     mode="wrap" # important for circular variables!
 )
 ```
@@ -185,10 +185,10 @@ for i, n in enumerate(sorted_tuning_curves.coords["unit"]):
     # Plot the curves in 8 rows and 4 columns
     plt.subplot(8, 4, i + 1, projection='polar')
     plt.plot(
-        sorted_tuning_curves.coords["head_direction"], 
+        sorted_tuning_curves.coords["head_direction"],
         sorted_tuning_curves.sel(unit=n).values,
         color=color.sel(unit=n).values
-    )  # Colour of the curves determined by preferred angle    
+    )  # Colour of the curves determined by preferred angle
     plt.xticks([])
 plt.show()
 ```
@@ -200,7 +200,7 @@ Awesome!
 Decoding
 ------------------
 
-Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in. 
+Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in.
 We will then compare this to the real head-direction of the animal, and discover that population activity in the ADn indeed codes for HD.
 
 To decode the population activity, we will be using a bayesian decoder as implemented in Pynapple.
@@ -254,7 +254,7 @@ plt.show()
 From this plot, we can see that the decoder is able to estimate the head-direction based on the population activity in ADn.
 
 We can also visualize the probability distribution.
-Ideally, the bins with the highest probability correspond to the bins with the most spikes. 
+Ideally, the bins with the highest probability correspond to the bins with the most spikes.
 
 ```{code-cell} ipython3
 smoothed = scipy.ndimage.gaussian_filter(

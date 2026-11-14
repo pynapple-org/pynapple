@@ -83,8 +83,7 @@ def _check_neo_installed():
     """Check if neo is installed and raise ImportError if not."""
     if not HAS_NEO:
         raise ImportError(
-            "Neo is required for this functionality. "
-            "Install it with: pip install neo"
+            "Neo is required for this functionality. Install it with: pip install neo"
         )
 
 
@@ -589,9 +588,7 @@ class NeoSignalInterface:
         # Build segment info and compute total shape across all segments
         self._segment_offsets = []  # Cumulative sample counts per segment
         self._segment_n_samples = []  # Number of samples per segment
-        self._times_list = (
-            []
-        )  # Pre-load timestamps per segment (small memory footprint)
+        self._times_list = []  # Pre-load timestamps per segment (small memory footprint)
 
         total_samples = 0
         for seg in block.segments:

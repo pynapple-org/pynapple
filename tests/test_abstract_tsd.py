@@ -9,7 +9,6 @@ from pynapple.core.time_series import _BaseTsd
 
 
 class MyClass(_BaseTsd):
-
     def __getitem__(self, key):
         return key
 
@@ -24,7 +23,6 @@ class MyClass(_BaseTsd):
 
 
 class MyClass2(_Base):
-
     def __getitem__(self, key):
         return key
 

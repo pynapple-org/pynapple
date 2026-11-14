@@ -83,8 +83,8 @@ plt.tight_layout();
 
 Hilbert transform: computing the envelope
 -----------------------------------------
-Now, we will apply the Hilbert transform to the filtered LFP and take its absolute value 
-to extract the amplitude envelope, which reflects ripple strength over time. 
+Now, we will apply the Hilbert transform to the filtered LFP and take its absolute value
+to extract the amplitude envelope, which reflects ripple strength over time.
 Pynapple provides [`compute_hilbert_envelope`](pynapple.process.signal.compute_hilbert_envelope):
 
 ```{code-cell} ipython3
@@ -137,14 +137,14 @@ plt.tight_layout();
 Ripple detection
 ----------------
 We detect ripple events by thresholding the z-scored smoothed signal with a threshold of 3 standard deviations.
-We further filter detected events to keep only those between 30ms and 300ms in duration, typical for hippocampal ripples. 
+We further filter detected events to keep only those between 30ms and 300ms in duration, typical for hippocampal ripples.
 We lastly merge events that are closer to each other than 20ms, as they are likely to be the same ripple.
 ```{code-cell} ipython3
 threshold = 3
 ripple_events = zscored_smoothed.threshold(threshold, method="above")
 ripple_epochs = ripple_events.time_support
 ripple_epochs = ripple_epochs.drop_short_intervals(0.03, time_units="s")
-ripple_epochs = ripple_epochs.drop_long_intervals(0.3, time_units="s")    
+ripple_epochs = ripple_epochs.drop_long_intervals(0.3, time_units="s")
 ripple_epochs = ripple_epochs.merge_close_intervals(0.02, time_units="s")
 ripple_epochs.intersect(segment)
 ```
@@ -166,7 +166,7 @@ plt.tight_layout();
 Using `detect_oscillatory_events`
 ------------------------------
 
-For your convenience, we put the entire process into a single 
+For your convenience, we put the entire process into a single
 function called [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events).
 
 To get it to work nicely, you will have to the tune the following detection parameters:

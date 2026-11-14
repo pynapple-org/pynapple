@@ -35,7 +35,6 @@ def test_newaxis_preserves_backing_array_indexing(cls, shape, key):
 
 
 class TestTsArray:
-
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, expectation",
@@ -84,7 +83,6 @@ class TestTsArray:
 
 
 class TestTsdArray:
-
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
@@ -166,7 +164,6 @@ class TestTsdArray:
 
 
 class TestTsdFrameArray:
-
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
@@ -239,7 +236,6 @@ class TestTsdFrameArray:
 
 
 class TestTsdTensorArray:
-
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",

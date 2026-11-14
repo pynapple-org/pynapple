@@ -32,7 +32,7 @@ theme:
     - navigation.top
     - search.highlights
     - search.share
-    - search.suggest      
+    - search.suggest
 
 plugins:
   - search
@@ -40,7 +40,7 @@ plugins:
         examples_dirs:
           - docs/api_guide
           - docs/examples
-        gallery_dirs:          
+        gallery_dirs:
           - docs/generated/api_guide
           - docs/generated/examples
         conf_script: docs/gallery_conf.py
@@ -61,10 +61,10 @@ plugins:
             show_root_heading: true
             separate_signature: true
 
-nav:  
+nav:
   - Overview: index.md
   - Install: installation.md
-  - Quickstart: quickstart.md  
+  - Quickstart: quickstart.md
   - Application guide: generated/api_guide
   - Analysis examples: generated/examples
   - External projects: external.md

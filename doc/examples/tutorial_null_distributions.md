@@ -14,7 +14,7 @@ kernelspec:
 Null distributions to test spatial firing
 ============
 
-Null distributions are ubiquitous in neuroscience. 
+Null distributions are ubiquitous in neuroscience.
 The brain can be incredibly noisy, and thus we need to use adequate statistical quantification to separate meaningful observations from random fluctuations.
 While statistics can be daunting, most often designing the right statistical test comes down to devising a good null distribution.
 A null distribution should reflect the expected behavior of the system under the assumption of no real effect, without introducing unnecessary assumptions or simplifications.
@@ -60,7 +60,7 @@ Downloading data from DANDI
 ---------------------------
 We will start by downloading some data off of DANDI.
 To do so, we need a dandiset ID, and a file path.
-In this tutorial we will use data from [dandiset 000582](https://dandiarchive.org/dandiset/000582/draft), which was published in:  
+In this tutorial we will use data from [dandiset 000582](https://dandiarchive.org/dandiset/000582/draft), which was published in:
 *Sargolini, Francesca, et al. “Conjunctive representation of position, direction, and velocity in entorhinal cortex.” Science 312.5774 (2006): 758-762*
 
 This dataset contains electrophysiology recordings from neurons in the entorhinal cortex, which are known to modulate their firing with position.
@@ -115,7 +115,7 @@ tuning_curves
 ```
 
 We can further also compute our metric of interest.
-In this case, we are interested in the modulation of the neurons' firing by position. 
+In this case, we are interested in the modulation of the neurons' firing by position.
 A metric that is typically used to quantify this is the mutual information, often called [spatial information](https://proceedings.neurips.cc/paper/1992/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html) for this case specifically:
 ```{code-cell} ipython3
 spatial_information = nap.compute_mutual_information(tuning_curves)
@@ -138,7 +138,7 @@ Randomization
 Next, we can start thinking about null distributions.
 Our ultimate goal is to be able to say that a neuron's activity is significantly modulated by position.
 To do that, we want to contrast it to the activity of a neuron that is not modulated by position at all.
-But how do we pick that neuron? 
+But how do we pick that neuron?
 We do not want to stray away from the firing patterns of our neuron of interest too much, so we can't just pick something arbitrary.
 
 In practice, we will often take the activity of our neuron of interest and shuffle it somehow, thereby breaking the relation with our variable of interest (position), but keeping its general firing statistics as much as possible.
@@ -207,12 +207,12 @@ fig.text(0.09, 0.12, "auto\ncorrelation", rotation=90, ha="center")
 plt.show()
 ```
 We are also visualizing the [two-dimensional autocorrelation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate2d.html)
-of the tuning curves here to highlight the breaking/maintaining of patterns.  
+of the tuning curves here to highlight the breaking/maintaining of patterns.
 
 Each of these methods seem to have different effects:
-- **Jittering**: does exactly that, the jitter in time also results in a jitter in position. 
+- **Jittering**: does exactly that, the jitter in time also results in a jitter in position.
   We set the maximal jitter to 2 seconds, which likely matches the timescale of the movements of the animal.
-  The tuning curve and autocorrelation have not changed a lot, meaning we have not broken the relation between spiking and behavior. 
+  The tuning curve and autocorrelation have not changed a lot, meaning we have not broken the relation between spiking and behavior.
   Thus, jittering might not be a good randomization method in this case, unless we increase the maximal jitter.
 - **Resampling**: gives us a uniform spread in position, the relation between spiking and behaviour is gone entirely.
 - **Shifting**: has the advantage of keeping the temporal relations between spikes, while only breaking the relation with position.
@@ -258,7 +258,7 @@ If the probability (the p-value) of obtaining a spatial information value **as l
 ```{code-cell} ipython3
 alpha = 0.01 # significance level
 p_values = np.sum(
-    null_distributions.T >= spatial_information['bits/spike'].values, 
+    null_distributions.T >= spatial_information['bits/spike'].values,
     axis=0
     ) / null_distributions.shape[1]
 spatial_units = tuning_curves.coords["unit"][p_values < alpha]
@@ -276,12 +276,12 @@ for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
     null = null_distributions[unit_idx]
     score = spatial_information['bits/spike'][unit_idx]
     pval = p_values[unit_idx]
-    
+
     ax.set_title(f"unit={unit_id}\nSI={score:.2f}\np={pval:.6f}{'*' if score>thresholds[unit_idx] else ''}")
 
     ax_hist = inset_axes(ax, width="100%", height="40%", loc="lower center",
                          bbox_to_anchor=(0, -1, 1, 1), bbox_transform=ax.transAxes, borderpad=0)
-    
+
     ax_hist.hist(null, histtype="stepfilled", edgecolor="none", bins=30)
     ax_hist.axvline(thresholds[unit_idx], color="black")
     ax_hist.axvline(score, color="red", linestyle="--")
@@ -291,7 +291,7 @@ for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
         ax_hist.set_xlabel("spatial\ninformation\n(bits/spike)")
 plt.show()
 ```
-We can see that all our units are significantly modulated by position, some more so than others. 
+We can see that all our units are significantly modulated by position, some more so than others.
 By visualizing the null distributions (blue histograms), the percentile thresholds (black lines), and the actual values (dashed red lines), we can get more nuance.
 We now also have approximate p-values to report.
 

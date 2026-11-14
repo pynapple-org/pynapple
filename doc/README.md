@@ -8,4 +8,3 @@ Building the pynapple documentation
 In doc:
 
 `sphinx-autobuild . _build/html`
-

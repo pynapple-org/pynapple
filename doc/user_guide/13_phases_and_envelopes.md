@@ -14,7 +14,7 @@ kernelspec:
 # Phases and envelopes
 In this tutorial, we will introduce Pynapple's functionality for computing signal phases
 and envelopes.
-Most of this functionality is part of the [`pynapple.process.signal`](pynapple.process.signal) module and is built on [the 
+Most of this functionality is part of the [`pynapple.process.signal`](pynapple.process.signal) module and is built on [the
 Hilbert transform](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.hilbert.html).
 
 ```{code-cell} ipython3

@@ -29,7 +29,7 @@ import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
-import requests 
+import requests
 import xarray as xr
 
 # some configuration, you can ignore this
@@ -188,10 +188,10 @@ ax1.legend(frameon=False, bbox_to_anchor=(1.0, 1.0))
 ax1.set_ylabel("Angle [rad]")
 
 im = ax2.imshow(
-    dist.values.T, 
-    aspect="auto", 
-    origin="lower", 
-    cmap="inferno_r", 
+    dist.values.T,
+    aspect="auto",
+    origin="lower",
+    cmap="inferno_r",
     extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
 )
 ax2.set_ylabel("Angle [rad]")
@@ -199,10 +199,10 @@ cbar_ax2 = fig.add_axes([0.95, ax2.get_position().y0, 0.015, ax2.get_position().
 fig.colorbar(im, cax=cbar_ax2, label="Distance")
 
 im = ax3.imshow(
-    dist_norm.values.T, 
-    aspect="auto", 
-    origin="lower", 
-    cmap="inferno_r", 
+    dist_norm.values.T,
+    aspect="auto",
+    origin="lower",
+    cmap="inferno_r",
     extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
 )
 cbar_ax3 = fig.add_axes([0.95, ax3.get_position().y0, 0.015, ax3.get_position().height])
@@ -213,8 +213,8 @@ plt.show()
 ```
 
 The distance metric you choose can influence how well we decode.
-Internally, ``decode_template`` uses `scipy.spatial.distance.cdist` to compute the distance matrix; 
-you can take a look at [its documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html) 
+Internally, ``decode_template`` uses `scipy.spatial.distance.cdist` to compute the distance matrix;
+you can take a look at [its documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html)
 to see which metrics are supported. Here are a couple examples:
 
 ```{code-cell} ipython3
@@ -250,10 +250,10 @@ for metric, ax in zip(metrics[-5:], axs.flatten()):
     )
     ax.plot(angle.restrict(epochs), label="True")
     im = ax.imshow(
-        dist_norm.values.T, 
-        aspect="auto", 
-        origin="lower", 
-        cmap="inferno_r", 
+        dist_norm.values.T,
+        aspect="auto",
+        origin="lower",
+        cmap="inferno_r",
         extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
     )
     if metric != metrics[-1]:
@@ -271,7 +271,7 @@ plt.show()
 
 We recommend trying a bunch to see which one works best for you.
 In the case of head direction, we can quantify how well we decode using the absolute angular error.
-To get a fair estimate of error, we will compute the tuning curves on the first half of the data 
+To get a fair estimate of error, we will compute the tuning curves on the first half of the data
 and compute the error for predictions of the second half.
 
 ```{code-cell} ipython3

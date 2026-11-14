@@ -124,7 +124,6 @@ def subclass_method_invocations(base_class, method_name):
         results[base_class.__name__] = cls_results
 
     for subclass in base_class.__subclasses__():
-
         subclass_results = class_method_invocations(subclass, method_name)
         if subclass_results:
             results[subclass.__name__] = subclass_results

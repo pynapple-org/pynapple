@@ -190,7 +190,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         elif isinstance(start, pd.DataFrame):
             assert "start" in start.columns and "end" in start.columns, """
-                DataFrame must contain columns name "start" and "end" for start and end times.                   
+                DataFrame must contain columns name "start" and "end" for start and end times.
                 """
             # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
             # since metadata would be dropped if starts and ends are sorted separately

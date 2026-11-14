@@ -23,8 +23,8 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 Learning pynapple
 -----------------
 
-Workshops are regularly organized by the [center for Computational Neuroscience ](https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/) of the Flatiron institute 
-to teach pynapple & [NeMos](https://nemos.readthedocs.io/en/latest/) to new users. 
+Workshops are regularly organized by the [center for Computational Neuroscience ](https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/) of the Flatiron institute
+to teach pynapple & [NeMos](https://nemos.readthedocs.io/en/latest/) to new users.
 
 **The next workshop will take place in NYC in 2027.**
 
@@ -40,7 +40,7 @@ It can now return a [xarray DataArray](https://docs.xarray.dev/en/stable/) inste
 
 ### pynapple >= 0.8.2
 
-The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for 
+The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for
 each interval of an `IntervalSet`, each column of a `TsdFrame` and each unit of a `TsGroup`.
 
 See the [documentation](https://pynapple.org/user_guide/03_metadata.html) for more details
@@ -81,7 +81,7 @@ Getting Started
 ### Installation
 
 The best way to install pynapple is with pip inside a new [conda](https://docs.conda.io/en/latest/) environment:
-    
+
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip python=3.11
 $ conda activate pynapple
@@ -89,7 +89,7 @@ $ pip install pynapple
 ```
 
 
-Running `pip install pynapple` will install all the dependencies, including: 
+Running `pip install pynapple` will install all the dependencies, including:
 
 -   pandas
 -   numpy
@@ -116,7 +116,7 @@ $ spyder
 Basic Usage
 -----------
 
-After installation, you can now import the package: 
+After installation, you can now import the package:
 
 ``` {.sourceCode .shell}
 $ python
@@ -145,9 +145,9 @@ tuning_curves = nap.compute_tuning_curves(
 
 # PLOT
 g=tuning_curves.plot(
-    row="unit", 
-    col_wrap=5, 
-    subplot_kws={"projection": "polar"}, 
+    row="unit",
+    col_wrap=5,
+    subplot_kws={"projection": "polar"},
     sharey=False
 )
 plt.xticks([0, np.pi / 2, np.pi, 3 * np.pi / 2])

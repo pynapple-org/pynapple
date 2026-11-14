@@ -41,19 +41,19 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ## `nap.build_tensor`
 --------------------
 
-The function [`nap.build_tensor`](pynapple.process.warping.build_tensor) slices a time series object or timestamps object for each interval of an `IntervalSet` object and returns 
-a numpy array. The intervals can be of unequal durations. 
+The function [`nap.build_tensor`](pynapple.process.warping.build_tensor) slices a time series object or timestamps object for each interval of an `IntervalSet` object and returns
+a numpy array. The intervals can be of unequal durations.
 
 ```{code-cell} ipython3
 tsgroup = nap.TsGroup({0:nap.Ts(t=np.arange(0, 100)+0.5)})
 ep = nap.IntervalSet(
     start=np.arange(20, 80, 20), end=np.arange(20, 80, 20) + np.arange(2, 8, 2),
-    metadata = {'trials':['trial1', 'trial2', 'trial3']} 
+    metadata = {'trials':['trial1', 'trial2', 'trial3']}
     )
 print(ep)
 ```
 
-To build a trial-based count tensor from a `TsGroup` object with 1 second bins: 
+To build a trial-based count tensor from a `TsGroup` object with 1 second bins:
 
 ```{code-cell} ipython3
 tensor = nap.build_tensor(tsgroup, ep, bin_size=1, padding_value=np.nan)
@@ -180,7 +180,7 @@ plt.show()
 
 ```
 
-It is also possible to warp a time series to create a trial-based tensor. Under the hood, the time series is either 
+It is also possible to warp a time series to create a trial-based tensor. Under the hood, the time series is either
 bin-averaged or interpolated depending on the number of bins.
 
 ```{code-cell} ipython3
