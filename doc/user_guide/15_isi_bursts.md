@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# ISI & burst detection
+# Inter-spike interval (ISI) & burst detection
 
 ```{contents}
 :local:
