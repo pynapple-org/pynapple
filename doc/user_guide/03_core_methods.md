@@ -828,6 +828,7 @@ plt.tight_layout()
 plt.show()
 ```
 
+(special-slicing-tsdframe)=
 ### Special slicing: TsdFrame
 
 For users that are familiar with pandas, [`TsdFrame`](pynapple.TsdFrame) is the closest object to a [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), but there are distinctive behavior when slicing the object. `TsdFrame` behaves primarily like a numpy array. This section lists all the possible ways of slicing `TsdFrame`.
