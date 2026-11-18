@@ -191,6 +191,7 @@ def compute_tuning_curves(
     feature_names: Optional[Sequence[str]] = None,
     return_pandas: bool = False,
     return_counts: bool = False,
+    min_occupancy: Optional[float] = None,
 ) -> Union[xr.DataArray, pd.DataFrame]:
     """
     Compute the tuning curve of each unit of ``data`` as a function of one or
@@ -281,6 +282,13 @@ def compute_tuning_curves(
         :math:`N_u(B)`, not divided by the occupancy. The attributes keep the
         occupancy and :math:`f_s`, so that you can divide later. Default is
         False.
+    min_occupancy : float, optional
+        Minimum time the features must spend in a bin for it to be kept.
+        Unit should match that of the features (i.e. seconds if `fs` is in Hz).
+        Bins visited for less than `min_occupancy` are set to NaN and their
+        occupancy is set to 0, so that they are ignored by downstream functions
+        such as `compute_mutual_information`. If None (default), every visited
+        bin is kept.
 
     Returns
     -------
@@ -512,6 +520,15 @@ def compute_tuning_curves(
     ):
         raise TypeError("return_counts should be a boolean.")
 
+    # check min_occupancy
+    if min_occupancy is not None:
+        if isinstance(min_occupancy, bool) or not isinstance(
+            min_occupancy, (int, float)
+        ):
+            raise TypeError("min_occupancy should be a number (int or float)")
+        if min_occupancy < 0:
+            raise ValueError("min_occupancy should be non-negative.")
+
     # occupancy
     # The feature is binned once: the same bin index gives the occupancy and,
     # for spikes, each spike's bin.
@@ -571,6 +588,12 @@ def compute_tuning_curves(
         tcs /= counts
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
+
+    # drop rarely visited bins
+    if min_occupancy is not None:
+        rare = occupancy / fs < min_occupancy
+        tcs[:, rare] = np.nan
+        occupancy = np.where(rare, 0.0, occupancy)
 
     attrs = {"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs}
     if rates is not None:
