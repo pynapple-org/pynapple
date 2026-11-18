@@ -461,6 +461,82 @@ the object explicitly:
 array = np.asarray(signal_trials)
 array.shape
 ```
+## Tensor data (movies, images, ...)
+
+`TsdTrials` also accepts a [`TsdTensor`](pynapple.TsdTensor).
+The first two axes are always `(trial, time)`; the remaining dimensions retain the source tensor's shape.
+
+For example, create a synthetic movie sampled at 100Hz, with a
+four-by-five image at each time point:
+
+```{code-cell} ipython3
+movie_rng = np.random.default_rng(43)
+movie = nap.TsdTensor(
+    t=t,
+    d=movie_rng.normal(size=(len(t), 4, 5)),
+)
+movie_trials = nap.TsdTrials(source=movie, trials=trials)
+movie_trials.shape
+```
+
+The shape is `(3, 101, 4, 5)`, corresponding to
+`(trial, time, row, column)`.
+
+### Selecting trials and pixels
+
+Selecting one trial returns a `TsdTensor` with axes `(time, row, column)`:
+
+```{code-cell} ipython3
+first_movie = movie_trials[0]
+first_movie.shape
+```
+
+Tensor dimensions use positional indices. Select one pixel across all trials and times:
+
+```{code-cell} ipython3
+pixel_trials = movie_trials[:, :, 1, 2]
+pixel_trials.shape
+```
+
+This returns a scalar `TsdTrials` with shape `(trial, time)`.
+Slices retain the selected tensor dimensions:
+
+```{code-cell} ipython3
+cropped_movies = movie_trials[:, :, :2, 1:4]
+cropped_movies.shape
+```
+Trial metadata remain available through `movie_trials.trials`.
+Tensor dimensions have no labels or metadata.
+
+### Processing tensor trials
+
+The same processing methods work on tensor data.
+Smoothing and convolution operate along time, independently for every trial and pixel:
+
+```{code-cell} ipython3
+smoothed_movies = movie_trials.smooth(0.03)
+smoothed_movies.shape
+```
+
+Averaging across trials returns a `TsdTensor`:
+
+```{code-cell} ipython3
+mean_movie = np.nanmean(movie_trials, axis=0)
+mean_movie.shape
+```
+
+Averaging across both spatial dimensions retains trials and time, returning a scalar `TsdTrials`:
+
+```{code-cell} ipython3
+spatial_mean = np.nanmean(movie_trials, axis=(2, 3))
+spatial_mean.shape
+```
+
+Time-window selection, normalization, and grouping by trial metadata work
+the same way as for scalar and frame data. For unequal trial durations,
+the `(trial, time)` validity mask applies to every pixel, and unavailable
+samples are padded with `NaN`.
+
 
 ## Grouping trials
 

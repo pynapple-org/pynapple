@@ -13,7 +13,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .time_series import Ts, Tsd, TsdFrame
+from .time_series import Ts, Tsd, TsdFrame, TsdTensor
 from .ts_group import TsGroup
 from .utils import _format_bytes
 
@@ -1462,8 +1462,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     Trial-aligned sampled data with a shared relative time axis.
 
     Each interval defines a trial, with time zero at its start.
-    Data are stored with axes ``(trial, time)`` for a scalar signal or
-    ``(trial, time, feature)`` for multiple signals.
+    Data are stored with axes ``(trial, time)`` for a scalar signal,
+    ``(trial, time, feature)`` for a frame, or
+    ``(trial, time, *tensor_shape)`` for tensor data.
     Shorter trials are padded with NaN.
 
     ::
@@ -1479,10 +1480,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     Parameters
     ----------
-    source : Tsd or TsdFrame
+    source : Tsd, TsdFrame, or TsdTensor
         Uniformly sampled source data containing at least two samples.
         Columns and column metadata are retained for a
-        :class:`~pynapple.TsdFrame` source.
+        :class:`~pynapple.TsdFrame` source. Tensor dimensions are positional
+        and have no associated labels or metadata.
     trials : IntervalSet
         Trial intervals in the same time reference as the source.
         Trial starts must coincide with source samples within numerical
@@ -1496,26 +1498,28 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     trial_ids : numpy.ndarray
         Original trial identifiers, preserved through selection.
     values : numpy.ndarray
-        Dense data with axes ``(trial, time)`` or
-        ``(trial, time, feature)``.
+        Dense data with leading axes ``(trial, time)`` followed by any
+        feature or tensor dimensions.
     d : numpy.ndarray
         Alias for ``values``.
     t : numpy.ndarray
         Shared aligned timestamps in seconds.
     valid : numpy.ndarray
         Boolean mask with shape ``(trial, time)`` indicating which
-        samples belong to each trial's current window.
+        samples belong to each trial's current window. Validity applies
+        to all trailing dimensions.
     shape : tuple of int
         Dimensions of the data array.
     ndim : int
-        Number of data dimensions: two or three.
+        Number of data dimensions, at least two.
     columns : pandas.Index
         Feature names for three-dimensional data. Not available for
-        scalar trial data.
+        scalar or higher-dimensional tensor trial data.
     feature_names : pandas.Index or None
-        Feature names, or ``None`` for scalar trial data.
+        Feature names for three-dimensional data, otherwise ``None``.
     feature_metadata : metadata table or None
-        Metadata associated with features, or ``None`` for scalar data.
+        Metadata associated with features for three-dimensional data,
+        otherwise ``None``.
     sample_period : float
         Sampling interval in seconds.
     bin_size : float or None
@@ -1545,26 +1549,34 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     Use ``np.nanmean`` rather than ``np.mean`` when NaN padding should
     be excluded from an average.
 
-    Indexing follows the axis order (trial, time, feature), with the feature axis omitted for scalar data.
-    Trial and feature scalar/list selectors use original identifiers and column names.
-    Time indexing and all slices are positional.
-    Selected trials are always returned chronologically.
+    Indexing follows the axis order ``(trial, time, ...)``.
+    Trial scalar/list selectors use original trial identifiers.
+    Feature scalar/list selectors use column names for three-dimensional
+    data. Time and tensor-axis indexing are positional, as are all slices.
+    Selected trials and time positions are returned chronologically.
+    Lists on different axes select independently rather than pairwise.
+    Adding axes with ``None`` is not supported.
 
-    Selecting one trial returns a :class:`~pynapple.Tsd` or
-    :class:`~pynapple.TsdFrame`, with invalid samples removed.
+    Selecting one trial returns a :class:`~pynapple.Tsd`,
+    :class:`~pynapple.TsdFrame`, or :class:`~pynapple.TsdTensor`,
+    depending on the remaining dimensions, with invalid samples removed.
     Keeping both trial and time axes returns a :class:`TsdTrials`.
     Selecting a single time position returns a NumPy array or scalar.
-    Lists on different axes select independently rather than pairwise.
+
+    When slicing or reducing tensor dimensions leaves one trailing
+    dimension, the result is frame-like and receives integer feature
+    names and empty feature metadata.
 
     Arithmetic and shape-preserving NumPy ufuncs retain the axes and
     metadata. Supported NumPy reductions return different objects
     depending on the reduced axes:
 
-    - Reducing only the trial axis returns a :class:`~pynapple.Tsd`
-      or :class:`~pynapple.TsdFrame`. Times invalid in every trial
-      are omitted.
-    - Reducing only the feature axis returns a scalar
-      :class:`TsdTrials`.
+    - Reducing the trial axis while retaining time returns a
+      :class:`~pynapple.Tsd`, :class:`~pynapple.TsdFrame`, or
+      :class:`~pynapple.TsdTensor`, depending on the remaining dimensions.
+      Times invalid in every trial are omitted.
+    - Reducing only feature or tensor axes returns a
+      :class:`TsdTrials` with the remaining dimensions.
     - Reducing the time axis or all axes returns a NumPy result.
       Reductions over nonempty axes with ``keepdims=True`` also
       return NumPy results.
@@ -1642,17 +1654,44 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     >>> window = data.get(0.0, 0.5)
     >>> window.t
     array([0. , 0.5])
+
+    A tensor source retains all trailing dimensions:
+
+    >>> tensor = nap.TsdTensor(
+    ...     t=time,
+    ...     d=np.arange(54).reshape(9, 2, 3),
+    ... )
+    >>> movies = nap.TsdTrials(tensor, intervals)
+    >>> movies.shape
+    (2, 3, 2, 3)
+    >>> isinstance(movies[0], nap.TsdTensor)
+    True
+
+    Tensor axes use positional selectors:
+
+    >>> movies[:, :, 0, 0].shape
+    (2, 3)
+    >>> movies[..., 0].shape
+    (2, 3, 2)
+
+    Averaging trials retains the tensor dimensions:
+
+    >>> average = np.nanmean(movies, axis=0)
+    >>> isinstance(average, nap.TsdTensor)
+    True
+    >>> average.shape
+    (3, 2, 3)
     """
 
     __array_priority__ = 1000
 
     def __init__(
         self,
-        source: Tsd | TsdFrame,
+        source: Tsd | TsdFrame | TsdTensor,
         trials: IntervalSet,
     ) -> None:
-        if not isinstance(source, (Tsd, TsdFrame)):
-            raise TypeError("source must be a Tsd or TsdFrame.")
+        if not isinstance(source, (Tsd, TsdFrame, TsdTensor)):
+            raise TypeError("source must be a Tsd, TsdFrame, or TsdTensor.")
         if not isinstance(trials, IntervalSet):
             raise TypeError("trials must be an IntervalSet.")
 
@@ -1692,12 +1731,12 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         source_values = np.asarray(source.d)
 
-        if source_values.ndim == 1:
-            self.feature_names = None
-            self.feature_metadata = None
-        else:
+        if isinstance(source, TsdFrame):
             self.feature_names = pd.Index(source.columns)
             self.feature_metadata = _copy_metadata(source)
+        else:
+            self.feature_names = None
+            self.feature_metadata = None
 
         (
             self.values,
@@ -1725,7 +1764,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         trials: IntervalSet,
         trial_ids: np.ndarray,
         feature_names: pd.Index | None,
-        feature_metadata,
+        feature_metadata: Any,
         sample_period: float | None,
         bin_size: float | None,
         data_kind: str,
@@ -1742,13 +1781,32 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         obj._windowed = windowed
         obj.trials = trials
         obj._trial_ids = np.asarray(trial_ids).copy()
-        obj.feature_names = feature_names
-        obj.feature_metadata = feature_metadata
+
+        if obj.values.ndim == 3:
+            obj.feature_names = (
+                pd.RangeIndex(obj.values.shape[2])
+                if feature_names is None
+                else feature_names
+            )
+            obj.feature_metadata = (
+                pd.DataFrame(index=obj.feature_names)
+                if feature_metadata is None
+                else feature_metadata
+            )
+        else:
+            obj.feature_names = None
+            obj.feature_metadata = None
+
         obj.sample_period = sample_period
         obj.bin_size = bin_size
         obj.data_kind = data_kind
         obj.alignment = alignment
         return obj
+
+    @staticmethod
+    def _broadcast_valid(valid: np.ndarray, ndim: int) -> np.ndarray:
+        """Broadcast a trial/time mask over trailing dimensions."""
+        return valid.reshape(valid.shape + (1,) * (ndim - 2))
 
     def __array_function__(
         self,
@@ -1813,14 +1871,10 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         self,
         values: np.ndarray,
         axes: tuple[int, ...],
-    ) -> TsdTrials | Tsd | TsdFrame:
+    ) -> TsdTrials | Tsd | TsdFrame | TsdTensor:
         """Wrap a reduction that preserves time."""
         if 0 not in axes:
-            result = self._new(values=values)
-            if 2 in axes:
-                result.feature_names = None
-                result.feature_metadata = None
-            return result
+            return self._new(values=values)
 
         valid = self.valid.any(axis=0)
         time = self.t[valid]
@@ -1837,6 +1891,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         if values.ndim == 1:
             return Tsd(t=time, d=values, time_support=support)
+
+        if values.ndim > 2:
+            return TsdTensor(t=time, d=values, time_support=support)
 
         return TsdFrame(
             t=time,
@@ -1936,9 +1993,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     @property
     def columns(self) -> pd.Index:
-        """Feature names for frame-like trial data."""
+        """Feature names for three-dimensional trial data."""
         if self.feature_names is None:
-            raise AttributeError("Scalar TsdTrials has no columns.")
+            raise AttributeError("Only three-dimensional TsdTrials has columns.")
         return self.feature_names
 
     def __len__(self) -> int:
@@ -1949,6 +2006,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         names = ["trial", "time"]
         if self.ndim == 3:
             names.append("unit" if self.data_kind == "count" else "feature")
+        else:
+            names.extend(f"axis_{axis}" for axis in range(2, self.ndim))
         return (
             "("
             + ", ".join(f"{name}: {size}" for name, size in zip(names, self.shape))
@@ -1959,11 +2018,18 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """Return a stacked data preview and tensor summary."""
         if len(self):
             values = self.values[0]
-            if values.ndim == 1:
+            column_label = "unit →" if self.data_kind == "count" else "feature →"
+
+            if self.ndim == 2:
                 values = values[:, None]
                 columns = ["value"]
-            else:
+            elif self.ndim == 3:
                 columns = self.feature_names
+            else:
+                size = int(np.prod(self.shape[2:]))
+                values = values.reshape(self.shape[1], size)
+                columns = pd.RangeIndex(size)
+                column_label = "tensor (flattened) →"
 
             preview = pd.DataFrame(
                 values,
@@ -1973,9 +2039,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 ),
                 columns=columns,
             )
-            preview.columns.name = (
-                "unit →" if self.data_kind == "count" else "feature →"
-            )
+            preview.columns.name = column_label
         else:
             preview = pd.DataFrame()
 
@@ -2001,8 +2065,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     def __array__(
         self,
-        dtype=None,
-        copy=None,
+        dtype: np.dtype | type | None = None,
+        copy: bool | None = None,
     ) -> np.ndarray:
         values = np.asarray(self.values, dtype=dtype)
         if copy:
@@ -2011,11 +2075,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     def __array_ufunc__(
         self,
-        ufunc,
-        method,
-        *inputs,
-        **kwargs,
-    ):
+        ufunc: np.ufunc,
+        method: str,
+        *inputs: Any,
+        **kwargs: Any,
+    ) -> Any:
         if method != "__call__" or "out" in kwargs:
             return NotImplemented
 
@@ -2045,96 +2109,75 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             return result
 
         if not self.valid.all():
-            valid = self.valid[..., None] if self.ndim == 3 else self.valid
+            valid = self._broadcast_valid(self.valid, self.ndim)
             result = np.where(valid, result, np.nan)
 
         return self._new(values=result)
 
-    def __getitem__(self, key):
-        ## TODO: decide what to do with nonequal sampling
-        """Select trial/feature labels, positional times, and positional slices."""
-        trial_key, time_key, feature_key = self._split_key(key)
+    def __getitem__(
+        self,
+        key: object,
+    ) -> TsdTrials | Tsd | TsdFrame | TsdTensor | np.ndarray | np.generic:
+        """Select labels and positional time or tensor axes."""
+        # TODO: decide what to do with nonequal sampling.
+        keys = self._split_key(key)
+        positions = []
+        scalars = []
 
-        trial_positions, trial_scalar = _normalize_labels(
-            trial_key, self.trial_ids, "trial"
-        )
-        trial_positions = np.sort(trial_positions)
+        for axis, selector in enumerate(keys):
+            if selector is None:
+                raise IndexError("Adding axes with None is not supported.")
 
-        time_positions, time_scalar = _normalize_positions(
-            time_key,
-            self.shape[1],
-            "time",
-        )
-        time_positions = np.sort(time_positions)
+            if axis == 0:
+                selected, scalar = _normalize_labels(selector, self.trial_ids, "trial")
+            elif axis == 2 and self.feature_names is not None:
+                selected, scalar = _normalize_labels(
+                    selector, self.feature_names, "feature"
+                )
+            else:
+                name = "time" if axis == 1 else f"axis {axis}"
+                selected, scalar = _normalize_positions(
+                    selector,
+                    self.shape[axis],
+                    name,
+                )
 
-        if self.ndim == 3:
-            feature_positions, feature_scalar = _normalize_labels(
-                feature_key, self.feature_names, "feature"
-            )
-        else:
-            if feature_key != slice(None):
-                raise IndexError("Two-dimensional TsdTrials has no feature axis.")
-            feature_positions = None
-            feature_scalar = False
+            if axis < 2:
+                selected = np.sort(selected)
 
-        values = np.take(
-            self.values,
-            trial_positions,
-            axis=0,
-        )
-        values = np.take(
-            values,
-            time_positions,
-            axis=1,
-        )
-        valid = np.take(
-            self.valid,
-            trial_positions,
-            axis=0,
-        )
-        valid = np.take(
-            valid,
-            time_positions,
-            axis=1,
-        )
+            positions.append(selected)
+            scalars.append(scalar)
 
-        if feature_positions is not None:
-            values = np.take(
-                values,
-                feature_positions,
-                axis=2,
-            )
+        trial_positions, time_positions = positions[:2]
+        trial_scalar, time_scalar = scalars[:2]
+
+        values = self.values
+        for axis, selected in enumerate(positions):
+            values = np.take(values, selected, axis=axis)
+
+        valid = np.take(self.valid, trial_positions, axis=0)
+        valid = np.take(valid, time_positions, axis=1)
+
+        trailing_scalars = tuple(axis for axis in range(2, self.ndim) if scalars[axis])
+        if trailing_scalars:
+            values = np.squeeze(values, axis=trailing_scalars)
+
+        feature_positions = positions[2] if self.feature_names is not None else None
 
         if time_scalar:
             values = values[:, 0]
-
-            if trial_scalar:
-                values = values[0]
-            if feature_scalar and isinstance(values, np.ndarray):
-                values = np.squeeze(values, axis=-1)
-
-            return values
+            return values[0] if trial_scalar else values
 
         if trial_scalar:
-            values = values[0]
-            trial_valid = valid[0]
-
-            if feature_scalar:
-                values = values[:, 0]
-
             return self._single_trial(
                 trial=trial_positions[0],
                 time_positions=time_positions,
-                values=values,
-                valid=trial_valid,
+                values=values[0],
+                valid=valid[0],
                 feature_positions=feature_positions,
             )
 
-        if feature_scalar:
-            values = values[:, :, 0]
-            feature_names = None
-            feature_metadata = None
-        elif feature_positions is not None:
+        if feature_positions is not None and not scalars[2]:
             feature_names = self.feature_names.take(feature_positions)
             feature_metadata = self.feature_metadata.loc[feature_names]
         else:
@@ -2159,11 +2202,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             alignment=self.alignment,
         )
 
-    def _split_key(self, key: object) -> tuple[object, object, object]:
-        keys = _expand_key(key, self.ndim)
-        if self.ndim == 2:
-            return keys[0], keys[1], slice(None)
-        return keys[0], keys[1], keys[2]
+    def _split_key(self, key: object) -> tuple[object, ...]:
+        return _expand_key(key, self.ndim)
 
     def _single_trial(
         self,
@@ -2173,7 +2213,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         values: np.ndarray,
         valid: np.ndarray,
         feature_positions: np.ndarray | None,
-    ) -> Tsd | TsdFrame:
+    ) -> Tsd | TsdFrame | TsdTensor:
         time = self.t[time_positions]
         time = time[valid]
         values = values[valid]
@@ -2190,8 +2230,19 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 time_support=support,
             )
 
-        feature_names = self.feature_names.take(feature_positions)
-        feature_metadata = self.feature_metadata.loc[feature_names]
+        if values.ndim > 2:
+            return TsdTensor(
+                t=time,
+                d=values,
+                time_support=support,
+            )
+
+        if feature_positions is not None:
+            feature_names = self.feature_names.take(feature_positions)
+            feature_metadata = self.feature_metadata.loc[feature_names]
+        else:
+            feature_names = None
+            feature_metadata = None
 
         return TsdFrame(
             t=time,
@@ -2234,49 +2285,53 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         data_kind: str | None = None,
     ) -> TsdTrials:
         """
-        Return new `TsdTrials` object with the existing trial and time axes but the given values.
+        Return new trial data with the existing trial and time axes.
 
         Use this method to attach externally computed values, such as
-        model predictions or dimensionality-reduction results, to the original trials.
+        model predictions or dimensionality-reduction results, to the
+        original trials.
 
         Parameters
         ----------
         values : array-like
-            Replacement data with shape ``(trial, time)`` or
-            ``(trial, time, feature)``. The first two dimensions must
-            match the original data. The feature dimension may change.
+            Replacement data with shape ``(trial, time, ...)``.
+            The first two dimensions must match the original data.
+            The number and sizes of trailing dimensions may change.
         columns : pandas.Index or list of str, optional
-            Names for the replacement features. Must match the feature
-            dimension and cannot be supplied for two-dimensional data.
-            Explicit names discard existing feature metadata.
+            Names for replacement features. Only supported for
+            three-dimensional values and must match the feature
+            dimension. Explicit names discard existing feature metadata.
         data_kind : str, optional
             Replacement data interpretation. If omitted, the current
             value is retained. Use ``"continuous"`` for transformed values
             that should be selected by timestamp rather than bin edges.
-            "count" requires an existing bin_size; setting this argument does not bin sampled data.
+            ``"count"`` requires an existing ``bin_size``; setting this
+            argument does not bin sampled data.
 
         Returns
         -------
         TsdTrials
-            Replacement values with the original time axis, validity mask,
-            trial metadata, alignment, and window boundaries.
+            Replacement values with the original time axis, validity
+            mask, trial metadata, alignment, and window boundaries.
             The original object is unchanged.
 
         Raises
         ------
         ValueError
-            If the data dimensions do not match, or the column names
-            are incompatible with the feature dimension.
+            If the data dimensions do not match, the column names are
+            incompatible with the feature dimension, or ``"count"`` is
+            requested without an existing bin size.
 
         Notes
         -----
         Invalid samples are set to NaN regardless of the supplied values.
         NaNs at valid samples are preserved.
 
-        Without explicit ``columns``, feature names and metadata are
-        retained when the feature count is unchanged. Otherwise, new
-        features receive integer names and empty metadata.
-        Two-dimensional values have no feature names or metadata.
+        For three-dimensional values without explicit ``columns``,
+        feature names and metadata are retained when the original data
+        have the same feature count. Otherwise, features receive integer
+        names and empty metadata. Scalar and higher-dimensional tensor
+        values have no feature names or metadata.
 
         Matching dimensions do not verify sample identity: replacement
         values must remain in the original trial and time order.
@@ -2313,6 +2368,12 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         (2, 3, 2)
         >>> list(transformed.columns)
         ['value', 'squared']
+
+        Replacement values can also have tensor dimensions:
+
+        >>> tensor = data.replace_data(np.zeros((2, 3, 4, 5)))
+        >>> tensor.shape
+        (2, 3, 4, 5)
         """
         if data_kind == "count" and self.bin_size is None:
             raise ValueError(
@@ -2321,14 +2382,15 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             )
 
         values = np.asarray(values)
-        if values.ndim not in (2, 3) or values.shape[:2] != self.shape[:2]:
+        if values.ndim < 2 or values.shape[:2] != self.shape[:2]:
             raise ValueError(
                 "values must have matching trial and time dimensions "
-                "and an optional feature dimension."
+                "and optional trailing dimensions."
             )
-        if values.ndim == 2:
+
+        if values.ndim != 3:
             if columns is not None:
-                raise ValueError("Two-dimensional values have no feature axis.")
+                raise ValueError("columns requires three-dimensional values.")
             names = None
             metadata = None
         elif columns is not None:
@@ -2344,7 +2406,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         else:
             names = pd.RangeIndex(values.shape[2])
             metadata = pd.DataFrame(index=names)
-        valid = self.valid[..., None] if values.ndim == 3 else self.valid
+
+        valid = self._broadcast_valid(self.valid, values.ndim)
         result = self._new(values=np.where(valid, values, np.nan))
         result.feature_names = names
         result.feature_metadata = metadata
@@ -2371,8 +2434,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         -------
         TsdTrials
             Selected time points and values with updated validity,
-            window boundaries, and durations. All trials and features
-            are retained. The original object is unchanged.
+            window boundaries, and durations. All trials and trailing
+            dimensions are retained. The original object is unchanged.
 
         Raises
         ------
@@ -2471,10 +2534,11 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 time[None, :] <= window_ends[:, None] + tolerance
             )
 
-        if values.ndim == 3:
-            values = np.where(valid[:, :, None], values, np.nan)
-        else:
-            values = np.where(valid, values, np.nan)
+        values = np.where(
+            self._broadcast_valid(valid, values.ndim),
+            values,
+            np.nan,
+        )
 
         return self._from_arrays(
             values=values,
@@ -2505,10 +2569,10 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         ----------
         axes : int, tuple of int, or None, optional
             Axes over which to compute the mean and standard deviation:
-            ``0`` for trials, ``1`` for time, and ``2`` for units or
-            features when present. The default, ``(0, 1)``, standardizes
-            each unit or feature across trials and time. Use ``None``
-            to standardize all values together.
+            ``0`` for trials, ``1`` for time, and ``2`` onward for feature
+            or tensor dimensions. The default, ``(0, 1)``, standardizes
+            each trailing coordinate across trials and time. Use
+            ``None`` to standardize all values together.
 
         Returns
         -------
@@ -2539,9 +2603,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Standardize each trial independently across time:
 
         >>> normalized = data.normalize(axes=1)
-
         """
-        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        valid = self._broadcast_valid(self.valid, self.ndim)
         values = np.where(valid, self.values, np.nan)
 
         mean = np.nanmean(values, axis=axes, keepdims=True)
@@ -2559,8 +2622,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Convolve each trial independently along the time axis.
 
         The same one-dimensional kernel is applied separately to every
-        trial and feature. The full convolution is trimmed to preserve
-        the original data shape and timestamps.
+        trial and trailing coordinate. The full convolution is trimmed
+        to preserve the original data shape and timestamps.
 
         Parameters
         ----------
@@ -2589,8 +2652,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Notes
         -----
         Each trial is zero-padded outside its valid samples. Invalid
-        samples are restored to NaN afterward. Trials and features never
-        contribute to one another's convolution.
+        samples are restored to NaN afterward. Trials and trailing
+        coordinates never contribute to one another's convolution.
 
         The kernel is not normalized, and no edge correction is applied.
         For a moving average, supply a kernel that sums to one. Values
@@ -2637,7 +2700,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         ):
             raise ValueError("Convolution requires a uniformly sampled time axis.")
 
-        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        valid = self._broadcast_valid(self.valid, self.ndim)
         values = np.where(valid, self.values, 0.0)
 
         if values.size:
@@ -2672,8 +2735,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """
         Smooth each trial independently with a Gaussian kernel.
 
-        Gaussian smoothing combines neighboring time samples to reduce rapid fluctuations.
-        Larger standard deviations produce stronger smoothing but reduce temporal detail.
+        Gaussian smoothing combines neighboring time samples to reduce
+        rapid fluctuations. Larger standard deviations produce stronger
+        smoothing but reduce temporal detail.
 
         Parameters
         ----------
@@ -2709,16 +2773,16 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
         Notes
         -----
-        The standard deviation in samples is ``std_seconds / sample_period``.
-        Kernel length is the integer part of this value multiplied by
-        ``size_factor``, or the integer part of
+        The standard deviation in samples is
+        ``std_seconds / sample_period``. Kernel length is the integer
+        part of ``std_samples * size_factor``, or of
         ``windowsize_seconds / sample_period`` when a duration is given.
         An even length is increased by one to obtain an odd-length kernel.
 
-        Each trial and feature is smoothed separately. Values outside
-        valid samples are treated as zero, and invalid samples are
-        restored to NaN afterward. NaNs within valid samples propagate
-        locally through the kernel.
+        Each trial and trailing coordinate is smoothed separately along
+        time. Values outside valid samples are treated as zero, and
+        invalid samples are restored to NaN afterward. NaNs within valid
+        samples propagate locally through the kernel.
 
         No edge correction is applied, so values near trial boundaries
         may be attenuated. A kernel much longer than a trial can affect
@@ -2787,7 +2851,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         if norm:
             kernel /= kernel.sum()
 
-        valid = self.valid[..., None] if self.ndim == 3 else self.valid
+        valid = self._broadcast_valid(self.valid, self.ndim)
         values = np.where(valid, self.values, 0.0)
 
         if values.size:

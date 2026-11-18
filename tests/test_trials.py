@@ -708,7 +708,7 @@ class TestTsdTrials:
 
     def test_columns(self, tsd_trials: nap.TsdTrials) -> None:
         if tsd_trials.ndim == 2:
-            with pytest.raises(AttributeError, match="no columns"):
+            with pytest.raises(AttributeError, match="has columns"):
                 _ = tsd_trials.columns
         else:
             np.testing.assert_array_equal(tsd_trials.columns, ["x", "y"])
@@ -1275,7 +1275,7 @@ class TestTsdTrials:
     ) -> None:
         values = np.ones(tsd_trials.shape[:2])
 
-        with pytest.raises(ValueError, match="no feature axis"):
+        with pytest.raises(ValueError, match="three-dimensional values"):
             tsd_trials.replace_data(values, columns=["value"])
 
     @pytest.mark.parametrize("columns", [[], ["one"], ["one", "two", "three"]])
@@ -1552,7 +1552,7 @@ def test_invalid_constructor_types(
     with pytest.raises(TypeError, match="trials must be an IntervalSet"):
         nap.TsTrials(spike_source, [])
 
-    with pytest.raises(TypeError, match="source must be a Tsd or TsdFrame"):
+    with pytest.raises(TypeError, match="source must be a Tsd, TsdFrame, or TsdTensor"):
         nap.TsdTrials(spike_source, intervals)
 
     with pytest.raises(TypeError, match="trials must be an IntervalSet"):
@@ -1792,6 +1792,489 @@ REDUCTIONS = [
     np.all,
     np.any,
 ]
+
+
+@pytest.fixture(params=[(2, 3), (2, 1, 3)], ids=["matrix", "tensor"])
+def tensor_source(
+    request: pytest.FixtureRequest,
+) -> nap.TsdTensor:
+    time = np.arange(57) / 4
+    shape = (len(time), *request.param)
+    values = np.arange(np.prod(shape), dtype=float).reshape(shape) / 100
+
+    return nap.TsdTensor(t=time, d=values)
+
+
+@pytest.fixture
+def tensor_trials(
+    tensor_source: nap.TsdTensor,
+    intervals: nap.IntervalSet,
+) -> nap.TsdTrials:
+    return nap.TsdTrials(tensor_source, intervals)
+
+
+def test_replace_frame_with_tensor() -> None:
+    source = nap.TsdFrame(
+        t=np.arange(5),
+        d=np.ones((5, 2)),
+        columns=["x", "y"],
+        metadata={"region": ["ca1", "ca3"]},
+    )
+    trials = nap.TsdTrials(source, nap.IntervalSet(0.0, 4.0))
+
+    result = trials.replace_data(np.ones((1, 5, 2, 3)))
+
+    assert result.feature_names is None
+    assert result.feature_metadata is None
+    assert isinstance(result[0], nap.TsdTensor)
+
+    np.testing.assert_array_equal(trials.columns, ["x", "y"])
+    np.testing.assert_array_equal(
+        trials.feature_metadata["region"],
+        ["ca1", "ca3"],
+    )
+
+
+class TestTsdTrialsTensor:
+    def test_create(
+        self,
+        tensor_trials: nap.TsdTrials,
+        tensor_source: nap.TsdTensor,
+        intervals: nap.IntervalSet,
+    ) -> None:
+        trials = tensor_trials
+
+        assert trials.shape == (3, 13, *tensor_source.shape[1:])
+        assert trials.sample_period == pytest.approx(0.25)
+        assert trials.feature_names is None
+        assert trials.feature_metadata is None
+        np.testing.assert_array_equal(trials.valid.sum(axis=1), [9, 7, 13])
+        np.testing.assert_array_equal(trials.trial_ids, intervals.index)
+        np.testing.assert_array_equal(
+            trials.trials["condition"],
+            intervals["condition"],
+        )
+        np.testing.assert_allclose(trials.t, np.arange(13) / 4)
+
+        for trial, (start, end) in enumerate(zip(intervals.start, intervals.end)):
+            selected = (tensor_source.t >= start) & (tensor_source.t <= end)
+            np.testing.assert_array_equal(
+                trials.d[trial, trials.valid[trial]],
+                tensor_source.d[selected],
+            )
+
+        assert np.isnan(trials.d[~trials.valid]).all()
+        with pytest.raises(AttributeError):
+            _ = trials.columns
+
+    def test_single_trial(self, tensor_trials: nap.TsdTrials) -> None:
+        result = tensor_trials[1]
+
+        assert isinstance(result, nap.TsdTensor)
+        np.testing.assert_array_equal(result.t, tensor_trials.t[:7])
+        np.testing.assert_array_equal(result.d, tensor_trials.d[1, :7])
+        np.testing.assert_array_equal(result.time_support.start, [0.0])
+        np.testing.assert_array_equal(result.time_support.end, [1.5])
+
+    def test_dimension_transitions(
+        self,
+        tensor_trials: nap.TsdTrials,
+    ) -> None:
+        # Keep only the last tensor axis.
+        key = (
+            (slice(None), slice(None))
+            + (0,) * (tensor_trials.ndim - 3)
+            + (slice(None),)
+        )
+        frame = tensor_trials[key]
+
+        assert frame.shape == (3, 13, 3)
+        np.testing.assert_array_equal(frame.d, tensor_trials.d[key])
+        pd.testing.assert_index_equal(frame.columns, pd.RangeIndex(3))
+        pd.testing.assert_frame_equal(
+            frame.feature_metadata,
+            pd.DataFrame(index=frame.columns),
+        )
+
+        single = tensor_trials[(1, *key[1:])]
+        assert isinstance(single, nap.TsdFrame)
+        np.testing.assert_array_equal(single.d, frame.d[1, :7])
+
+        scalar_key = key[:-1] + (0,)
+        scalar = tensor_trials[scalar_key]
+        assert scalar.shape == (3, 13)
+        assert scalar.feature_names is None
+        assert scalar.feature_metadata is None
+        np.testing.assert_array_equal(
+            scalar.d,
+            tensor_trials.d[scalar_key],
+        )
+
+        single = tensor_trials[(1, *scalar_key[1:])]
+        assert isinstance(single, nap.Tsd)
+        np.testing.assert_array_equal(single.d, scalar.d[1, :7])
+
+    def test_orthogonal_selection(
+        self,
+        tensor_trials: nap.TsdTrials,
+    ) -> None:
+        result = tensor_trials[[2, 0], [4, 0], [1, 0], ..., [2, 0]]
+        expected = tensor_trials.d
+
+        for axis, positions in (
+            (0, [0, 2]),
+            (1, [0, 4]),
+            (2, [1, 0]),
+            (tensor_trials.ndim - 1, [2, 0]),
+        ):
+            expected = np.take(expected, positions, axis=axis)
+
+        np.testing.assert_array_equal(result.d, expected)
+        np.testing.assert_array_equal(result.trial_ids, [0, 2])
+        np.testing.assert_array_equal(result.t, [0.0, 1.0])
+        np.testing.assert_array_equal(
+            result.valid,
+            tensor_trials.valid[np.ix_([0, 2], [0, 4])],
+        )
+
+    def test_positional_tensor_axes(
+        self,
+        tensor_trials: nap.TsdTrials,
+    ) -> None:
+        for key in (
+            (..., -1),
+            (..., slice(None, None, -1)),
+            (..., [True, False, True]),
+        ):
+            result = tensor_trials[key]
+            np.testing.assert_array_equal(result.d, tensor_trials.d[key])
+
+        with pytest.raises(IndexError):
+            tensor_trials[..., tensor_trials.shape[-1]]
+
+        with pytest.raises(IndexError, match="None"):
+            tensor_trials[None]
+
+    def test_scalar_time(self, tensor_trials: nap.TsdTrials) -> None:
+        for key in ((slice(None), 0), (1, 0), (1, 0, Ellipsis, 0)):
+            result = tensor_trials[key]
+            assert isinstance(result, np.ndarray)
+            np.testing.assert_array_equal(result, tensor_trials.d[key])
+
+        key = (1, 0) + (0,) * (tensor_trials.ndim - 2)
+        assert np.isscalar(tensor_trials[key])
+        assert tensor_trials[key] == tensor_trials.d[key]
+
+    def test_get(self, tensor_trials: nap.TsdTrials) -> None:
+        result = tensor_trials.get(0.5, 2.5)
+
+        np.testing.assert_array_equal(result.t, tensor_trials.t[2:11])
+        np.testing.assert_array_equal(result.d, tensor_trials.d[:, 2:11])
+        np.testing.assert_array_equal(
+            result.valid,
+            tensor_trials.valid[:, 2:11],
+        )
+        np.testing.assert_array_equal(result.window_starts, [0.5] * 3)
+        np.testing.assert_array_equal(result.window_ends, [2.0, 1.5, 2.5])
+        np.testing.assert_array_equal(result.durations, [1.5, 1.0, 2.0])
+        assert np.isnan(result.d[~result.valid]).all()
+
+    @pytest.mark.parametrize(
+        "operation",
+        [
+            pytest.param(lambda x: x + 2, id="add"),
+            pytest.param(lambda x: 2 - x, id="reverse-subtract"),
+            pytest.param(lambda x: x + x, id="binary-trials"),
+            pytest.param(np.negative, id="negative"),
+            pytest.param(np.isfinite, id="isfinite"),
+            pytest.param(lambda x: x > 2, id="comparison"),
+        ],
+    )
+    def test_operations(
+        self,
+        tensor_trials: nap.TsdTrials,
+        operation: Any,
+    ) -> None:
+        original = tensor_trials.d.copy()
+        valid = tensor_trials.valid.reshape(
+            tensor_trials.valid.shape + (1,) * (tensor_trials.ndim - 2)
+        )
+        expected = np.where(valid, operation(original), np.nan)
+
+        result = operation(tensor_trials)
+
+        np.testing.assert_array_equal(result.d, expected)
+        np.testing.assert_array_equal(tensor_trials.d, original)
+        assert_same_axes(result, tensor_trials)
+
+    @pytest.mark.parametrize("axes", [None, (0, 1), 1, -1])
+    def test_normalize(
+        self,
+        tensor_trials: nap.TsdTrials,
+        axes: int | tuple[int, ...] | None,
+    ) -> None:
+        original = tensor_trials.d.copy()
+        mean = np.nanmean(original, axis=axes, keepdims=True)
+        std = np.nanstd(original, axis=axes, keepdims=True)
+        expected = (original - mean) / np.where(std == 0, 1.0, std)
+
+        result = tensor_trials.normalize(axes=axes)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        np.testing.assert_array_equal(tensor_trials.d, original)
+        assert_same_axes(result, tensor_trials)
+
+    @pytest.mark.parametrize("trim", ["both", "left", "right"])
+    def test_convolve(
+        self,
+        tensor_trials: nap.TsdTrials,
+        trim: str,
+    ) -> None:
+        kernel = np.array([1.0, 2.0, 3.0, 4.0]) / 10
+        original = tensor_trials.d.copy()
+        expected = np.full_like(original, np.nan)
+        start = {"both": 1, "left": 3, "right": 0}[trim]
+
+        for trial in range(len(tensor_trials)):
+            valid = tensor_trials.valid[trial]
+            for coordinate in np.ndindex(tensor_trials.shape[2:]):
+                key = (trial, slice(None), *coordinate)
+                padded = np.where(valid, original[key], 0.0)
+                convolved = np.convolve(padded, kernel, mode="full")
+                trimmed = convolved[start : start + tensor_trials.shape[1]]
+                expected[key] = np.where(valid, trimmed, np.nan)
+
+        result = tensor_trials.convolve(kernel, trim=trim)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        np.testing.assert_array_equal(tensor_trials.d, original)
+        assert_same_axes(result, tensor_trials)
+
+    @pytest.mark.parametrize("norm", [False, True])
+    def test_smooth(
+        self,
+        tensor_trials: nap.TsdTrials,
+        norm: bool,
+    ) -> None:
+        kernel = signal.windows.gaussian(5, std=1.0)
+        if norm:
+            kernel /= kernel.sum()
+
+        expected = tensor_trials.convolve(kernel)
+        result = tensor_trials.smooth(
+            std=0.25,
+            windowsize=1.0,
+            norm=norm,
+        )
+
+        np.testing.assert_allclose(result.d, expected.d, equal_nan=True)
+        assert_same_axes(result, tensor_trials)
+
+    @pytest.mark.parametrize("trailing_shape", [(), (4,), (2, 3), (2, 1, 3)])
+    def test_replace_data(
+        self,
+        tensor_trials: nap.TsdTrials,
+        trailing_shape: tuple[int, ...],
+    ) -> None:
+        original = tensor_trials.d.copy()
+        values = np.ones((*tensor_trials.shape[:2], *trailing_shape))
+        values[0, 0] = np.nan
+
+        result = tensor_trials.replace_data(values)
+
+        assert result.shape == values.shape
+        np.testing.assert_array_equal(
+            result.d[result.valid],
+            values[result.valid],
+        )
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(tensor_trials.d, original)
+        np.testing.assert_array_equal(result.valid, tensor_trials.valid)
+        np.testing.assert_array_equal(result.t, tensor_trials.t)
+
+        if result.ndim == 3:
+            pd.testing.assert_index_equal(result.columns, pd.RangeIndex(4))
+            pd.testing.assert_frame_equal(
+                result.feature_metadata,
+                pd.DataFrame(index=result.columns),
+            )
+        else:
+            assert result.feature_names is None
+            assert result.feature_metadata is None
+
+        if result.shape == tensor_trials.shape:
+            assert_same_axes(result, tensor_trials)
+
+    def test_reject_tensor_columns(
+        self,
+        tensor_trials: nap.TsdTrials,
+    ) -> None:
+        with pytest.raises(ValueError, match="three-dimensional"):
+            tensor_trials.replace_data(
+                tensor_trials.d,
+                columns=["a", "b"],
+            )
+
+    def test_groupby(self, tensor_trials: nap.TsdTrials) -> None:
+        groups = tensor_trials.groupby("condition")
+
+        for condition, positions in {"a": [0, 2], "b": [1]}.items():
+            expected = tensor_trials[positions]
+            np.testing.assert_array_equal(groups[condition].d, expected.d)
+            assert_same_axes(groups[condition], expected)
+
+        means = tensor_trials.groupby_apply("condition", np.nansum, axis=0)
+        for condition, group in groups.items():
+            assert isinstance(means[condition], nap.TsdTensor)
+            valid = group.valid.any(axis=0)
+            np.testing.assert_array_equal(
+                means[condition].d,
+                np.nansum(group.d, axis=0)[valid],
+            )
+
+    def test_empty_axes(
+        self,
+        tensor_trials: nap.TsdTrials,
+        tensor_source: nap.TsdTensor,
+    ) -> None:
+        empty = nap.TsdTrials(tensor_source, nap.IntervalSet([], []))
+        assert empty.shape == (0, 0, *tensor_source.shape[1:])
+        assert empty.valid.shape == (0, 0)
+        assert "No trials." in repr(empty)
+
+        selections = (
+            tensor_trials[:0],
+            tensor_trials[:, :0],
+            tensor_trials[..., :0],
+        )
+        for selected in selections:
+            assert selected.d.size == 0
+            repr(selected)
+
+            for result in (
+                selected + 1,
+                selected.convolve(np.ones(3)),
+                selected.smooth(0.25, windowsize=1.0),
+            ):
+                assert result.shape == selected.shape
+                assert_same_axes(result, selected)
+
+    def test_repr(self, tensor_trials: nap.TsdTrials) -> None:
+        representation = repr(tensor_trials)
+        names = ["trial", "time"] + [
+            f"axis_{axis}" for axis in range(2, tensor_trials.ndim)
+        ]
+        dimensions = ", ".join(
+            f"{name}: {size}" for name, size in zip(names, tensor_trials.shape)
+        )
+
+        assert f"shape: ({dimensions})" in representation
+        assert "tensor (flattened)" in representation
+        assert "align: 'start'" in representation
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+class TestTsdTrialsTensorReductions:
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    @pytest.mark.parametrize(
+        "axis",
+        [None, (), 0, 1, -1, (0, -1), (2, 3), (0, 2, 3)],
+    )
+    @pytest.mark.parametrize("keepdims", [False, True])
+    def test_reduction(
+        self,
+        tensor_trials: nap.TsdTrials,
+        reduction: Any,
+        axis: int | tuple[int, ...] | None,
+        keepdims: bool,
+    ) -> None:
+        trials = tensor_trials
+        original = trials.d.copy()
+        expected = reduction(original, axis=axis, keepdims=keepdims)
+        result = reduction(trials, axis=axis, keepdims=keepdims)
+
+        axes = (
+            tuple(range(trials.ndim))
+            if axis is None
+            else axis
+            if isinstance(axis, tuple)
+            else (axis,)
+        )
+        axes = tuple(value % trials.ndim for value in axes)
+
+        if axis is None or 1 in axes or (axes and keepdims):
+            assert not isinstance(
+                result,
+                (nap.TsdTrials, nap.Tsd, nap.TsdFrame, nap.TsdTensor),
+            )
+            np.testing.assert_allclose(result, expected, equal_nan=True)
+
+        elif 0 in axes:
+            expected_type = (
+                nap.Tsd
+                if expected.ndim == 1
+                else nap.TsdFrame
+                if expected.ndim == 2
+                else nap.TsdTensor
+            )
+            assert isinstance(result, expected_type)
+
+            valid = trials.valid.any(axis=0)
+            np.testing.assert_array_equal(result.t, trials.t[valid])
+            np.testing.assert_allclose(
+                result.d,
+                expected[valid],
+                equal_nan=True,
+            )
+            np.testing.assert_array_equal(
+                result.time_support.start,
+                [trials.window_starts.min()],
+            )
+            np.testing.assert_array_equal(
+                result.time_support.end,
+                [trials.window_ends.max()],
+            )
+
+            if isinstance(result, nap.TsdFrame):
+                np.testing.assert_array_equal(
+                    result.columns,
+                    np.arange(expected.shape[1]),
+                )
+                assert len(result.metadata_columns) == 0
+
+        else:
+            assert isinstance(result, nap.TsdTrials)
+            np.testing.assert_allclose(result.d, expected, equal_nan=True)
+            assert_same_axes(result, trials.replace_data(expected))
+
+        np.testing.assert_array_equal(trials.d, original)
+
+    def test_omit_globally_invalid_times(
+        self,
+        tensor_trials: nap.TsdTrials,
+    ) -> None:
+        trials = tensor_trials[:2]
+        valid = trials.valid.any(axis=0)
+
+        result = np.nanmean(trials, axis=0)
+
+        assert isinstance(result, nap.TsdTensor)
+        assert not valid.all()
+        np.testing.assert_array_equal(result.t, trials.t[valid])
+        np.testing.assert_allclose(
+            result.d,
+            np.nanmean(trials.d[:, valid], axis=0),
+            equal_nan=True,
+        )
+
+    def test_out(self, tensor_trials: nap.TsdTrials) -> None:
+        expected = np.nanmean(tensor_trials.d, axis=0)
+        output = np.empty_like(expected)
+
+        result = np.nanmean(tensor_trials, axis=0, out=output)
+
+        assert result is output
+        np.testing.assert_allclose(output, expected, equal_nan=True)
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
