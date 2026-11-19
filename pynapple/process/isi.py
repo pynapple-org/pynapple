@@ -479,71 +479,74 @@ def _detect_bursts_instantaneous_rate(
 # ---------------------------------------------------------------------------
 
 
-def _poisson_surprise(times, first, n, mean_isi):
+def _poisson_surprise(times, first, n_spikes, mean_isi):
     """
-    Surprise of the `n` spikes starting at index `first`: -log of the probability
-    that a Poisson process with the mean rate of the train has at least `n - 1`
-    spikes in their duration (sjemea's `surprise`, ``ppois(n - 2, upper)``).
+    Surprise of the `n_spikes` spikes starting at index `first`: -log of the
+    probability that a Poisson process with the mean rate of the train has at
+    least `n_spikes - 1` spikes in their duration (sjemea's `surprise`,
+    ``ppois(n - 2, upper)``).
     """
-    lam = (times[first + n - 1] - times[first]) / mean_isi
+    # number of spikes expected in the duration of the group
+    expected = (times[first + n_spikes - 1] - times[first]) / mean_isi
     with np.errstate(divide="ignore"):
-        return -np.log(scipy.special.pdtrc(n - 2, lam))
+        return -np.log(scipy.special.pdtrc(n_spikes - 2, expected))
 
 
 def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
     """
     Bursts of the Poisson surprise method, translated from `PS_method.R` of
     Cotterill & Eglen (2018) (`si.find.bursts.thresh` and
-    `si.find.burst.thresh2`), with 0-based indices. Returns (first, last, surprise).
+    `si.find.burst.thresh2`), with 0-based indices. `first` and `n_spikes` are
+    `n` and `i` of the R code. Returns (first, last, surprise).
     """
     n_total = len(times)
     start_isi = mean_isi / 2
     isi_thresh = 2 * mean_isi if max_isi_burst is None else max_isi_burst
     bursts = []
-    n = 0
+    first = 0
     # Unlike the R code (`n < nspikes - 2`, 1-based), the last three spikes are
     # also tested as the start of a burst.
-    while n + 2 < n_total:
+    while first + 2 < n_total:
         if not (
-            times[n + 1] - times[n] < start_isi
-            and times[n + 2] - times[n + 1] < start_isi
+            times[first + 1] - times[first] < start_isi
+            and times[first + 2] - times[first + 1] < start_isi
         ):
-            n += 1
+            first += 1
             continue
 
         # Phase 1: add spikes to the end while the surprise increases, looking up
         # to 10 spikes ahead, but not past an ISI longer than `isi_thresh`.
-        i = 3
-        s = _poisson_surprise(times, n, i, mean_isi)
+        n_spikes = 3
+        s = _poisson_surprise(times, first, n_spikes, mean_isi)
         while True:
-            i_cur = i
-            check = min(10, n_total - (i + n))
+            n_spikes_cur = n_spikes
+            check = min(10, n_total - (n_spikes + first))
             improved = False
             while check > 0:
                 check -= 1
-                i += 1
-                s_new = _poisson_surprise(times, n, i, mean_isi)
+                n_spikes += 1
+                s_new = _poisson_surprise(times, first, n_spikes, mean_isi)
                 if s_new > s:
                     improved = True
                     break
-                # As in the R code, this reads the ISI ending at spike `i` of the
-                # train, not spike `i` of the burst.
-                if times[i - 1] - times[i - 2] > isi_thresh:
+                # As in the R code, this reads the ISI ending at spike `n_spikes`
+                # of the train, not spike `n_spikes` of the burst.
+                if times[n_spikes - 1] - times[n_spikes - 2] > isi_thresh:
                     break
             if not improved:
-                i = i_cur
+                n_spikes = n_spikes_cur
                 break
             s = s_new
 
         # Phase 2: drop spikes from the start while the surprise increases.
-        while i > 3:
-            s_new = _poisson_surprise(times, n + 1, i - 1, mean_isi)
+        while n_spikes > 3:
+            s_new = _poisson_surprise(times, first + 1, n_spikes - 1, mean_isi)
             if not s_new > s:
                 break
-            n, i, s = n + 1, i - 1, s_new
+            first, n_spikes, s = first + 1, n_spikes - 1, s_new
 
-        bursts.append((n, n + i - 1, s))
-        n += i
+        bursts.append((first, first + n_spikes - 1, s))
+        first += n_spikes
     return bursts
 
 
