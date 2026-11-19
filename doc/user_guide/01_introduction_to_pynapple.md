@@ -159,7 +159,7 @@ signals = nap.TsdFrame(
     d=np.column_stack([np.sin(t), np.cos(t)]),
     columns=["sin", "cos"],
 )
-signal_trials = nap.TsdTrials(source=signals, trials=trials)
+signal_trials = nap.TsdTrials(source=signals, trials=trials, sample_period=0.1)
 signal_trials
 ```
 :::{note}
