@@ -330,7 +330,7 @@ class _TrialMetadataMixin:
         ...     end=[1.0, 3.0, 5.0],
         ...     metadata={"condition": ["a", "b", "a"]},
         ... )
-        >>> data = nap.TsdTrials(source, intervals)
+        >>> data = nap.TsdTrials(source, intervals, sample_period=0.5)
         >>> groups = data.groupby("condition")
 
         Condition ``"a"`` contains two trials; condition ``"b"`` contains
@@ -417,7 +417,7 @@ class _TrialMetadataMixin:
         ...     end=[1.0, 3.0, 5.0],
         ...     metadata={"condition": ["a", "b", "a"]},
         ... )
-        >>> data = nap.TsdTrials(source, intervals)
+        >>> data = nap.TsdTrials(source, intervals, sample_period=0.5)
         >>> means = data.groupby_apply("condition", np.nanmean, axis=0)
 
         The result for each condition retains the relative time axis:
@@ -1610,7 +1610,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     ...     end=[1.0, 2.5],
     ...     metadata={"condition": ["a", "b"]},
     ... )
-    >>> data = nap.TsdTrials(source, intervals)
+    >>> data = nap.TsdTrials(source, intervals, sample_period=0.5)
     >>> data.shape
     (2, 3)
     >>> data.t
@@ -1650,7 +1650,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     ...     d=np.column_stack([time, -time]),
     ...     columns=["x", "y"],
     ... )
-    >>> population = nap.TsdTrials(frame, intervals)
+    >>> population = nap.TsdTrials(frame, intervals, sample_period=0.5)
     >>> population.shape
     (2, 3, 2)
     >>> list(population.columns)
@@ -1673,7 +1673,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     ...     t=time,
     ...     d=np.arange(54).reshape(9, 2, 3),
     ... )
-    >>> movies = nap.TsdTrials(tensor, intervals)
+    >>> movies = nap.TsdTrials(tensor, intervals, sample_period=0.5)
     >>> movies.shape
     (2, 3, 2, 3)
     >>> isinstance(movies[0], nap.TsdTensor)
@@ -2350,7 +2350,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> intervals = nap.IntervalSet(
         ...     start=[0.0, 2.0], end=[1.0, 3.0]
         ... )
-        >>> data = nap.TsdTrials(source, intervals)
+        >>> data = nap.TsdTrials(source, intervals, sample_period=0.5)
         >>> squared = data.replace_data(data.d ** 2)
         >>> squared.d
         array([[0.  , 0.25, 1.  ],
@@ -2469,7 +2469,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> intervals = nap.IntervalSet(
         ...     start=[0.0, 2.0], end=[1.0, 3.0]
         ... )
-        >>> data = nap.TsdTrials(source, intervals)
+        >>> data = nap.TsdTrials(source, intervals, sample_period=0.5)
         >>> selected = data.get(0.5, 1.0)
         >>> selected.t
         array([0.5, 1. ])
@@ -2592,7 +2592,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> import pynapple as nap
         >>> source = nap.Tsd(t=np.arange(20) / 10, d=np.arange(20))
         >>> trials = nap.IntervalSet(start=[0.0, 1.0], end=[0.9, 1.9])
-        >>> data = nap.TsdTrials(source=source, trials=trials)
+        >>> data = nap.TsdTrials(source=source, trials=trials, sample_period=0.1)
 
         Standardize across trials and time:
 
@@ -2671,7 +2671,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> import numpy as np
         >>> import pynapple as nap
         >>> source = nap.Tsd(t=np.arange(5), d=np.ones(5))
-        >>> data = nap.TsdTrials(source, nap.IntervalSet(0.0, 4.0))
+        >>> data = nap.TsdTrials(source, nap.IntervalSet(0.0, 4.0), sample_period=1.0)
         >>> averaged = data.convolve(np.ones(3) / 3)
         >>> np.round(averaged.d, 3)
         array([[0.667, 1.   , 1.   , 1.   , 0.667]])
@@ -2800,7 +2800,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         >>> intervals = nap.IntervalSet(
         ...     start=[0.0, 1.0], end=[0.9, 1.9]
         ... )
-        >>> data = nap.TsdTrials(source, intervals)
+        >>> data = nap.TsdTrials(source, intervals, sample_period=0.01)
 
         Smooth with a Gaussian standard deviation of 50 ms:
 

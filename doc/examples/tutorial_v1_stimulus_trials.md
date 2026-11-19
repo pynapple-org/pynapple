@@ -312,7 +312,7 @@ A [`TsdTrials`](pynapple.TsdTrials) object holds the drive of each trial.
 Time is relative to the start of the trial, so the selected frame is at sample 4:
 
 ```{code-cell} ipython3
-drive_trials = nap.TsdTrials(source=drive, trials=trials)
+drive_trials = nap.TsdTrials(source=drive, trials=trials, sample_period=0.01)
 drive_trials
 ```
 
