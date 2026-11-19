@@ -5,6 +5,7 @@ Interspike interval functions: ISI distribution and burst detection.
 from __future__ import annotations
 
 import inspect
+import math
 import numbers
 import warnings
 from typing import Optional, Union
@@ -12,7 +13,7 @@ from typing import Optional, Union
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import scipy.special
+from numba import jit
 
 from .. import core as nap
 
@@ -156,86 +157,136 @@ def _check_min_spikes(name, value):
 # ---------------------------------------------------------------------------
 
 
-def _find_runs(times, max_isi_start, max_isi_burst):
+@jit(nopython=True, cache=True)
+def _jitfind_runs(times, max_isi_start, max_isi_burst):
     """
     Phase 1: runs of spikes. A run starts at the first of two spikes closer than
     `max_isi_start` and ends at the last spike before an interval longer than
-    `max_isi_burst`. Returns (first, last) spike indices, both inclusive.
+    `max_isi_burst`. Returns the first and the last spike index of each run,
+    both inclusive.
     """
-    runs = []
-    start = None
-    for i in range(1, len(times)):
+    n = len(times)
+    # a run has at least two spikes and runs do not overlap
+    first = np.empty(n // 2, dtype=np.int64)
+    last = np.empty(n // 2, dtype=np.int64)
+    count = 0
+    start = -1
+    for i in range(1, n):
         isi = times[i] - times[i - 1]
-        if start is None:
+        if start < 0:
             if isi < max_isi_start:
                 start = i - 1
         elif isi > max_isi_burst:
-            runs.append((start, i - 1))
-            start = None
-    if start is not None:
-        runs.append((start, len(times) - 1))
-    return runs
+            first[count] = start
+            last[count] = i - 1
+            count += 1
+            start = -1
+    if start >= 0:
+        first[count] = start
+        last[count] = n - 1
+        count += 1
+    return first[:count], last[:count]
 
 
-def _merge_close_runs(times, runs, min_inter_burst_interval):
+@jit(nopython=True, cache=True)
+def _jitmerge_close_runs(times, first, last, min_inter_burst_interval):
     """
     Phase 2: two consecutive runs separated by less than `min_inter_burst_interval`
     (last spike of one to first spike of the next) become one run.
     """
-    merged = []
-    for first, last in runs:
-        if merged and times[first] - times[merged[-1][1]] < min_inter_burst_interval:
-            merged[-1] = (merged[-1][0], last)
+    merged_first = np.empty(len(first), dtype=np.int64)
+    merged_last = np.empty(len(first), dtype=np.int64)
+    count = 0
+    for k in range(len(first)):
+        if (
+            count > 0
+            and times[first[k]] - times[merged_last[count - 1]]
+            < min_inter_burst_interval
+        ):
+            merged_last[count - 1] = last[k]
         else:
-            merged.append((first, last))
-    return merged
+            merged_first[count] = first[k]
+            merged_last[count] = last[k]
+            count += 1
+    return merged_first[:count], merged_last[:count]
 
 
-def _drop_small_runs(times, runs, min_burst_duration, min_spikes_in_burst):
+@jit(nopython=True, cache=True)
+def _jitdrop_small_runs(times, first, last, min_burst_duration, min_spikes_in_burst):
     """
     Phase 3: a run shorter than `min_burst_duration` or with fewer than
     `min_spikes_in_burst` spikes is not a burst.
     """
-    return [
-        (first, last)
-        for first, last in runs
-        if times[last] - times[first] >= min_burst_duration
-        and last - first + 1 >= min_spikes_in_burst
-    ]
+    keep = np.empty(len(first), dtype=np.bool_)
+    for k in range(len(first)):
+        keep[k] = (
+            times[last[k]] - times[first[k]] >= min_burst_duration
+            and last[k] - first[k] + 1 >= min_spikes_in_burst
+        )
+    return first[keep], last[keep]
 
 
-def _extend_to_related_spikes(times, cores, threshold):
+@jit(nopython=True, cache=True)
+def _jitextend_to_related_spikes(times, first, last, threshold):
     """
     Extend each core to the run of spikes with consecutive intervals no longer
     than `threshold` that contains it. Cores inside the same run become one burst.
     """
-    runs = _find_runs(times, threshold, threshold)
-    extended = []
-    for first, last in cores:
-        container = next(
-            (r for r in runs if r[0] <= first and last <= r[1]), (first, last)
-        )
-        if container not in extended:
-            extended.append(container)
-    return extended
+    run_first, run_last = _jitfind_runs(times, threshold, threshold)
+    extended_first = np.empty(len(first), dtype=np.int64)
+    extended_last = np.empty(len(first), dtype=np.int64)
+    count = 0
+    r = 0
+    for k in range(len(first)):
+        # cores and runs are sorted: the first run that ends at or after the
+        # core is the only one that can contain it
+        while r < len(run_first) and run_last[r] < last[k]:
+            r += 1
+        if r < len(run_first) and run_first[r] <= first[k]:
+            new_first, new_last = run_first[r], run_last[r]
+        else:
+            new_first, new_last = first[k], last[k]
+        if (
+            count == 0
+            or extended_first[count - 1] != new_first
+            or extended_last[count - 1] != new_last
+        ):
+            extended_first[count] = new_first
+            extended_last[count] = new_last
+            count += 1
+    return extended_first[:count], extended_last[:count]
+
+
+def _no_runs():
+    return np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64)
 
 
 def _detect_per_epoch(spikes, find_bursts):
     """
     Run `find_bursts(times)` on the spikes of each epoch of the time support,
     so no burst spans a gap in it, and return the bursts as one IntervalSet.
+    `find_bursts` returns the first and the last spike index of each burst.
     """
-    starts, ends, n_spikes = [], [], []
-    for epoch in spikes.time_support:
-        times = spikes.restrict(epoch).t
-        for first, last in find_bursts(times):
-            # Skip identical spike times (artifacts)
-            if times[last] == times[first]:
-                continue
-            starts.append(times[first])
-            ends.append(times[last])
-            n_spikes.append(last - first + 1)
-    return nap.IntervalSet(start=starts, end=ends, metadata={"n_spikes": n_spikes})
+    t = spikes.t
+    # the spikes lie within the time support: those of an epoch run from its
+    # first spike to the first spike of the next epoch
+    bounds = np.append(np.searchsorted(t, spikes.time_support.start), len(t))
+    starts, ends, n_spikes = [np.empty(0)], [np.empty(0)], [np.empty(0, dtype=int)]
+    for k in range(len(bounds) - 1):
+        times = t[bounds[k] : bounds[k + 1]]
+        first, last = find_bursts(times)
+        if len(first) == 0:
+            continue
+        # Skip identical spike times (artifacts)
+        keep = times[last] != times[first]
+        starts.append(times[first[keep]])
+        ends.append(times[last[keep]])
+        n_spikes.append(last[keep] - first[keep] + 1)
+    return nap.IntervalSet(
+        start=np.concatenate(starts),
+        end=np.concatenate(ends),
+        metadata={"n_spikes": np.concatenate(n_spikes)},
+    )
 
 
 def _apply(spikes, find_bursts):
@@ -264,10 +315,17 @@ def _detect_bursts_max_interval(
     _check_positive("min_burst_duration", min_burst_duration, strict=False)
     _check_min_spikes("min_spikes_in_burst", min_spikes_in_burst)
 
+    # floats, so that numba compiles the loops once
+    max_isi_start, max_isi_burst = float(max_isi_start), float(max_isi_burst)
+    min_inter_burst_interval = float(min_inter_burst_interval)
+    min_burst_duration = float(min_burst_duration)
+
     def find_bursts(times):
-        runs = _find_runs(times, max_isi_start, max_isi_burst)
-        runs = _merge_close_runs(times, runs, min_inter_burst_interval)
-        return _drop_small_runs(times, runs, min_burst_duration, min_spikes_in_burst)
+        runs = _jitfind_runs(times, max_isi_start, max_isi_burst)
+        runs = _jitmerge_close_runs(times, *runs, min_inter_burst_interval)
+        return _jitdrop_small_runs(
+            times, *runs, min_burst_duration, min_spikes_in_burst
+        )
 
     return _apply(spikes, find_bursts)
 
@@ -392,20 +450,21 @@ def _log_isi_bursts_single(spikes, max_cutoff, min_spikes_in_burst, fallback):
     """logISI bursts of one Ts. Returns (bursts, whether a threshold was missing)."""
     has_peak, threshold = _log_isi_valley(spikes, max_cutoff)
     no_valley = threshold is None or threshold >= 1.0
+    max_cutoff = float(max_cutoff)
 
     def find_bursts(times):
         if not has_peak or (no_valley and not fallback):
-            return []
+            return _no_runs()
         if no_valley:
-            runs = _find_runs(times, max_cutoff, max_cutoff)
-            return _drop_small_runs(times, runs, 0, min_spikes_in_burst)
+            runs = _jitfind_runs(times, max_cutoff, max_cutoff)
+            return _jitdrop_small_runs(times, *runs, 0.0, min_spikes_in_burst)
         if threshold > max_cutoff:
-            cores = _find_runs(times, max_cutoff, max_cutoff)
-            cores = _merge_close_runs(times, cores, threshold)
-            cores = _drop_small_runs(times, cores, 0, min_spikes_in_burst)
-            return _extend_to_related_spikes(times, cores, threshold)
-        runs = _find_runs(times, threshold, threshold)
-        return _drop_small_runs(times, runs, 0, min_spikes_in_burst)
+            cores = _jitfind_runs(times, max_cutoff, max_cutoff)
+            cores = _jitmerge_close_runs(times, *cores, threshold)
+            cores = _jitdrop_small_runs(times, *cores, 0.0, min_spikes_in_burst)
+            return _jitextend_to_related_spikes(times, *cores, threshold)
+        runs = _jitfind_runs(times, threshold, threshold)
+        return _jitdrop_small_runs(times, *runs, 0.0, min_spikes_in_burst)
 
     return (
         _detect_per_epoch(spikes, find_bursts),
@@ -468,8 +527,8 @@ def _detect_bursts_instantaneous_rate(
     max_isi = 1.0 / rate_threshold
 
     def find_bursts(times):
-        runs = _find_runs(times, max_isi, max_isi)
-        return _drop_small_runs(times, runs, 0, min_spikes_in_burst)
+        runs = _jitfind_runs(times, max_isi, max_isi)
+        return _jitdrop_small_runs(times, *runs, 0.0, min_spikes_in_burst)
 
     return _apply(spikes, find_bursts)
 
@@ -479,7 +538,8 @@ def _detect_bursts_instantaneous_rate(
 # ---------------------------------------------------------------------------
 
 
-def _poisson_surprise(times, first, n_spikes, mean_isi):
+@jit(nopython=True, cache=True)
+def _jitpoisson_surprise(times, first, n_spikes, mean_isi):
     """
     Surprise of the `n_spikes` spikes starting at index `first`: -log of the
     probability that a Poisson process with the mean rate of the train has at
@@ -488,21 +548,48 @@ def _poisson_surprise(times, first, n_spikes, mean_isi):
     """
     # number of spikes expected in the duration of the group
     expected = (times[first + n_spikes - 1] - times[first]) / mean_isi
-    with np.errstate(divide="ignore"):
-        return -np.log(scipy.special.pdtrc(n_spikes - 2, expected))
+    if expected <= 0:
+        return np.inf
+    k = n_spikes - 1
+    # The probability of `k` or more spikes is a sum of Poisson terms. The terms
+    # decrease away from `expected`, so the sum runs over the shorter side.
+    if expected <= k:
+        term = math.exp(k * math.log(expected) - expected - math.lgamma(k + 1.0))
+        tail = term
+        j = k
+        while term > 1e-17 * tail:
+            j += 1
+            term *= expected / j
+            tail += term
+        if tail <= 0:
+            return np.inf
+        return -math.log(tail)
+    j = k - 1
+    term = math.exp(j * math.log(expected) - expected - math.lgamma(j + 1.0))
+    below = term
+    while j > 0 and term > 1e-17 * below:
+        term *= j / expected
+        j -= 1
+        below += term
+    return -math.log1p(-below)
 
 
-def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
+@jit(nopython=True, cache=True)
+def _jitpoisson_surprise_bursts(times, mean_isi, isi_thresh):
     """
     Bursts of the Poisson surprise method, translated from `PS_method.R` of
     Cotterill & Eglen (2018) (`si.find.bursts.thresh` and
     `si.find.burst.thresh2`), with 0-based indices. `first` and `n_spikes` are
-    `n` and `i` of the R code. Returns (first, last, surprise).
+    `n` and `i` of the R code. Returns the first spike index, the last spike
+    index and the surprise of each burst.
     """
     n_total = len(times)
     start_isi = mean_isi / 2
-    isi_thresh = 2 * mean_isi if max_isi_burst is None else max_isi_burst
-    bursts = []
+    # a burst has at least three spikes and bursts do not overlap
+    burst_first = np.empty(n_total // 3, dtype=np.int64)
+    burst_last = np.empty(n_total // 3, dtype=np.int64)
+    burst_surprise = np.empty(n_total // 3, dtype=np.float64)
+    count = 0
     first = 0
     # Unlike the R code (`n < nspikes - 2`, 1-based), the last three spikes are
     # also tested as the start of a burst.
@@ -517,7 +604,7 @@ def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
         # Phase 1: add spikes to the end while the surprise increases, looking up
         # to 10 spikes ahead, but not past an ISI longer than `isi_thresh`.
         n_spikes = 3
-        s = _poisson_surprise(times, first, n_spikes, mean_isi)
+        s = _jitpoisson_surprise(times, first, n_spikes, mean_isi)
         while True:
             n_spikes_cur = n_spikes
             check = min(10, n_total - (n_spikes + first))
@@ -532,7 +619,7 @@ def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
                 if times[first + n_spikes] - times[first + n_spikes - 1] > isi_thresh:
                     break
                 n_spikes += 1
-                s_new = _poisson_surprise(times, first, n_spikes, mean_isi)
+                s_new = _jitpoisson_surprise(times, first, n_spikes, mean_isi)
                 if s_new > s:
                     improved = True
                     break
@@ -543,30 +630,30 @@ def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
 
         # Phase 2: drop spikes from the start while the surprise increases.
         while n_spikes > 3:
-            s_new = _poisson_surprise(times, first + 1, n_spikes - 1, mean_isi)
+            s_new = _jitpoisson_surprise(times, first + 1, n_spikes - 1, mean_isi)
             if not s_new > s:
                 break
             first, n_spikes, s = first + 1, n_spikes - 1, s_new
 
-        bursts.append((first, first + n_spikes - 1, s))
+        burst_first[count] = first
+        burst_last[count] = first + n_spikes - 1
+        burst_surprise[count] = s
+        count += 1
         first += n_spikes
-    return bursts
+    return burst_first[:count], burst_last[:count], burst_surprise[:count]
 
 
 def _poisson_surprise_single(spikes, min_surprise, max_isi_burst):
     isi = _interspike_intervals(spikes)
     if len(isi) == 0:
-        return _detect_per_epoch(spikes, lambda times: [])
-    mean_isi = isi.mean()
+        return _detect_per_epoch(spikes, lambda times: _no_runs())
+    mean_isi = float(isi.mean())
+    isi_thresh = 2 * mean_isi if max_isi_burst is None else float(max_isi_burst)
 
     def find_bursts(times):
-        return [
-            (first, last)
-            for first, last, s in _poisson_surprise_bursts(
-                times, mean_isi, max_isi_burst
-            )
-            if s >= min_surprise
-        ]
+        first, last, surprise = _jitpoisson_surprise_bursts(times, mean_isi, isi_thresh)
+        keep = surprise >= min_surprise
+        return first[keep], last[keep]
 
     return _detect_per_epoch(spikes, find_bursts)
 
