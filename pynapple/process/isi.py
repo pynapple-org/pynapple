@@ -504,7 +504,9 @@ def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
     isi_thresh = 2 * mean_isi if max_isi_burst is None else max_isi_burst
     bursts = []
     n = 0
-    while n < n_total - 3:
+    # Unlike the R code (`n < nspikes - 2`, 1-based), the last three spikes are
+    # also tested as the start of a burst.
+    while n + 2 < n_total:
         if not (
             times[n + 1] - times[n] < start_isi
             and times[n + 2] - times[n + 1] < start_isi

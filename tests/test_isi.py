@@ -232,16 +232,9 @@ def test_bursts_do_not_span_time_support_gaps(method):
     assert np.all(bursts.end <= epochs.end.max())
     in_gap = (bursts.start < cut) & (bursts.end > cut)
     assert not np.any(in_gap)
-    if method == "poisson_surprise":
-        # as in the R code, a burst cannot start at the last 3 spikes of a
-        # train, so only the 3 spikes after the gap form a burst
-        assert len(bursts) == 100
-        n_spikes = np.asarray(bursts.n_spikes)
-        assert np.sum(n_spikes == 3) == 1
-        assert bursts.start[n_spikes == 3][0] > cut
-    else:
-        assert len(bursts) == 101
-        assert np.sum(np.asarray(bursts.n_spikes) == 3) == 2
+    # the 3 spikes before the gap and the 3 spikes after it each form a burst
+    assert len(bursts) == 101
+    assert np.sum(np.asarray(bursts.n_spikes) == 3) == 2
 
 
 @pytest.mark.parametrize(
