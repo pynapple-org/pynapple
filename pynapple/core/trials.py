@@ -1481,15 +1481,17 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     Parameters
     ----------
     source : Tsd, TsdFrame, or TsdTensor
-        Uniformly sampled source data containing at least two samples.
-        Columns and column metadata are retained for a
-        :class:`~pynapple.TsdFrame` source. Tensor dimensions are positional
-        and have no associated labels or metadata.
+        Source data containing at least two samples.
+        Timestamps are linearly interpolated to a uniform grid.
+        Columns and column metadata are retained for a TsdFrame source.
+        Tensor dimensions are positional and have no labels or metadata.
     trials : IntervalSet
-        Trial intervals in the same time reference as the source.
-        Trial starts must coincide with source samples within numerical
-        tolerance, and the source must contain the required samples.
+        Trial intervals in the source recording time reference.
+        Trial starts need not coincide with source samples.
         Interval metadata is retained as trial metadata.
+    sample_period : float
+        Sampling interval in seconds for the shared relative time grid.
+
 
     Attributes
     ----------
@@ -1539,15 +1541,25 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     Notes
     -----
-    Construction copies source samples without interpolation. Samples
-    at both trial boundaries are included within numerical tolerance.
-    The shared relative time grid is reconstructed from the estimated
-    sampling interval.
+    Construction linearly interpolates source values onto a shared grid
+    starting at relative time zero, with spacing ``sample_period``.
+    Each trial is evaluated at its start plus these relative timestamps.
+    Trial endpoints are included only when they lie on the grid, within
+    numerical tolerance.
 
-    The ``valid`` mask describes sample availability, not whether values
-    are finite. A valid sample can contain NaN from the source data.
-    Use ``np.nanmean`` rather than ``np.mean`` when NaN padding should
-    be excluded from an average.
+    Interpolation is performed independently for every trailing coordinate.
+    Source NaNs are not removed or filled: evaluating a source NaN or
+    interpolating between samples when either endpoint is NaN produces NaN.
+
+    Interpolation may use source samples outside the trial boundaries, but
+    never crosses separate source time-support intervals. No extrapolation
+    is performed beyond the available samples, apart from clipping numerical
+    roundoff at the boundaries.
+
+    The ``valid`` mask describes interpolation availability, not whether
+    values are finite. Samples outside a trial or without source coverage
+    are invalid and contain NaN. Samples affected by source NaNs remain
+    valid but contain NaN.
 
     Indexing follows the axis order ``(trial, time, ...)``.
     Trial scalar/list selectors use original trial identifiers.
@@ -1689,31 +1701,25 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         self,
         source: Tsd | TsdFrame | TsdTensor,
         trials: IntervalSet,
+        *,
+        sample_period: float,
     ) -> None:
         if not isinstance(source, (Tsd, TsdFrame, TsdTensor)):
             raise TypeError("source must be a Tsd, TsdFrame, or TsdTensor.")
         if not isinstance(trials, IntervalSet):
             raise TypeError("trials must be an IntervalSet.")
 
+        sample_period = float(sample_period)
+        if not np.isfinite(sample_period) or sample_period <= 0:
+            raise ValueError("sample_period must be finite and positive.")
+
         timestamps = np.asarray(source.t, dtype=float)
         if len(timestamps) < 2:
             raise ValueError("source must contain at least two samples.")
-
-        differences = np.diff(timestamps)
-        sample_period = float((timestamps[-1] - timestamps[0]) / (len(timestamps) - 1))
-
-        tolerance = max(
-            abs(sample_period) * 1e-6,
-            np.finfo(float).eps * 32,
-        )
-
-        if sample_period <= 0 or not np.allclose(
-            differences,
-            sample_period,
-            rtol=1e-6,
-            atol=tolerance,
-        ):
-            raise ValueError("source must be uniformly sampled.")
+        if not np.isfinite(timestamps).all() or np.any(np.diff(timestamps) <= 0):
+            raise ValueError(
+                "source timestamps must be finite and strictly increasing."
+            )
 
         self.sample_period = sample_period
         self.bin_size = None
@@ -1729,8 +1735,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         self.window_ends = ends - starts
         self.durations = self.window_ends - self.window_starts
 
-        source_values = np.asarray(source.d)
-
         if isinstance(source, TsdFrame):
             self.feature_names = pd.Index(source.columns)
             self.feature_metadata = _copy_metadata(source)
@@ -1738,17 +1742,13 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             self.feature_names = None
             self.feature_metadata = None
 
-        (
-            self.values,
-            self.time,
-            self.valid,
-        ) = self._align_source(
+        self.values, self.time, self.valid = self._align_source(
             timestamps=timestamps,
-            source_values=source_values,
-            starts=np.asarray(trials.start, dtype=float),
+            source_values=np.asarray(source.d),
+            starts=starts,
             durations=self.durations,
             sample_period=sample_period,
-            tolerance=tolerance,
+            time_support=source.time_support,
         )
 
     @classmethod
@@ -1911,65 +1911,63 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         starts: np.ndarray,
         durations: np.ndarray,
         sample_period: float,
-        tolerance: float,
+        time_support: IntervalSet,
     ) -> tuple[np.ndarray, TsIndex, np.ndarray]:
-        """Align uniformly sampled data to trial starts."""
-        n_trials = len(starts)
+        """Interpolate trials without extrapolating or removing source NaNs."""
+        tolerance = max(sample_period * 1e-6, np.finfo(float).eps * 32)
         sample_counts = (
             np.floor((durations + tolerance) / sample_period).astype(int) + 1
         )
         max_samples = int(sample_counts.max()) if len(sample_counts) else 0
 
-        time = np.arange(max_samples) * sample_period
-        valid = time[None, :] <= durations[:, None] + tolerance
+        time = TsIndex(np.arange(max_samples) * sample_period)
+        relative_time = time.values
+        absolute_time = starts[:, None] + relative_time[None, :]
+        inside_trials = relative_time[None, :] <= durations[:, None] + tolerance
 
         trailing_shape = source_values.shape[1:]
+        n_features = int(np.prod(trailing_shape))
+        source_flat = source_values.reshape(len(timestamps), n_features)
+
         values = np.full(
-            (n_trials, max_samples, *trailing_shape),
+            (len(starts), max_samples, n_features),
             np.nan,
             dtype=np.result_type(source_values.dtype, float),
         )
+        valid = np.zeros((len(starts), max_samples), dtype=bool)
 
-        for trial, start in enumerate(starts):
-            insertion = np.searchsorted(timestamps, start)
-            candidates = np.clip(
-                [insertion - 1, insertion],
-                0,
-                len(timestamps) - 1,
+        for start, end in zip(time_support.start, time_support.end):
+            left = np.searchsorted(timestamps, start, side="left")
+            right = np.searchsorted(timestamps, end, side="right")
+            if left == right:
+                continue
+
+            source_time = timestamps[left:right]
+            available = (
+                inside_trials
+                & (absolute_time >= source_time[0] - tolerance)
+                & (absolute_time <= source_time[-1] + tolerance)
             )
-            start_index = int(
-                candidates[np.argmin(np.abs(timestamps[candidates] - start))]
+            query = np.clip(
+                absolute_time[available],
+                source_time[0],
+                source_time[-1],
             )
 
-            if abs(timestamps[start_index] - start) > tolerance:
-                raise ValueError(
-                    "Trial starts must align with the source sampling grid."
+            for feature in range(n_features):
+                values[:, :, feature][available] = np.interp(
+                    query,
+                    source_time,
+                    source_flat[left:right, feature],
                 )
 
-            count = int(valid[trial].sum())
-            stop_index = start_index + count
+            valid |= available
 
-            if stop_index > len(timestamps):
-                raise ValueError(
-                    "Trial intervals must be contained within the source time range."
-                )
-
-            expected = start + np.arange(count) * sample_period
-            actual = timestamps[start_index:stop_index]
-
-            if not np.allclose(
-                actual,
-                expected,
-                rtol=1e-6,
-                atol=tolerance,
-            ):
-                raise ValueError(
-                    "Source samples do not align consistently across trials."
-                )
-
-            values[trial, :count] = source_values[start_index:stop_index]
-
-        return values, TsIndex(time), valid
+        return (
+            values.reshape(len(starts), max_samples, *trailing_shape),
+            time,
+            valid,
+        )
 
     @property
     def shape(self) -> tuple[int, ...]:

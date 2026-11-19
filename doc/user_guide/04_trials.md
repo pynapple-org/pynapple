@@ -193,7 +193,7 @@ signals = nap.TsdFrame(
     d=values,
     columns=["signal_1", "signal_2"],
 )
-signal_trials = nap.TsdTrials(source=signals, trials=trials)
+signal_trials = nap.TsdTrials(source=signals, trials=trials, sample_period=0.01)
 signal_trials
 ```
 
@@ -224,7 +224,7 @@ first_signal = signal_trials[:, :, "signal_1"]
 first_signal
 ```
 This returns a scalar [`TsdTrials`](pynapple.TsdTrials) object with shape
-`(trial, time)`. Use `["signal_1"]` instead to retain the feature axis.
+`(trial, time)`.
 
 ### Extracting a time window
 Time is expressed relative to each trial's start.
@@ -475,7 +475,7 @@ movie = nap.TsdTensor(
     t=t,
     d=movie_rng.normal(size=(len(t), 4, 5)),
 )
-movie_trials = nap.TsdTrials(source=movie, trials=trials)
+movie_trials = nap.TsdTrials(source=movie, trials=trials, sample_period=0.1)
 movie_trials.shape
 ```
 

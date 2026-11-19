@@ -1,4 +1,4 @@
-"""Tests for trial-aligned timestamps and sampled data."""
+"""Tests for trial-aligned objects."""
 
 from __future__ import annotations
 
@@ -11,6 +11,113 @@ from scipy import signal
 
 import pynapple as nap
 from pynapple.core.trials import _count_timestamps, _format_axes
+
+REDUCTIONS = [
+    np.mean,
+    np.nanmean,
+    np.sum,
+    np.nansum,
+    np.std,
+    np.nanstd,
+    np.var,
+    np.nanvar,
+    np.min,
+    np.nanmin,
+    np.max,
+    np.nanmax,
+    np.median,
+    np.nanmedian,
+    np.prod,
+    np.nanprod,
+    np.all,
+    np.any,
+]
+
+
+# Fixtures and helpers
+
+
+def make_source(
+    time: np.ndarray,
+    values: np.ndarray,
+) -> nap.Tsd | nap.TsdFrame | nap.TsdTensor:
+    """Construct a time series matching the data dimensions."""
+    if values.ndim == 1:
+        return nap.Tsd(t=time, d=values)
+    if values.ndim == 2:
+        return nap.TsdFrame(t=time, d=values)
+    return nap.TsdTensor(t=time, d=values)
+
+
+def scalar_trials(trials: nap.TsdTrials) -> nap.TsdTrials:
+    """Select one trailing coordinate while retaining trial and time."""
+    if trials.ndim == 2:
+        return trials
+    if trials.ndim == 3:
+        return trials[:, :, trials.columns[0]]
+    return trials[(slice(None), slice(None)) + (0,) * (trials.ndim - 2)]
+
+
+def assert_same_axes(
+    actual: nap.TsdTrials,
+    expected: nap.TsdTrials,
+) -> None:
+    """Check axes, validity, and metadata after value-only operations."""
+    np.testing.assert_array_equal(actual.t, expected.t)
+    np.testing.assert_array_equal(actual.valid, expected.valid)
+    np.testing.assert_array_equal(actual.trial_ids, expected.trial_ids)
+    np.testing.assert_array_equal(actual.durations, expected.durations)
+    np.testing.assert_array_equal(actual.window_starts, expected.window_starts)
+    np.testing.assert_array_equal(actual.window_ends, expected.window_ends)
+
+    assert actual.alignment == expected.alignment
+    assert actual.sample_period == expected.sample_period
+    assert actual.bin_size == expected.bin_size
+    assert actual.data_kind == expected.data_kind
+    assert actual._windowed == expected._windowed
+
+    np.testing.assert_array_equal(
+        actual.trials.values,
+        expected.trials.values,
+    )
+    for column in expected.trials.metadata_columns:
+        np.testing.assert_array_equal(
+            actual.trials[column],
+            expected.trials[column],
+        )
+
+    if expected.feature_names is None:
+        assert actual.feature_names is None
+        assert actual.feature_metadata is None
+    else:
+        np.testing.assert_array_equal(actual.columns, expected.columns)
+        np.testing.assert_array_equal(
+            actual.feature_metadata.columns,
+            expected.feature_metadata.columns,
+        )
+        for column in expected.feature_metadata.columns:
+            np.testing.assert_array_equal(
+                actual.feature_metadata[column],
+                expected.feature_metadata[column],
+            )
+
+
+def assert_time_series(
+    actual: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
+    time: np.ndarray,
+    values: np.ndarray,
+) -> None:
+    """Check the output type, timestamps, and values."""
+    expected_type = (
+        nap.Tsd
+        if values.ndim == 1
+        else nap.TsdFrame
+        if values.ndim == 2
+        else nap.TsdTensor
+    )
+    assert isinstance(actual, expected_type)
+    np.testing.assert_array_equal(actual.t, time)
+    np.testing.assert_allclose(actual.d, values, equal_nan=True)
 
 
 @pytest.fixture
@@ -65,27 +172,39 @@ def ts_trials(
     return nap.TsTrials(spike_source, intervals)
 
 
-@pytest.fixture(params=["scalar", "frame"])
-def sampled_source(request: pytest.FixtureRequest) -> nap.Tsd | nap.TsdFrame:
+@pytest.fixture(params=["scalar", "frame", "matrix", "tensor"])
+def sampled_source(
+    request: pytest.FixtureRequest,
+) -> nap.Tsd | nap.TsdFrame | nap.TsdTensor:
     time = np.arange(57) / 4
 
     if request.param == "scalar":
         return nap.Tsd(t=time, d=time)
 
-    return nap.TsdFrame(
-        t=time,
-        d=np.column_stack([time, -time]),
-        columns=["x", "y"],
-        metadata={"region": ["ca1", "ca3"]},
-    )
+    if request.param == "frame":
+        return nap.TsdFrame(
+            t=time,
+            d=np.column_stack([time, -time]),
+            columns=["x", "y"],
+            metadata={"region": ["ca1", "ca3"]},
+        )
+
+    trailing_shape = (2, 3) if request.param == "matrix" else (2, 1, 3)
+    shape = (len(time), *trailing_shape)
+    values = np.arange(np.prod(shape), dtype=float).reshape(shape) / 100
+    return nap.TsdTensor(t=time, d=values)
 
 
 @pytest.fixture
 def tsd_trials(
-    sampled_source: nap.Tsd | nap.TsdFrame,
+    sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
     intervals: nap.IntervalSet,
 ) -> nap.TsdTrials:
-    return nap.TsdTrials(sampled_source, intervals)
+    return nap.TsdTrials(
+        sampled_source,
+        intervals,
+        sample_period=0.25,
+    )
 
 
 @pytest.fixture(params=["timestamps", "sampled", "counts"])
@@ -101,36 +220,7 @@ def trial_data(
     return ts_trials.count(0.5)
 
 
-def assert_same_axes(actual: nap.TsdTrials, expected: nap.TsdTrials) -> None:
-    """Check axes, validity, and metadata after value-only operations."""
-    np.testing.assert_array_equal(actual.t, expected.t)
-    np.testing.assert_array_equal(actual.valid, expected.valid)
-    np.testing.assert_array_equal(actual.trial_ids, expected.trial_ids)
-    np.testing.assert_array_equal(actual.durations, expected.durations)
-    np.testing.assert_array_equal(actual.window_starts, expected.window_starts)
-    np.testing.assert_array_equal(actual.window_ends, expected.window_ends)
-
-    assert actual.alignment == expected.alignment
-    assert actual.sample_period == expected.sample_period
-    assert actual.bin_size == expected.bin_size
-    assert actual.data_kind == expected.data_kind
-
-    for column in expected.trials.metadata_columns:
-        np.testing.assert_array_equal(
-            actual.trials[column],
-            expected.trials[column],
-        )
-
-    if expected.feature_names is None:
-        assert actual.feature_names is None
-        assert actual.feature_metadata is None
-    else:
-        np.testing.assert_array_equal(actual.columns, expected.columns)
-        for column in expected.feature_metadata.columns:
-            np.testing.assert_array_equal(
-                actual.feature_metadata[column],
-                expected.feature_metadata[column],
-            )
+# Timestamp trials
 
 
 class TestTsTrials:
@@ -147,7 +237,7 @@ class TestTsTrials:
         np.testing.assert_array_equal(ts_trials.trial_ids, intervals.index)
         np.testing.assert_array_equal(ts_trials.unit_keys, [10, 20])
         np.testing.assert_allclose(ts_trials.durations, [2.0, 1.5, 3.0])
-        np.testing.assert_array_equal(ts_trials.window_starts, [0.0, 0.0, 0.0])
+        np.testing.assert_array_equal(ts_trials.window_starts, [0.0] * 3)
         np.testing.assert_allclose(ts_trials.window_ends, [2.0, 1.5, 3.0])
 
         for trial_id, start, end in zip(
@@ -221,7 +311,7 @@ class TestTsTrials:
         unit: int,
     ) -> None:
         result = ts_trials[trial, unit]
-        trial_position = np.flatnonzero(ts_trials.trial_ids == trial)[0]
+        position = np.flatnonzero(ts_trials.trial_ids == trial)[0]
         selected = (ts_trials.trial_index == trial) & (ts_trials.unit_index == unit)
 
         assert isinstance(result, nap.Ts)
@@ -231,11 +321,11 @@ class TestTsTrials:
         )
         np.testing.assert_allclose(
             result.time_support.start,
-            [ts_trials.window_starts[trial_position]],
+            [ts_trials.window_starts[position]],
         )
         np.testing.assert_allclose(
             result.time_support.end,
-            [ts_trials.window_ends[trial_position]],
+            [ts_trials.window_ends[position]],
         )
 
     def test_trial_group(self, ts_trials: nap.TsTrials) -> None:
@@ -269,18 +359,13 @@ class TestTsTrials:
 
         assert isinstance(result, nap.TsTrials)
         assert result.shape == (len(positions), 2)
-
         np.testing.assert_array_equal(
             result.trial_ids,
             ts_trials.trial_ids[positions],
         )
         np.testing.assert_array_equal(
-            result.trials.start,
-            ts_trials.trials.start[positions],
-        )
-        np.testing.assert_array_equal(
-            result.trials.end,
-            ts_trials.trials.end[positions],
+            result.trials.values,
+            ts_trials.trials.values[positions],
         )
         np.testing.assert_array_equal(
             result.durations,
@@ -305,7 +390,10 @@ class TestTsTrials:
 
         assert result.shape == (3, 1)
         np.testing.assert_array_equal(result.unit_keys, [20])
-        np.testing.assert_array_equal(result.unit_metadata["region"], ["ca3"])
+        np.testing.assert_array_equal(
+            result.unit_metadata["region"],
+            ["ca3"],
+        )
         np.testing.assert_array_equal(
             result.unit_index,
             np.full(len(result.timestamps), 20),
@@ -371,8 +459,14 @@ class TestTsTrials:
         np.testing.assert_allclose(restored.t, original.t)
         np.testing.assert_array_equal(restored.d, original.d)
         np.testing.assert_array_equal(restored.trial_ids, original.trial_ids)
-        np.testing.assert_allclose(restored.window_starts, original.window_starts)
-        np.testing.assert_allclose(restored.window_ends, original.window_ends)
+        np.testing.assert_allclose(
+            restored.window_starts,
+            original.window_starts,
+        )
+        np.testing.assert_allclose(
+            restored.window_ends,
+            original.window_ends,
+        )
         np.testing.assert_array_equal(restored.durations, original.durations)
 
     @pytest.mark.parametrize(
@@ -406,9 +500,9 @@ class TestTsTrials:
     def test_get(self, ts_trials: nap.TsTrials) -> None:
         result = ts_trials.get(0.5, 1.5)
 
-        np.testing.assert_allclose(result.window_starts, [0.5, 0.5, 0.5])
-        np.testing.assert_allclose(result.window_ends, [1.5, 1.5, 1.5])
-        np.testing.assert_allclose(result.durations, [1.0, 1.0, 1.0])
+        np.testing.assert_allclose(result.window_starts, [0.5] * 3)
+        np.testing.assert_allclose(result.window_ends, [1.5] * 3)
+        np.testing.assert_allclose(result.durations, [1.0] * 3)
         np.testing.assert_allclose(result[0, 10].t, [0.5, 1.0])
         np.testing.assert_allclose(result[1, 10].t, [0.5, 1.5])
         assert np.all(result.timestamps >= 0.5)
@@ -450,7 +544,7 @@ class TestTsTrials:
 
         assert result.shape == ts_trials.shape
         assert len(result.timestamps) == 0
-        np.testing.assert_array_equal(result.durations, [0.0, 0.0, 0.0])
+        np.testing.assert_array_equal(result.durations, [0.0] * 3)
 
     def test_to_tsdframe(self, ts_trials: nap.TsTrials) -> None:
         result = ts_trials.to_tsdframe()
@@ -468,101 +562,16 @@ class TestTsTrials:
             ts_trials.unit_index[order],
         )
 
-    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
-    @pytest.mark.parametrize(
-        "bin_size, time_units",
-        [(1.0, "s"), (1000.0, "ms"), (1_000_000.0, "us")],
-    )
-    def test_count(
-        self,
-        ts_trials: nap.TsTrials,
-        dtype: type,
-        bin_size: float,
-        time_units: str,
-    ) -> None:
-        result = ts_trials.count(bin_size, time_units=time_units, dtype=dtype)
-        expected = np.array(
-            [
-                [[2, 1], [1, 1], [np.nan, np.nan]],
-                [[2, 1], [np.nan, np.nan], [np.nan, np.nan]],
-                [[1, 1], [1, 1], [1, 0]],
-            ],
-            dtype=dtype,
-        )
-
-        assert isinstance(result, nap.TsdTrials)
-        assert result.data_kind == "count"
-        assert result.bin_size == 1.0
-        assert result.sample_period == 1.0
-        assert result.d.dtype == dtype
-        np.testing.assert_allclose(result.t, [0.5, 1.5, 2.5])
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-        np.testing.assert_array_equal(
-            result.valid,
-            [[True, True, False], [True, False, False], [True, True, True]],
-        )
-        np.testing.assert_array_equal(result.columns, [10, 20])
-        np.testing.assert_array_equal(
-            result.feature_metadata["region"],
-            ["ca1", "ca3"],
-        )
-
-    def test_count_negative_times(self, ts_trials: nap.TsTrials) -> None:
-        aligned = ts_trials.realign_to("cue")
-        result = aligned.count(0.5)
-
-        assert np.any(result.t < 0)
-        assert result.alignment == "cue"
-
-        for trial in range(3):
-            for time_index, center in enumerate(result.t):
-                left = center - 0.25
-                right = center + 0.25
-                if not result.valid[trial, time_index]:
-                    assert np.isnan(result.d[trial, time_index]).all()
-                    continue
-
-                for unit, unit_key in enumerate(aligned.unit_keys):
-                    spikes = aligned[trial, unit_key].t
-                    expected = np.sum((spikes >= left) & (spikes < right))
-                    assert result.d[trial, time_index, unit] == expected
-
-    @pytest.mark.parametrize(
-        "bin_size, error, message",
-        [
-            ("1", TypeError, "int or float"),
-            (0.0, ValueError, "positive"),
-            (-1.0, ValueError, "positive"),
-            (1e-12, ValueError, "at least one nanosecond"),
-        ],
-    )
-    def test_invalid_bin_size(
-        self,
-        ts_trials: nap.TsTrials,
-        bin_size: Any,
-        error: type[Exception],
-        message: str,
-    ) -> None:
-        with pytest.raises(error, match=message):
-            ts_trials.count(bin_size)
-
-    @pytest.mark.parametrize("dtype", [int, np.int32, bool])
-    def test_invalid_count_dtype(
-        self,
-        ts_trials: nap.TsTrials,
-        dtype: type,
-    ) -> None:
-        with pytest.raises(TypeError, match="floating-point"):
-            ts_trials.count(1.0, dtype=dtype)
-
     def test_event_array_properties(self, ts_trials: nap.TsTrials) -> None:
         subset = ts_trials[[2, 0], [20]]
 
         assert subset.t is subset.timestamps
         assert subset.d.shape == (len(subset.t), 2)
-
         np.testing.assert_array_equal(subset.trial_ids, [0, 2])
-        np.testing.assert_array_equal(np.unique(subset.trial_index), [0, 2])
+        np.testing.assert_array_equal(
+            np.unique(subset.trial_index),
+            [0, 2],
+        )
         np.testing.assert_array_equal(
             subset.unit_index,
             np.full(len(subset.t), 20),
@@ -575,7 +584,10 @@ class TestTsTrials:
         np.testing.assert_array_equal(converted.t, subset.t[order])
         np.testing.assert_array_equal(converted.d, subset.d[order])
 
-    def test_ids_survive_event_operations(self, ts_trials: nap.TsTrials) -> None:
+    def test_ids_survive_event_operations(
+        self,
+        ts_trials: nap.TsTrials,
+    ) -> None:
         subset = ts_trials[[2, 0], [20]]
         aligned = subset.realign_to("cue")
         windowed = aligned.get(-0.25, 0.75)
@@ -599,9 +611,7 @@ class TestTsTrials:
         np.testing.assert_array_equal(empty.trial_ids, [0, 2])
         assert empty.t.shape == (0,)
         assert empty.d.shape == (0, 2)
-
-        empty_counts = ts_trials[:0].count(0.5)
-        assert empty_counts.trial_ids.size == 0
+        assert ts_trials[:0].count(0.5).trial_ids.size == 0
 
     def test_unit_labels_and_slices(self, ts_trials: nap.TsTrials) -> None:
         selected = ts_trials[:, [20]]
@@ -629,15 +639,532 @@ class TestTsTrials:
             ts_trials[:, [10, 10]]
 
 
+# Counting
+
+
+class TestTrialCounts:
+    @pytest.mark.parametrize("dtype", [np.float32, np.float64])
+    @pytest.mark.parametrize(
+        "bin_size, time_units",
+        [(1.0, "s"), (1000.0, "ms"), (1_000_000.0, "us")],
+    )
+    def test_count(
+        self,
+        ts_trials: nap.TsTrials,
+        dtype: type,
+        bin_size: float,
+        time_units: str,
+    ) -> None:
+        result = ts_trials.count(
+            bin_size,
+            time_units=time_units,
+            dtype=dtype,
+        )
+        expected = np.array(
+            [
+                [[2, 1], [1, 1], [np.nan, np.nan]],
+                [[2, 1], [np.nan, np.nan], [np.nan, np.nan]],
+                [[1, 1], [1, 1], [1, 0]],
+            ],
+            dtype=dtype,
+        )
+
+        assert isinstance(result, nap.TsdTrials)
+        assert result.data_kind == "count"
+        assert result.bin_size == 1.0
+        assert result.sample_period == 1.0
+        assert result.d.dtype == dtype
+        np.testing.assert_allclose(result.t, [0.5, 1.5, 2.5])
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        np.testing.assert_array_equal(
+            result.valid,
+            [
+                [True, True, False],
+                [True, False, False],
+                [True, True, True],
+            ],
+        )
+        np.testing.assert_array_equal(result.columns, [10, 20])
+        np.testing.assert_array_equal(
+            result.feature_metadata["region"],
+            ["ca1", "ca3"],
+        )
+
+    def test_negative_times(self, ts_trials: nap.TsTrials) -> None:
+        aligned = ts_trials.realign_to("cue")
+        result = aligned.count(0.5)
+
+        assert np.any(result.t < 0)
+        assert result.alignment == "cue"
+
+        for trial in range(len(aligned)):
+            for time_index, center in enumerate(result.t):
+                if not result.valid[trial, time_index]:
+                    assert np.isnan(result.d[trial, time_index]).all()
+                    continue
+
+                left = center - 0.25
+                right = center + 0.25
+                for unit, unit_key in enumerate(aligned.unit_keys):
+                    spikes = aligned[trial, unit_key].t
+                    expected = np.sum((spikes >= left) & (spikes < right))
+                    assert result.d[trial, time_index, unit] == expected
+
+    @pytest.mark.parametrize(
+        "bin_size, error, message",
+        [
+            ("1", TypeError, "int or float"),
+            (0.0, ValueError, "positive"),
+            (-1.0, ValueError, "positive"),
+            (1e-12, ValueError, "at least one nanosecond"),
+        ],
+    )
+    def test_invalid_bin_size(
+        self,
+        ts_trials: nap.TsTrials,
+        bin_size: Any,
+        error: type[Exception],
+        message: str,
+    ) -> None:
+        with pytest.raises(error, match=message):
+            ts_trials.count(bin_size)
+
+    @pytest.mark.parametrize("dtype", [int, np.int32, bool])
+    def test_invalid_dtype(
+        self,
+        ts_trials: nap.TsTrials,
+        dtype: type,
+    ) -> None:
+        with pytest.raises(TypeError, match="floating-point"):
+            ts_trials.count(1.0, dtype=dtype)
+
+    @pytest.mark.parametrize("empty", [False, True])
+    def test_does_not_interpolate(
+        self,
+        ts_trials: nap.TsTrials,
+        monkeypatch: pytest.MonkeyPatch,
+        empty: bool,
+    ) -> None:
+        def unexpected_interpolation(**kwargs: Any) -> None:
+            pytest.fail("Counting must not interpolate.")
+
+        monkeypatch.setattr(
+            nap.TsdTrials,
+            "_align_source",
+            staticmethod(unexpected_interpolation),
+        )
+        trials = ts_trials[:0] if empty else ts_trials
+
+        result = trials.count(0.5)
+
+        assert result.data_kind == "count"
+        assert result.sample_period == 0.5
+        assert result.bin_size == 0.5
+        assert len(result) == len(trials)
+        np.testing.assert_allclose(np.diff(result.t), 0.5)
+
+    def test_get_requires_complete_bins(
+        self,
+        ts_trials: nap.TsTrials,
+    ) -> None:
+        counts = ts_trials.count(0.5)
+        result = counts.get(0.2, 1.3)
+
+        np.testing.assert_allclose(result.t, [0.75])
+        np.testing.assert_array_equal(result.d, counts.d[:, 1:2])
+
+    def test_unit_label_selection(self, ts_trials: nap.TsTrials) -> None:
+        counts = ts_trials.count(0.5)
+
+        np.testing.assert_array_equal(
+            counts[:, :, 20].d,
+            counts.d[:, :, 1],
+        )
+        np.testing.assert_array_equal(counts[:, :, [20]].columns, [20])
+
+        with pytest.raises(KeyError):
+            counts[:, :, 1]
+
+    def test_restore_count_kind(self, ts_trials: nap.TsTrials) -> None:
+        counts = ts_trials.count(0.5)
+        continuous = counts.replace_data(counts.d, data_kind="continuous")
+        restored = continuous.replace_data(
+            continuous.d,
+            data_kind="count",
+        )
+
+        assert_same_axes(restored, counts)
+        np.testing.assert_array_equal(
+            restored.get(0.2, 1.3).d,
+            counts.get(0.2, 1.3).d,
+        )
+
+    def test_replace_data(self, ts_trials: nap.TsTrials) -> None:
+        counts = ts_trials.realign_to("cue").count(0.5).get(-0.5, 1.5)
+        original = counts.d.copy()
+
+        result = counts.replace_data(np.full(counts.shape, 7))
+
+        np.testing.assert_array_equal(result.d[result.valid], 7)
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(counts.d, original)
+        assert_same_axes(result, counts)
+
+
+@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
+def test_count_timestamps(compiled: bool) -> None:
+    count_timestamps = _count_timestamps if compiled else _count_timestamps.py_func
+    valid = np.array([[True, False, True], [True, True, False]])
+
+    result = count_timestamps(
+        times_ns=np.array(
+            [-11, -10, -1, 0, 10, 19, 20, -10, 0, 9, 10],
+            dtype=np.int64,
+        ),
+        trial_index=np.array([0] * 7 + [1] * 4, dtype=np.int64),
+        unit_index=np.array(
+            [0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1],
+            dtype=np.int64,
+        ),
+        first_edge_ns=-10,
+        bin_size_ns=10,
+        valid=valid,
+        n_units=2,
+    )
+
+    expected = np.array(
+        [
+            [[2, 0], [0, 0], [0, 2]],
+            [[0, 1], [1, 1], [0, 0]],
+        ],
+        dtype=np.int64,
+    )
+
+    assert result.dtype == np.int64
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
+@pytest.mark.parametrize("shape", [(2, 3), (0, 3), (2, 0)])
+def test_count_timestamps_without_events(
+    compiled: bool,
+    shape: tuple[int, int],
+) -> None:
+    count_timestamps = _count_timestamps if compiled else _count_timestamps.py_func
+    empty = np.array([], dtype=np.int64)
+
+    result = count_timestamps(
+        times_ns=empty,
+        trial_index=empty,
+        unit_index=empty,
+        first_edge_ns=0,
+        bin_size_ns=10,
+        valid=np.ones(shape, dtype=bool),
+        n_units=2,
+    )
+
+    np.testing.assert_array_equal(
+        result,
+        np.zeros((*shape, 2), dtype=np.int64),
+    )
+
+
+# Interpolation
+
+
+class TestTsdTrialsInterpolation:
+    def test_sampling_interval_is_required(self) -> None:
+        source = nap.Tsd(t=[0.0, 1.0], d=[0.0, 1.0])
+
+        with pytest.raises(TypeError, match="sample_period"):
+            nap.TsdTrials(source, nap.IntervalSet(0.0, 1.0))
+
+    @pytest.mark.parametrize("sample_period", [0.0, -1.0, np.nan, np.inf])
+    def test_invalid_sampling_interval(
+        self,
+        sample_period: float,
+    ) -> None:
+        source = nap.Tsd(t=[0.0, 1.0], d=[0.0, 1.0])
+
+        with pytest.raises(ValueError, match="finite and positive"):
+            nap.TsdTrials(
+                source,
+                nap.IntervalSet(0.0, 1.0),
+                sample_period=sample_period,
+            )
+
+    def test_source_requires_two_samples(self) -> None:
+        source = nap.Tsd(
+            t=[0.0],
+            d=[0.0],
+            time_support=nap.IntervalSet(-2.0, 5.0),
+        )
+
+        with pytest.raises(ValueError, match="at least two samples"):
+            nap.TsdTrials(
+                source,
+                nap.IntervalSet(0.0, 1.0),
+                sample_period=0.5,
+            )
+
+    @pytest.mark.parametrize(
+        "timestamps, start, end, expected",
+        [
+            (
+                [0.0, 1.0, 2.5],
+                0.0,
+                1.0,
+                [0.0, 0.5, 1.0],
+            ),
+            (
+                [0.0, 1.0, 2.0],
+                0.5,
+                1.5,
+                [0.5, 1.0, 1.5],
+            ),
+            (
+                [0.0, 1.0, 2.0],
+                -1.0,
+                1.0,
+                [np.nan, np.nan, 0.0, 0.5, 1.0],
+            ),
+            (
+                [0.0, 1.0, 2.0],
+                0.0,
+                4.0,
+                [
+                    0.0,
+                    0.5,
+                    1.0,
+                    1.5,
+                    2.0,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                    np.nan,
+                ],
+            ),
+        ],
+    )
+    def test_nonuniform_or_partial_source(
+        self,
+        timestamps: list[float],
+        start: float,
+        end: float,
+        expected: list[float],
+    ) -> None:
+        source = nap.Tsd(
+            t=timestamps,
+            d=np.arange(len(timestamps), dtype=float),
+            time_support=nap.IntervalSet(-2.0, 5.0),
+        )
+
+        result = nap.TsdTrials(
+            source,
+            nap.IntervalSet(start, end),
+            sample_period=0.5,
+        )
+
+        np.testing.assert_allclose(result.d[0], expected, equal_nan=True)
+        np.testing.assert_array_equal(
+            result.valid[0],
+            np.isfinite(expected),
+        )
+        np.testing.assert_allclose(
+            result.t,
+            np.arange(len(expected)) * 0.5,
+        )
+        assert result.sample_period == 0.5
+
+    @pytest.mark.parametrize("trailing_shape", [(), (2,), (2, 3), (2, 1, 3)])
+    def test_linear_interpolation(
+        self,
+        trailing_shape: tuple[int, ...],
+    ) -> None:
+        time = np.array([0.0, 0.75, 1.5, 2.5])
+        n_features = int(np.prod(trailing_shape))
+        offsets = np.arange(n_features).reshape(trailing_shape)
+        values = 2 * time.reshape((-1,) + (1,) * len(trailing_shape)) + offsets
+        source = make_source(time, values)
+        original = source.d.copy()
+        intervals = nap.IntervalSet(
+            start=[0.125, 1.25],
+            end=[0.875, 2.25],
+            metadata={"condition": ["a", "b"]},
+        )
+
+        result = nap.TsdTrials(
+            source,
+            intervals,
+            sample_period=0.25,
+        )
+
+        assert result.shape == (2, 5, *trailing_shape)
+        np.testing.assert_array_equal(result.t, np.arange(5) / 4)
+        np.testing.assert_array_equal(result.valid.sum(axis=1), [4, 5])
+        np.testing.assert_array_equal(
+            result.trials["condition"],
+            ["a", "b"],
+        )
+
+        for trial, start in enumerate(intervals.start):
+            query = start + result.t[result.valid[trial]]
+            expected = 2 * query.reshape((-1,) + (1,) * len(trailing_shape)) + offsets
+            np.testing.assert_allclose(
+                result.d[trial, result.valid[trial]],
+                expected,
+            )
+
+        assert np.isnan(result.d[~result.valid]).all()
+        np.testing.assert_array_equal(source.d, original)
+
+    @pytest.mark.parametrize("trailing_shape", [(), (2,), (2, 3), (2, 1, 3)])
+    def test_preserves_source_nan(
+        self,
+        trailing_shape: tuple[int, ...],
+    ) -> None:
+        time = np.arange(4, dtype=float)
+        n_features = int(np.prod(trailing_shape))
+        values = np.broadcast_to(time[:, None], (4, n_features)).copy()
+        values[1, 0] = np.nan
+        values = values.reshape(4, *trailing_shape)
+        source = make_source(time, values)
+        original = source.d.copy()
+
+        result = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 3.0),
+            sample_period=0.5,
+        )
+        actual = result.d[0].reshape(7, n_features)
+        expected = np.broadcast_to(
+            result.t[:, None],
+            (7, n_features),
+        ).copy()
+        expected[1:4, 0] = np.nan
+
+        assert result.valid.all()
+        np.testing.assert_allclose(actual, expected, equal_nan=True)
+        np.testing.assert_array_equal(source.d, original)
+
+    def test_does_not_bridge_support_gaps(self) -> None:
+        source = nap.Tsd(
+            t=[0.0, 1.0, 3.0, 4.0],
+            d=[0.0, 1.0, 3.0, 4.0],
+            time_support=nap.IntervalSet(
+                start=[0.0, 3.0],
+                end=[1.0, 4.0],
+            ),
+        )
+
+        result = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 4.0),
+            sample_period=0.5,
+        )
+
+        valid = (result.t <= 1.0) | (result.t >= 3.0)
+        np.testing.assert_array_equal(result.valid[0], valid)
+        np.testing.assert_allclose(result.d[0, valid], result.t[valid])
+        assert np.isnan(result.d[0, ~valid]).all()
+
+    def test_omits_off_grid_endpoint(self) -> None:
+        source = nap.Tsd(t=[0.0, 1.0], d=[0.0, 1.0])
+
+        result = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 0.9),
+            sample_period=0.25,
+        )
+
+        np.testing.assert_array_equal(result.t, [0.0, 0.25, 0.5, 0.75])
+        np.testing.assert_array_equal(result.d[0], result.t)
+        np.testing.assert_allclose(result.window_ends, [0.9])
+        assert result.valid.all()
+
+    def test_inclusive_endpoints(self) -> None:
+        time = np.arange(6000) / 100
+        source = nap.Tsd(t=time, d=np.arange(6000, dtype=float))
+        trials = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 59.0),
+            sample_period=0.01,
+        )
+
+        assert trials.shape == (1, 5901)
+        assert trials.d[0, -1] == pytest.approx(
+            5900.0,
+            rel=0,
+            abs=1e-6,
+        )
+        assert trials.valid.all()
+
+        result = trials.get(10.0, 11.0)
+        expected = source.get(10.0, 11.0)
+
+        assert result.shape == (1, 101)
+        np.testing.assert_allclose(
+            result.t,
+            expected.t,
+            rtol=0,
+            atol=1e-8,
+        )
+        np.testing.assert_allclose(
+            result.d[0],
+            expected.d,
+            rtol=0,
+            atol=1e-6,
+        )
+        np.testing.assert_allclose(
+            result.d[0, [0, -1]],
+            [1000.0, 1100.0],
+            rtol=0,
+            atol=1e-6,
+        )
+        assert result.valid.all()
+
+    def test_get_long_recording_endpoints(self) -> None:
+        fs = 1000
+        duration = 2000
+        time = np.arange(fs * duration) / fs
+        source = nap.Tsd(t=time, d=np.arange(len(time), dtype=float))
+        trials = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, duration - 1.0),
+            sample_period=1 / fs,
+        )
+
+        for start in (43.0, 1500.0, 1998.0):
+            expected = source.get(start, start + 1.0)
+            result = trials.get(start, start + 1.0)
+
+            assert result.shape == (1, fs + 1)
+            np.testing.assert_allclose(
+                result.d[0],
+                expected.d,
+                rtol=0,
+                atol=1e-6,
+            )
+            np.testing.assert_allclose(
+                result.t,
+                expected.t,
+                rtol=0,
+                atol=1e-9,
+            )
+
+
+# Sampled trials: scalar, frame, and tensor
+
+
 class TestTsdTrials:
     def test_create(
         self,
         tsd_trials: nap.TsdTrials,
-        sampled_source: nap.Tsd | nap.TsdFrame,
+        sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
         intervals: nap.IntervalSet,
     ) -> None:
         assert len(tsd_trials) == 3
-        assert tsd_trials.shape[:2] == (3, 13)
+        assert tsd_trials.shape == (3, 13, *sampled_source.shape[1:])
         assert tsd_trials.sample_period == pytest.approx(0.25)
         assert tsd_trials.bin_size is None
         assert tsd_trials.data_kind == "continuous"
@@ -661,53 +1188,26 @@ class TestTsdTrials:
 
     def test_single_trial(self, tsd_trials: nap.TsdTrials) -> None:
         result = tsd_trials[1]
-        expected_type = nap.Tsd if tsd_trials.ndim == 2 else nap.TsdFrame
 
-        assert isinstance(result, expected_type)
-        np.testing.assert_allclose(result.t, tsd_trials.t[:7])
-        np.testing.assert_allclose(result.d, tsd_trials.d[1, :7])
+        assert_time_series(
+            result,
+            tsd_trials.t[:7],
+            tsd_trials.d[1, :7],
+        )
         np.testing.assert_allclose(result.time_support.start, [0.0])
         np.testing.assert_allclose(result.time_support.end, [1.5])
 
         if isinstance(result, nap.TsdFrame):
             np.testing.assert_array_equal(result.columns, ["x", "y"])
-            np.testing.assert_array_equal(result["region"], ["ca1", "ca3"])
-
-    def test_feature_selection(self, tsd_trials: nap.TsdTrials) -> None:
-        if tsd_trials.ndim == 2:
-            return
-
-        scalar = tsd_trials[:, :, "y"]
-        frame = tsd_trials[:, :, ["y"]]
-
-        assert scalar.ndim == 2
-        assert scalar.feature_names is None
-        np.testing.assert_allclose(
-            scalar.d,
-            tsd_trials.d[:, :, 1],
-            equal_nan=True,
-        )
-
-        assert frame.shape == (3, 13, 1)
-        np.testing.assert_array_equal(frame.columns, ["y"])
-        np.testing.assert_array_equal(frame.feature_metadata["region"], ["ca3"])
-        assert isinstance(tsd_trials[0, :, "y"], nap.Tsd)
-
-    def test_get(self, tsd_trials: nap.TsdTrials) -> None:
-        result = tsd_trials.get(0.5, 1.5)
-
-        np.testing.assert_allclose(result.t, [0.5, 0.75, 1.0, 1.25, 1.5])
-        np.testing.assert_allclose(
-            result.d,
-            tsd_trials.d[:, 2:7],
-            equal_nan=True,
-        )
-        np.testing.assert_allclose(result.window_starts, [0.5, 0.5, 0.5])
-        np.testing.assert_allclose(result.window_ends, [1.5, 1.5, 1.5])
-        np.testing.assert_allclose(result.durations, [1.0, 1.0, 1.0])
+            np.testing.assert_array_equal(
+                result["region"],
+                ["ca1", "ca3"],
+            )
 
     def test_columns(self, tsd_trials: nap.TsdTrials) -> None:
-        if tsd_trials.ndim == 2:
+        if tsd_trials.ndim != 3:
+            assert tsd_trials.feature_names is None
+            assert tsd_trials.feature_metadata is None
             with pytest.raises(AttributeError, match="has columns"):
                 _ = tsd_trials.columns
         else:
@@ -717,23 +1217,104 @@ class TestTsdTrials:
                 ["ca1", "ca3"],
             )
 
+    def test_feature_selection(self, tsd_trials: nap.TsdTrials) -> None:
+        if tsd_trials.ndim != 3:
+            pytest.skip("Requires frame-like trial data.")
+
+        scalar = tsd_trials[:, :, "y"]
+        frame = tsd_trials[:, :, ["y"]]
+
+        assert scalar.ndim == 2
+        assert scalar.feature_names is None
+        assert scalar.feature_metadata is None
+        np.testing.assert_array_equal(scalar.d, tsd_trials.d[:, :, 1])
+
+        assert frame.shape == (3, 13, 1)
+        np.testing.assert_array_equal(frame.columns, ["y"])
+        np.testing.assert_array_equal(
+            frame.feature_metadata["region"],
+            ["ca3"],
+        )
+        assert isinstance(tsd_trials[0, :, "y"], nap.Tsd)
+
+    def test_feature_labels_and_slices(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        if tsd_trials.ndim != 3:
+            pytest.skip("Requires frame-like trial data.")
+
+        selected = tsd_trials[:, :, ["y"]]
+        sliced = tsd_trials[:, :, 1:]
+        np.testing.assert_array_equal(selected.d, sliced.d)
+        assert_same_axes(selected, sliced)
+
+        reordered = tsd_trials[:, :, ["y", "x"]]
+        np.testing.assert_array_equal(reordered.columns, ["y", "x"])
+        np.testing.assert_array_equal(
+            reordered.d,
+            tsd_trials.d[:, :, [1, 0]],
+        )
+        np.testing.assert_array_equal(
+            reordered.feature_metadata["region"],
+            ["ca3", "ca1"],
+        )
+
+        with pytest.raises(KeyError):
+            tsd_trials[:, :, 0]
+
+        with pytest.raises(ValueError, match="Repeated feature labels"):
+            tsd_trials[:, :, ["x", "x"]]
+
+    def test_get(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials.get(0.5, 1.5)
+
+        np.testing.assert_allclose(result.t, [0.5, 0.75, 1.0, 1.25, 1.5])
+        np.testing.assert_array_equal(result.d, tsd_trials.d[:, 2:7])
+        np.testing.assert_array_equal(
+            result.valid,
+            tsd_trials.valid[:, 2:7],
+        )
+        np.testing.assert_allclose(result.window_starts, [0.5] * 3)
+        np.testing.assert_allclose(result.window_ends, [1.5] * 3)
+        np.testing.assert_allclose(result.durations, [1.0] * 3)
+
+    def test_get_partial_windows(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials.get(0.5, 2.5)
+
+        np.testing.assert_array_equal(result.t, tsd_trials.t[2:11])
+        np.testing.assert_array_equal(result.d, tsd_trials.d[:, 2:11])
+        np.testing.assert_array_equal(
+            result.valid,
+            tsd_trials.valid[:, 2:11],
+        )
+        np.testing.assert_allclose(result.window_starts, [0.5] * 3)
+        np.testing.assert_allclose(result.window_ends, [2.0, 1.5, 2.5])
+        np.testing.assert_allclose(result.durations, [1.5, 1.0, 2.0])
+        assert np.isnan(result.d[~result.valid]).all()
+
     def test_ellipsis_last_axis(self, tsd_trials: nap.TsdTrials) -> None:
         key = "x" if tsd_trials.ndim == 3 else 0
         result = tsd_trials[..., key]
-        expected = tsd_trials.d[..., 0]
         actual = result.d if isinstance(result, nap.TsdTrials) else result
 
-        np.testing.assert_array_equal(actual, expected)
+        np.testing.assert_array_equal(actual, tsd_trials.d[..., 0])
 
         if tsd_trials.ndim == 3:
-            assert isinstance(result, nap.TsdTrials)
             assert_same_axes(result, tsd_trials[:, :, "x"])
 
     def test_multiple_ellipses(self, tsd_trials: nap.TsdTrials) -> None:
         with pytest.raises(IndexError, match="one ellipsis"):
             tsd_trials[..., ...]
 
-    def test_orthogonal_selection(self, tsd_trials: nap.TsdTrials) -> None:
+    def test_no_new_axis(self, tsd_trials: nap.TsdTrials) -> None:
+        with pytest.raises(IndexError, match="None"):
+            tsd_trials[None]
+
+    def test_orthogonal_selection(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
         trial_positions = [0, 2]
         time_positions = [0, 2, 4]
         result = tsd_trials[trial_positions, time_positions]
@@ -744,15 +1325,11 @@ class TestTsdTrials:
         )
 
         assert isinstance(result, nap.TsdTrials)
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        np.testing.assert_array_equal(result.d, expected)
         np.testing.assert_allclose(result.t, [0.0, 0.5, 1.0])
         np.testing.assert_array_equal(
-            result.trials.start,
-            tsd_trials.trials.start[trial_positions],
-        )
-        np.testing.assert_array_equal(
-            result.trials.end,
-            tsd_trials.trials.end[trial_positions],
+            result.trials.values,
+            tsd_trials.trials.values[trial_positions],
         )
         np.testing.assert_array_equal(
             result.valid,
@@ -791,115 +1368,50 @@ class TestTsdTrials:
         assert isinstance(result, nap.TsdTrials)
         np.testing.assert_array_equal(result.t, trials.t[positions])
         np.testing.assert_array_equal(result.d, trials.d[:, positions])
-        np.testing.assert_array_equal(result.valid, trials.valid[:, positions])
+        np.testing.assert_array_equal(
+            result.valid,
+            trials.valid[:, positions],
+        )
         np.testing.assert_array_equal(result.trial_ids, trials.trial_ids)
 
         for trial_position, trial_id in enumerate(trials.trial_ids):
             single = trials[trial_id, time_key]
             valid = trials.valid[trial_position, positions]
-            expected_type = nap.Tsd if trials.ndim == 2 else nap.TsdFrame
 
-            assert isinstance(single, expected_type)
-            np.testing.assert_array_equal(
-                single.t,
+            assert_time_series(
+                single,
                 trials.t[positions][valid],
-            )
-            np.testing.assert_array_equal(
-                single.d,
                 trials.d[trial_position, positions][valid],
             )
-
             if isinstance(single, nap.TsdFrame):
-                np.testing.assert_array_equal(single.columns, trials.columns)
+                np.testing.assert_array_equal(
+                    single.columns,
+                    trials.columns,
+                )
 
         np.testing.assert_array_equal(trials.d, original)
 
     def test_boolean_selection(self, tsd_trials: nap.TsdTrials) -> None:
         result = tsd_trials[[True, False, True]]
-
-        np.testing.assert_allclose(
-            result.d,
-            tsd_trials.d[[0, 2]],
-            equal_nan=True,
-        )
-
-    def test_count_kind_requires_bin_size(
-        self,
-        tsd_trials: nap.TsdTrials,
-    ) -> None:
-        with pytest.raises(ValueError, match="requires an existing bin_size"):
-            tsd_trials.replace_data(tsd_trials.d, data_kind="count")
-
-    def test_restore_count_kind(self, ts_trials: nap.TsTrials) -> None:
-        counts = ts_trials.count(0.5)
-        continuous = counts.replace_data(counts.d, data_kind="continuous")
-        restored = continuous.replace_data(
-            continuous.d,
-            data_kind="count",
-        )
-
-        assert_same_axes(restored, counts)
-        np.testing.assert_array_equal(
-            restored.get(0.2, 1.3).d,
-            counts.get(0.2, 1.3).d,
-        )
+        np.testing.assert_array_equal(result.d, tsd_trials.d[[0, 2]])
 
     def test_scalar_time(self, tsd_trials: nap.TsdTrials) -> None:
         np.testing.assert_array_equal(tsd_trials[:, 0], tsd_trials.d[:, 0])
         np.testing.assert_array_equal(tsd_trials[0, 0], tsd_trials.d[0, 0])
 
-    def test_inclusive_endpoints(self) -> None:
-        time = np.arange(6000) / 100
-        source = nap.Tsd(t=time, d=np.arange(6000, dtype=float))
-        intervals = nap.IntervalSet(start=[0.0], end=[59.0])
-
-        trials = nap.TsdTrials(source, intervals)
-
-        assert trials.shape == (1, 5901)
-        assert trials.d[0, -1] == 5900.0
-        assert trials.valid.all()
-
-        result = trials.get(10.0, 11.0)
-        expected = source.get(10.0, 11.0)
-
-        assert result.shape == (1, 101)
-        np.testing.assert_allclose(result.t, expected.t, rtol=0, atol=1e-8)
-        np.testing.assert_array_equal(result.d[0], expected.d)
-        np.testing.assert_array_equal(result.d[0, [0, -1]], [1000.0, 1100.0])
-        assert result.valid.all()
-
-    def test_get_long_recording_endpoints(self) -> None:
-        fs = 1000
-        duration = 2000
-        time = np.arange(fs * duration) / fs
-        source = nap.Tsd(
-            t=time,
-            d=np.arange(len(time), dtype=float),
+        trailing = (
+            (tsd_trials.columns[0],)
+            if tsd_trials.ndim == 3
+            else (0,) * (tsd_trials.ndim - 2)
         )
-        trials = nap.TsdTrials(
-            source,
-            nap.IntervalSet(start=0.0, end=duration - 1.0),
-        )
+        key = (0, 0, *trailing)
+        array_key = (0, 0) + (0,) * (tsd_trials.ndim - 2)
 
-        for start in (43.0, 1500.0, 1998.0):
-            expected = source.get(start, start + 1.0)
-            result = trials.get(start, start + 1.0)
-
-            assert result.shape == (1, fs + 1)
-            np.testing.assert_array_equal(result.d[0], expected.d)
-            np.testing.assert_allclose(
-                result.t,
-                expected.t,
-                rtol=0,
-                atol=1e-9,
-            )
+        assert np.isscalar(tsd_trials[key])
+        assert tsd_trials[key] == tsd_trials.d[array_key]
 
     def test_array_conversion(self, tsd_trials: nap.TsdTrials) -> None:
-        np.testing.assert_allclose(
-            np.asarray(tsd_trials),
-            tsd_trials.d,
-            equal_nan=True,
-        )
+        np.testing.assert_array_equal(np.asarray(tsd_trials), tsd_trials.d)
 
         copied = np.array(tsd_trials, dtype=np.float32, copy=True)
         assert copied.dtype == np.float32
@@ -913,7 +1425,8 @@ class TestTsdTrials:
             pytest.param(lambda x: x * 2, id="multiply"),
             pytest.param(lambda x: x / 2, id="divide"),
             pytest.param(lambda x: x > 2, id="compare"),
-            pytest.param(np.negative, id="ufunc"),
+            pytest.param(np.negative, id="negative"),
+            pytest.param(np.isfinite, id="isfinite"),
         ],
     )
     def test_operations(
@@ -922,12 +1435,12 @@ class TestTsdTrials:
         operation: Any,
     ) -> None:
         original = tsd_trials.d.copy()
-        result = operation(tsd_trials)
-
-        valid = (
-            tsd_trials.valid[..., None] if tsd_trials.ndim == 3 else tsd_trials.valid
+        valid = tsd_trials.valid.reshape(
+            tsd_trials.valid.shape + (1,) * (tsd_trials.ndim - 2)
         )
         expected = np.where(valid, operation(original), np.nan)
+
+        result = operation(tsd_trials)
 
         assert isinstance(result, nap.TsdTrials)
         np.testing.assert_array_equal(result.d, expected)
@@ -975,45 +1488,6 @@ class TestTsdTrials:
         )
         assert_same_axes(result, tsd_trials)
 
-    def test_binary_trials_different_intervals(self) -> None:
-        time = np.arange(20) / 10
-        source = nap.Tsd(t=time, d=np.arange(20.0))
-        left = nap.TsdTrials(source, nap.IntervalSet(0.0, 0.5))
-        right = nap.TsdTrials(source, nap.IntervalSet(1.0, 1.5))
-
-        np.testing.assert_array_equal(left.trial_ids, right.trial_ids)
-        np.testing.assert_array_equal(left.t, right.t)
-        np.testing.assert_array_equal(left.valid, right.valid)
-
-        with pytest.raises(TypeError):
-            left + right
-
-    @pytest.mark.parametrize(
-        "columns",
-        [
-            ["c", "d"],
-            ["b", "a"],
-        ],
-    )
-    def test_binary_trials_different_columns(
-        self,
-        columns: list[str],
-    ) -> None:
-        time = np.arange(10) / 10
-        values = np.zeros((len(time), 2))
-        intervals = nap.IntervalSet(0.0, 0.5)
-        left = nap.TsdTrials(
-            nap.TsdFrame(t=time, d=values, columns=["a", "b"]),
-            intervals,
-        )
-        right = nap.TsdTrials(
-            nap.TsdFrame(t=time, d=values, columns=columns),
-            intervals,
-        )
-
-        with pytest.raises(TypeError):
-            left + right
-
     def test_binary_trials_matching_axes(
         self,
         tsd_trials: nap.TsdTrials,
@@ -1028,7 +1502,178 @@ class TestTsdTrials:
         )
         assert_same_axes(result, tsd_trials)
 
-    @pytest.mark.parametrize("axes", [None, 0, 1, (0, 1)])
+    def test_binary_trials_different_intervals(self) -> None:
+        time = np.arange(20) / 10
+        source = nap.Tsd(t=time, d=np.arange(20.0))
+        left = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 0.5),
+            sample_period=0.1,
+        )
+        right = nap.TsdTrials(
+            source,
+            nap.IntervalSet(1.0, 1.5),
+            sample_period=0.1,
+        )
+
+        np.testing.assert_array_equal(left.trial_ids, right.trial_ids)
+        np.testing.assert_array_equal(left.t, right.t)
+        np.testing.assert_array_equal(left.valid, right.valid)
+
+        with pytest.raises(TypeError):
+            left + right
+
+    @pytest.mark.parametrize("columns", [["c", "d"], ["b", "a"]])
+    def test_binary_trials_different_columns(
+        self,
+        columns: list[str],
+    ) -> None:
+        time = np.arange(10) / 10
+        values = np.zeros((len(time), 2))
+        intervals = nap.IntervalSet(0.0, 0.5)
+        left = nap.TsdTrials(
+            nap.TsdFrame(t=time, d=values, columns=["a", "b"]),
+            intervals,
+            sample_period=0.1,
+        )
+        right = nap.TsdTrials(
+            nap.TsdFrame(t=time, d=values, columns=columns),
+            intervals,
+            sample_period=0.1,
+        )
+
+        with pytest.raises(TypeError):
+            left + right
+
+    def test_ids_survive_value_operations(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        subset = tsd_trials[[2, 0]]
+
+        for result in (
+            subset + 1,
+            subset.replace_data(subset.d),
+            subset.normalize(),
+            subset.smooth(0.25, windowsize=1.0),
+            subset.convolve(np.ones(3) / 3),
+        ):
+            assert_same_axes(result, subset)
+
+        np.testing.assert_array_equal(
+            subset.get(0.5, 1.0).trial_ids,
+            [0, 2],
+        )
+
+    def test_empty_axes(self, tsd_trials: nap.TsdTrials) -> None:
+        selections = [tsd_trials[:0], tsd_trials[:, :0]]
+        if tsd_trials.ndim > 2:
+            selections.append(tsd_trials[..., :0])
+
+        for selected in selections:
+            assert selected.d.size == 0
+            repr(selected)
+
+            for result in (
+                selected + 1,
+                selected.convolve(np.ones(3)),
+                selected.smooth(0.25, windowsize=1.0),
+            ):
+                assert result.shape == selected.shape
+                assert_same_axes(result, selected)
+
+
+# Tensor-specific indexing
+
+
+class TestTsdTrialsTensor:
+    def test_dimension_transitions(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        if tsd_trials.ndim < 4:
+            pytest.skip("Requires tensor trial data.")
+
+        key = (slice(None), slice(None)) + (0,) * (tsd_trials.ndim - 3) + (slice(None),)
+        frame = tsd_trials[key]
+
+        assert frame.shape == (3, 13, 3)
+        np.testing.assert_array_equal(frame.d, tsd_trials.d[key])
+        pd.testing.assert_index_equal(frame.columns, pd.RangeIndex(3))
+        pd.testing.assert_frame_equal(
+            frame.feature_metadata,
+            pd.DataFrame(index=frame.columns),
+        )
+
+        single = tsd_trials[(1, *key[1:])]
+        assert_time_series(single, frame.t[:7], frame.d[1, :7])
+        np.testing.assert_array_equal(single.columns, frame.columns)
+
+        scalar_key = key[:-1] + (0,)
+        scalar = tsd_trials[scalar_key]
+
+        assert scalar.shape == (3, 13)
+        assert scalar.feature_names is None
+        assert scalar.feature_metadata is None
+        np.testing.assert_array_equal(
+            scalar.d,
+            tsd_trials.d[scalar_key],
+        )
+
+        single = tsd_trials[(1, *scalar_key[1:])]
+        assert_time_series(single, scalar.t[:7], scalar.d[1, :7])
+
+    def test_orthogonal_tensor_axes(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        if tsd_trials.ndim < 4:
+            pytest.skip("Requires tensor trial data.")
+
+        result = tsd_trials[[2, 0], [4, 0], [1, 0], ..., [2, 0]]
+        expected = tsd_trials.d
+
+        for axis, positions in (
+            (0, [0, 2]),
+            (1, [0, 4]),
+            (2, [1, 0]),
+            (tsd_trials.ndim - 1, [2, 0]),
+        ):
+            expected = np.take(expected, positions, axis=axis)
+
+        np.testing.assert_array_equal(result.d, expected)
+        np.testing.assert_array_equal(result.trial_ids, [0, 2])
+        np.testing.assert_array_equal(result.t, [0.0, 1.0])
+        np.testing.assert_array_equal(
+            result.valid,
+            tsd_trials.valid[np.ix_([0, 2], [0, 4])],
+        )
+
+    def test_positional_tensor_axes(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        if tsd_trials.ndim < 4:
+            pytest.skip("Requires tensor trial data.")
+
+        for key in (
+            (..., -1),
+            (..., slice(None, None, -1)),
+            (..., [True, False, True]),
+        ):
+            result = tsd_trials[key]
+            np.testing.assert_array_equal(result.d, tsd_trials.d[key])
+
+        with pytest.raises(IndexError):
+            tsd_trials[..., tsd_trials.shape[-1]]
+
+
+# Normalization, convolution, and smoothing
+
+
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+class TestTsdTrialsProcessing:
+    @pytest.mark.parametrize("axes", [None, 0, 1, (0, 1), -1])
     def test_normalize(
         self,
         tsd_trials: nap.TsdTrials,
@@ -1047,11 +1692,36 @@ class TestTsdTrials:
         assert_same_axes(result, tsd_trials)
 
     def test_normalize_constant(self, tsd_trials: nap.TsdTrials) -> None:
-        constant = tsd_trials * 0 + 7
-        result = constant.normalize()
+        result = (tsd_trials * 0 + 7).normalize()
 
         np.testing.assert_array_equal(result.d[result.valid], 0.0)
         assert np.isnan(result.d[~result.valid]).all()
+
+    @pytest.mark.parametrize("trim", ["both", "left", "right"])
+    def test_convolve(
+        self,
+        tsd_trials: nap.TsdTrials,
+        trim: str,
+    ) -> None:
+        kernel = np.array([1.0, 2.0, 3.0, 4.0]) / 10
+        original = tsd_trials.d.copy()
+        expected = np.full_like(original, np.nan)
+        start = {"both": 1, "left": 3, "right": 0}[trim]
+
+        for trial in range(len(tsd_trials)):
+            valid = tsd_trials.valid[trial]
+            for coordinate in np.ndindex(tsd_trials.shape[2:]):
+                key = (trial, slice(None), *coordinate)
+                padded = np.where(valid, original[key], 0.0)
+                convolved = np.convolve(padded, kernel, mode="full")
+                trimmed = convolved[start : start + tsd_trials.shape[1]]
+                expected[key] = np.where(valid, trimmed, np.nan)
+
+        result = tsd_trials.convolve(kernel, trim=trim)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        np.testing.assert_array_equal(tsd_trials.d, original)
+        assert_same_axes(result, tsd_trials)
 
     @pytest.mark.parametrize("norm", [True, False])
     @pytest.mark.parametrize(
@@ -1080,7 +1750,6 @@ class TestTsdTrials:
             norm=norm,
         )
 
-        # All parameter combinations produce a five-sample kernel.
         kernel = signal.windows.gaussian(5, std=1.0)
         if norm:
             kernel /= kernel.sum()
@@ -1088,27 +1757,27 @@ class TestTsdTrials:
         expected = np.full_like(original, np.nan)
         for trial in range(len(tsd_trials)):
             valid = tsd_trials.valid[trial]
-            values = original[trial]
-            if values.ndim == 1:
-                values = values[:, None]
-
-            for feature in range(values.shape[1]):
-                padded = np.where(valid, values[:, feature], 0.0)
+            for coordinate in np.ndindex(tsd_trials.shape[2:]):
+                key = (trial, slice(None), *coordinate)
+                padded = np.where(valid, original[key], 0.0)
                 convolved = np.convolve(padded, kernel, mode="same")
-                if original.ndim == 2:
-                    expected[trial, valid] = convolved[valid]
-                else:
-                    expected[trial, valid, feature] = convolved[valid]
+                expected[key] = np.where(valid, convolved, np.nan)
 
         np.testing.assert_allclose(result.d, expected, equal_nan=True)
         np.testing.assert_array_equal(tsd_trials.d, original)
         assert_same_axes(result, tsd_trials)
 
-    def test_smooth_irregular_time(self, tsd_trials: nap.TsdTrials) -> None:
+    @pytest.mark.parametrize("method", ["smooth", "convolve"])
+    def test_irregular_time(
+        self,
+        tsd_trials: nap.TsdTrials,
+        method: str,
+    ) -> None:
         irregular = tsd_trials[:, [0, 1, 3]]
+        argument = 0.25 if method == "smooth" else np.ones(3)
 
         with pytest.raises(ValueError, match="uniformly sampled"):
-            irregular.smooth(0.25)
+            getattr(irregular, method)(argument)
 
     @pytest.mark.parametrize(
         "kwargs, message",
@@ -1131,6 +1800,11 @@ class TestTsdTrials:
         with pytest.raises(ValueError, match=message):
             tsd_trials.smooth(**kwargs)
 
+
+# Replacement data
+
+
+class TestTsdTrialsReplaceData:
     @pytest.mark.parametrize("as_list", [False, True])
     def test_replace_data(
         self,
@@ -1147,8 +1821,10 @@ class TestTsdTrials:
         assert isinstance(result, nap.TsdTrials)
         assert result is not trials
         assert result.shape == trials.shape
-        assert result._windowed == trials._windowed
-        np.testing.assert_array_equal(result.d[result.valid], values[result.valid])
+        np.testing.assert_array_equal(
+            result.d[result.valid],
+            values[result.valid],
+        )
         assert np.isnan(result.d[~result.valid]).all()
         np.testing.assert_array_equal(trials.d, original)
         np.testing.assert_array_equal(replacement, values)
@@ -1164,48 +1840,36 @@ class TestTsdTrials:
         assert np.isnan(result.d[~result.valid]).all()
         assert_same_axes(result, tsd_trials)
 
-    @pytest.mark.parametrize("n_features", [None, 1, 2, 3])
-    def test_feature_dimensions(
+    @pytest.mark.parametrize(
+        "trailing_shape",
+        [(), (1,), (2,), (3,), (2, 3), (2, 1, 3)],
+    )
+    def test_dimensions(
         self,
         tsd_trials: nap.TsdTrials,
-        n_features: int | None,
+        trailing_shape: tuple[int, ...],
     ) -> None:
-        shape = tsd_trials.shape[:2]
-        if n_features is not None:
-            shape += (n_features,)
-        values = np.ones(shape)
-
-        result = tsd_trials.replace_data(values)
+        shape = (*tsd_trials.shape[:2], *trailing_shape)
+        result = tsd_trials.replace_data(np.ones(shape))
 
         assert result.shape == shape
         np.testing.assert_array_equal(result.d[result.valid], 1.0)
         assert np.isnan(result.d[~result.valid]).all()
+        assert_same_axes(scalar_trials(result), scalar_trials(tsd_trials))
 
-        actual_axes = result if result.ndim == 2 else result[:, :, result.columns[0]]
-        expected_axes = (
-            tsd_trials
-            if tsd_trials.ndim == 2
-            else tsd_trials[:, :, tsd_trials.columns[0]]
-        )
-        assert_same_axes(actual_axes, expected_axes)
-
-        if n_features is None:
+        if result.ndim != 3:
             assert result.feature_names is None
             assert result.feature_metadata is None
-        elif tsd_trials.feature_names is not None and n_features == len(
+        elif tsd_trials.feature_names is not None and result.shape[2] == len(
             tsd_trials.columns
         ):
             assert_same_axes(result, tsd_trials)
             assert result.feature_names is not tsd_trials.feature_names
             assert result.feature_metadata is not tsd_trials.feature_metadata
-            np.testing.assert_array_equal(
-                result.feature_metadata.columns,
-                tsd_trials.feature_metadata.columns,
-            )
         else:
             pd.testing.assert_index_equal(
                 result.columns,
-                pd.RangeIndex(n_features),
+                pd.RangeIndex(result.shape[2]),
             )
             pd.testing.assert_frame_equal(
                 result.feature_metadata,
@@ -1228,9 +1892,11 @@ class TestTsdTrials:
             if tsd_trials.feature_metadata is None
             else tsd_trials.feature_metadata.copy()
         )
-        values = np.ones((*tsd_trials.shape[:2], 2))
 
-        result = tsd_trials.replace_data(values, columns=columns)
+        result = tsd_trials.replace_data(
+            np.ones((*tsd_trials.shape[:2], 2)),
+            columns=columns,
+        )
 
         pd.testing.assert_index_equal(result.columns, pd.Index(columns))
         pd.testing.assert_frame_equal(
@@ -1266,19 +1932,27 @@ class TestTsdTrials:
         tsd_trials: nap.TsdTrials,
         shape: tuple[int, ...],
     ) -> None:
-        with pytest.raises(ValueError, match="matching trial and time dimensions"):
+        with pytest.raises(
+            ValueError,
+            match="matching trial and time dimensions",
+        ):
             tsd_trials.replace_data(np.ones(shape))
 
-    def test_columns_without_feature_axis(
+    @pytest.mark.parametrize("trailing_shape", [(), (2, 3)])
+    def test_columns_require_feature_axis(
         self,
         tsd_trials: nap.TsdTrials,
+        trailing_shape: tuple[int, ...],
     ) -> None:
-        values = np.ones(tsd_trials.shape[:2])
+        values = np.ones((*tsd_trials.shape[:2], *trailing_shape))
 
         with pytest.raises(ValueError, match="three-dimensional values"):
             tsd_trials.replace_data(values, columns=["value"])
 
-    @pytest.mark.parametrize("columns", [[], ["one"], ["one", "two", "three"]])
+    @pytest.mark.parametrize(
+        "columns",
+        [[], ["one"], ["one", "two", "three"]],
+    )
     def test_column_count_mismatch(
         self,
         tsd_trials: nap.TsdTrials,
@@ -1290,261 +1964,453 @@ class TestTsdTrials:
             tsd_trials.replace_data(values, columns=columns)
 
     def test_data_kind_override(self, tsd_trials: nap.TsdTrials) -> None:
-        result = tsd_trials.replace_data(tsd_trials.d, data_kind="transformed")
+        result = tsd_trials.replace_data(
+            tsd_trials.d,
+            data_kind="transformed",
+        )
 
         assert result.data_kind == "transformed"
         assert tsd_trials.data_kind == "continuous"
         np.testing.assert_array_equal(result.d, tsd_trials.d)
 
-    def test_count_data(self, ts_trials: nap.TsTrials) -> None:
-        counts = ts_trials.realign_to("cue").count(0.5).get(-0.5, 1.5)
-        original = counts.d.copy()
-        values = np.full(counts.shape, 7)
+    def test_count_kind_requires_bin_size(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        with pytest.raises(ValueError, match="requires an existing bin_size"):
+            tsd_trials.replace_data(tsd_trials.d, data_kind="count")
 
-        result = counts.replace_data(values)
-
-        np.testing.assert_array_equal(result.d[result.valid], 7)
-        assert np.isnan(result.d[~result.valid]).all()
-        np.testing.assert_array_equal(counts.d, original)
-        assert result._windowed == counts._windowed
-        assert_same_axes(result, counts)
-
-    def test_feature_labels_and_slices(self, tsd_trials: nap.TsdTrials) -> None:
-        if tsd_trials.ndim == 2:
-            return
-
-        selected = tsd_trials[:, :, ["y"]]
-        sliced = tsd_trials[:, :, 1:]
-        np.testing.assert_array_equal(selected.d, sliced.d)
-        assert_same_axes(selected, sliced)
-
-        reordered = tsd_trials[:, :, ["y", "x"]]
-        np.testing.assert_array_equal(reordered.columns, ["y", "x"])
-        np.testing.assert_array_equal(
-            reordered.d,
-            tsd_trials.d[:, :, [1, 0]],
+    def test_frame_to_tensor_discards_feature_metadata(self) -> None:
+        source = nap.TsdFrame(
+            t=np.arange(5),
+            d=np.ones((5, 2)),
+            columns=["x", "y"],
+            metadata={"region": ["ca1", "ca3"]},
         )
-        np.testing.assert_array_equal(
-            reordered.feature_metadata["region"],
-            ["ca3", "ca1"],
+        trials = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 4.0),
+            sample_period=1.0,
         )
 
-        with pytest.raises(KeyError):
-            tsd_trials[:, :, 0]
+        result = trials.replace_data(np.ones((1, 5, 2, 3)))
 
-        with pytest.raises(ValueError, match="Repeated feature labels"):
-            tsd_trials[:, :, ["x", "x"]]
-
-    def test_count_unit_label_selection(self, ts_trials: nap.TsTrials) -> None:
-        counts = ts_trials.count(0.5)
-
+        assert result.feature_names is None
+        assert result.feature_metadata is None
+        assert isinstance(result[0], nap.TsdTensor)
+        np.testing.assert_array_equal(trials.columns, ["x", "y"])
         np.testing.assert_array_equal(
-            counts[:, :, 20].d,
-            counts.d[:, :, 1],
-        )
-        np.testing.assert_array_equal(counts[:, :, [20]].columns, [20])
-
-        with pytest.raises(KeyError):
-            counts[:, :, 1]
-
-    def test_ids_survive_value_operations(self, tsd_trials: nap.TsdTrials) -> None:
-        subset = tsd_trials[[2, 0]]
-
-        for result in (
-            subset + 1,
-            subset.replace_data(subset.d),
-            subset.normalize(),
-            subset.smooth(0.25, windowsize=1.0),
-            subset.convolve(np.ones(3) / 3),
-        ):
-            assert_same_axes(result, subset)
-
-        np.testing.assert_array_equal(
-            subset.get(0.5, 1.0).trial_ids,
-            [0, 2],
+            trials.feature_metadata["region"],
+            ["ca1", "ca3"],
         )
 
 
-@pytest.mark.parametrize("kind", ["timestamps", "sampled", "counts"])
-def test_groupby(
-    kind: str,
-    ts_trials: nap.TsTrials,
-    tsd_trials: nap.TsdTrials,
-) -> None:
-    if kind == "timestamps":
-        trials = ts_trials
-    elif kind == "sampled":
-        trials = tsd_trials
-    else:
-        trials = ts_trials.count(0.5)
+# NumPy reductions
 
-    groups = trials.groupby("condition")
 
-    assert set(groups) == {"a", "b"}
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+class TestTsdTrialsReductions:
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    @pytest.mark.parametrize(
+        "axis",
+        [
+            None,
+            (),
+            0,
+            1,
+            2,
+            3,
+            -1,
+            -2,
+            -3,
+            (0, 1),
+            (0, 2),
+            (1, 2),
+            (0, 1, 2),
+            (2, 0),
+            "trailing",
+            "trial-and-trailing",
+        ],
+    )
+    @pytest.mark.parametrize("keepdims", [False, True])
+    def test_reduction(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+        axis: int | tuple[int, ...] | str | None,
+        keepdims: bool,
+    ) -> None:
+        if isinstance(axis, str):
+            trailing = tuple(range(2, tsd_trials.ndim))
+            axis = trailing if axis == "trailing" else (0, *trailing)
 
-    for condition, positions in {"a": [0, 2], "b": [1]}.items():
-        group = groups[condition]
-
-        assert len(group) == len(positions)
-        np.testing.assert_array_equal(
-            group.trial_ids,
-            trials.trial_ids[positions],
+        axes = (
+            tuple(range(tsd_trials.ndim))
+            if axis is None
+            else axis
+            if isinstance(axis, tuple)
+            else (axis,)
         )
-        np.testing.assert_array_equal(
-            group.trials.start,
-            trials.trials.start[positions],
-        )
-        np.testing.assert_array_equal(
-            group.trials.end,
-            trials.trials.end[positions],
-        )
-        np.testing.assert_array_equal(
-            group.durations,
-            trials.durations[positions],
-        )
+        if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
+            pytest.skip("Axis is not present in this data.")
 
-        for column in trials.trials.metadata_columns:
-            np.testing.assert_array_equal(
-                group.trials[column],
-                np.asarray(trials.trials[column])[positions],
+        axes = tuple(value % tsd_trials.ndim for value in axes)
+        original = tsd_trials.d.copy()
+        expected = reduction(original, axis=axis, keepdims=keepdims)
+        result = reduction(tsd_trials, axis=axis, keepdims=keepdims)
+
+        if axis is None or 1 in axes or (axes and keepdims):
+            assert not isinstance(
+                result,
+                (nap.TsdTrials, nap.Tsd, nap.TsdFrame, nap.TsdTensor),
             )
+            assert np.shape(result) == np.shape(expected)
+            np.testing.assert_allclose(result, expected, equal_nan=True)
 
-        if isinstance(trials, nap.TsTrials):
-            np.testing.assert_array_equal(group.unit_keys, trials.unit_keys)
-
-            for trial_id in group.trial_ids:
-                for unit_key in group.unit_keys:
-                    np.testing.assert_allclose(
-                        group[trial_id, unit_key].t,
-                        trials[trial_id, unit_key].t,
-                    )
-        else:
-            np.testing.assert_array_equal(group.t, trials.t)
-            np.testing.assert_array_equal(
-                group.valid,
-                trials.valid[positions],
+        elif 0 in axes:
+            valid = tsd_trials.valid.any(axis=0)
+            assert_time_series(
+                result,
+                tsd_trials.t[valid],
+                expected[valid],
             )
             np.testing.assert_allclose(
-                group.d,
-                trials.d[positions],
-                equal_nan=True,
+                result.time_support.start,
+                [tsd_trials.window_starts.min()],
+            )
+            np.testing.assert_allclose(
+                result.time_support.end,
+                [tsd_trials.window_ends.max()],
             )
 
-    with pytest.raises(KeyError, match="Unknown trial metadata column"):
-        trials.groupby("missing")
+            if isinstance(result, nap.TsdFrame):
+                if tsd_trials.ndim == 3 and 2 not in axes:
+                    np.testing.assert_array_equal(
+                        result.columns,
+                        tsd_trials.columns,
+                    )
+                    for column in tsd_trials.feature_metadata.columns:
+                        np.testing.assert_array_equal(
+                            result[column],
+                            tsd_trials.feature_metadata[column],
+                        )
+                else:
+                    np.testing.assert_array_equal(
+                        result.columns,
+                        np.arange(expected.shape[1]),
+                    )
+                    assert len(result.metadata_columns) == 0
 
+        else:
+            assert isinstance(result, nap.TsdTrials)
+            np.testing.assert_allclose(
+                result.d,
+                expected,
+                equal_nan=True,
+            )
+            assert_same_axes(
+                result,
+                tsd_trials.replace_data(expected),
+            )
 
-@pytest.mark.parametrize(
-    "key, expected_ids",
-    [
-        ([2, 0], [0, 2]),
-        (slice(None, None, -1), [0, 1, 2]),
-        (slice(None, None, -2), [0, 2]),
-    ],
-)
-def test_trial_selection_order(
-    trial_data: nap.TsTrials | nap.TsdTrials,
-    key: Any,
-    expected_ids: list[int],
-) -> None:
-    result = trial_data[key]
+        np.testing.assert_array_equal(tsd_trials.d, original)
 
-    np.testing.assert_array_equal(result.trial_ids, expected_ids)
-    np.testing.assert_array_equal(
-        result.trials.start,
-        trial_data.trials.start[expected_ids],
-    )
-    np.testing.assert_array_equal(
-        result.trials["condition"],
-        np.asarray(trial_data.trials["condition"])[expected_ids],
-    )
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    def test_positional_axis(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+    ) -> None:
+        result = reduction(tsd_trials, 0)
+        expected = reduction(tsd_trials.d, axis=0)
+        valid = tsd_trials.valid.any(axis=0)
 
-    if isinstance(result, nap.TsdTrials):
-        np.testing.assert_allclose(
-            result.d,
-            trial_data.d[expected_ids],
-            equal_nan=True,
+        assert_time_series(
+            result,
+            tsd_trials.t[valid],
+            expected[valid],
         )
-    else:
-        for trial_id in expected_ids:
-            for unit_key in result.unit_keys:
+
+    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
+    def test_out(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+    ) -> None:
+        expected = reduction(tsd_trials.d, axis=0)
+        output = np.empty_like(expected)
+
+        result = reduction(tsd_trials, axis=0, out=output)
+
+        assert result is output
+        np.testing.assert_allclose(output, expected, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "reduction, kwargs",
+        [
+            (np.mean, {"dtype": np.float32}),
+            (np.nanmean, {"dtype": np.float32}),
+            (np.sum, {"initial": 5.0}),
+            (np.nansum, {"initial": 5.0}),
+            (np.std, {"ddof": 1}),
+            (np.nanstd, {"ddof": 1}),
+            (np.var, {"ddof": 1}),
+            (np.nanvar, {"ddof": 1}),
+            (np.min, {"initial": -100.0}),
+            (np.max, {"initial": 100.0}),
+        ],
+    )
+    def test_reduction_arguments(
+        self,
+        tsd_trials: nap.TsdTrials,
+        reduction: Any,
+        kwargs: dict[str, Any],
+    ) -> None:
+        expected = reduction(tsd_trials.d, axis=0, **kwargs)
+        result = reduction(tsd_trials, axis=0, **kwargs)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+        assert result.d.dtype == expected.dtype
+
+    def test_where(self, tsd_trials: nap.TsdTrials) -> None:
+        valid = tsd_trials.valid.reshape(
+            tsd_trials.valid.shape + (1,) * (tsd_trials.ndim - 2)
+        )
+
+        expected = np.mean(tsd_trials.d, axis=0, where=valid)
+        result = np.mean(tsd_trials, axis=0, where=valid)
+
+        np.testing.assert_allclose(result.d, expected, equal_nan=True)
+
+    def test_mean_nan_behavior(self, tsd_trials: nap.TsdTrials) -> None:
+        ordinary = np.mean(tsd_trials, axis=0)
+        ignoring_nan = np.nanmean(tsd_trials, axis=0)
+        partially_valid = tsd_trials.valid.any(axis=0) & (~tsd_trials.valid.all(axis=0))
+
+        assert np.isnan(ordinary.d[partially_valid]).all()
+        assert np.isfinite(ignoring_nan.d[partially_valid]).all()
+
+    def test_omit_globally_invalid_times(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        trials = tsd_trials[:2]
+        valid = trials.valid.any(axis=0)
+        result = np.nanmean(trials, axis=0)
+
+        assert not valid.all()
+        assert_time_series(
+            result,
+            trials.t[valid],
+            np.nanmean(trials.d[:, valid], axis=0),
+        )
+
+    @pytest.mark.parametrize("axis", [100, (0, 0)])
+    def test_invalid_axis(
+        self,
+        tsd_trials: nap.TsdTrials,
+        axis: int | tuple[int, ...],
+    ) -> None:
+        with pytest.raises((IndexError, ValueError)):
+            np.mean(tsd_trials, axis=axis)
+
+    def test_unsupported_function(self, tsd_trials: nap.TsdTrials) -> None:
+        with pytest.raises(TypeError):
+            np.transpose(tsd_trials)
+
+
+# Shared trial behavior
+
+
+class TestTrialSelectionAndGrouping:
+    @pytest.mark.parametrize(
+        "key, expected_ids",
+        [
+            ([2, 0], [0, 2]),
+            (slice(None, None, -1), [0, 1, 2]),
+            (slice(None, None, -2), [0, 2]),
+        ],
+    )
+    def test_trial_selection_order(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+        key: Any,
+        expected_ids: list[int],
+    ) -> None:
+        result = trial_data[key]
+
+        np.testing.assert_array_equal(result.trial_ids, expected_ids)
+        np.testing.assert_array_equal(
+            result.trials.start,
+            trial_data.trials.start[expected_ids],
+        )
+        np.testing.assert_array_equal(
+            result.trials["condition"],
+            np.asarray(trial_data.trials["condition"])[expected_ids],
+        )
+
+        if isinstance(result, nap.TsdTrials):
+            np.testing.assert_array_equal(
+                result.d,
+                trial_data.d[expected_ids],
+            )
+        else:
+            for trial_id in expected_ids:
+                for unit_key in result.unit_keys:
+                    np.testing.assert_array_equal(
+                        result[trial_id, unit_key].t,
+                        trial_data[trial_id, unit_key].t,
+                    )
+
+    def test_chained_trial_selection(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        subset = trial_data[[2, 0]]
+
+        np.testing.assert_array_equal(subset.trial_ids, [0, 2])
+        np.testing.assert_array_equal(subset[[2]].trial_ids, [2])
+        np.testing.assert_array_equal(subset[1:].trial_ids, [2])
+        np.testing.assert_array_equal(subset[-1:].trial_ids, [2])
+
+        for missing in (1, -1):
+            with pytest.raises(KeyError):
+                subset[missing]
+
+        if isinstance(subset, nap.TsTrials):
+            np.testing.assert_array_equal(
+                subset[2, 10].t,
+                trial_data[2, 10].t,
+            )
+        else:
+            np.testing.assert_array_equal(subset[2].d, trial_data[2].d)
+
+    def test_repeated_trial_labels(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        with pytest.raises(ValueError, match="Repeated trial labels"):
+            trial_data[[0, 0]]
+
+    def test_groupby(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        groups = trial_data.groupby("condition")
+
+        assert set(groups) == {"a", "b"}
+
+        for condition, positions in {"a": [0, 2], "b": [1]}.items():
+            group = groups[condition]
+
+            assert len(group) == len(positions)
+            np.testing.assert_array_equal(
+                group.trial_ids,
+                trial_data.trial_ids[positions],
+            )
+            np.testing.assert_array_equal(
+                group.trials.values,
+                trial_data.trials.values[positions],
+            )
+            np.testing.assert_array_equal(
+                group.durations,
+                trial_data.durations[positions],
+            )
+
+            for column in trial_data.trials.metadata_columns:
                 np.testing.assert_array_equal(
-                    result[trial_id, unit_key].t,
-                    trial_data[trial_id, unit_key].t,
+                    group.trials[column],
+                    np.asarray(trial_data.trials[column])[positions],
                 )
 
+            if isinstance(trial_data, nap.TsTrials):
+                np.testing.assert_array_equal(
+                    group.unit_keys,
+                    trial_data.unit_keys,
+                )
+                for trial_id in group.trial_ids:
+                    for unit_key in group.unit_keys:
+                        np.testing.assert_allclose(
+                            group[trial_id, unit_key].t,
+                            trial_data[trial_id, unit_key].t,
+                        )
+            else:
+                expected = trial_data[positions]
+                np.testing.assert_array_equal(group.d, expected.d)
+                assert_same_axes(group, expected)
 
-def test_chained_trial_selection(
-    trial_data: nap.TsTrials | nap.TsdTrials,
-) -> None:
-    subset = trial_data[[2, 0]]
+        with pytest.raises(KeyError, match="Unknown trial metadata column"):
+            trial_data.groupby("missing")
 
-    np.testing.assert_array_equal(subset.trial_ids, [0, 2])
-    np.testing.assert_array_equal(subset[[2]].trial_ids, [2])
-    np.testing.assert_array_equal(subset[1:].trial_ids, [2])
-    np.testing.assert_array_equal(subset[-1:].trial_ids, [2])
+    def test_groupby_after_selection(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        subset = trial_data[[2, 1]]
+        groups = subset.groupby("condition")
 
-    for missing in (1, -1):
-        with pytest.raises(KeyError):
-            subset[missing]
+        np.testing.assert_array_equal(subset.trial_ids, [1, 2])
+        np.testing.assert_array_equal(groups["a"].trial_ids, [2])
+        np.testing.assert_array_equal(groups["b"].trial_ids, [1])
 
-    if isinstance(subset, nap.TsTrials):
-        np.testing.assert_array_equal(
-            subset[2, 10].t,
-            trial_data[2, 10].t,
+        nested = groups["a"].groupby("condition")
+        np.testing.assert_array_equal(nested["a"].trial_ids, [2])
+
+        assert subset.groupby_apply("condition", len) == {"a": 1, "b": 1}
+
+    def test_groupby_apply(self, tsd_trials: nap.TsdTrials) -> None:
+        groups = tsd_trials.groupby("condition")
+        results = tsd_trials.groupby_apply(
+            "condition",
+            np.nansum,
+            axis=0,
         )
-    else:
-        np.testing.assert_array_equal(subset[2].d, trial_data[2].d)
 
+        for condition, group in groups.items():
+            valid = group.valid.any(axis=0)
+            assert_time_series(
+                results[condition],
+                group.t[valid],
+                np.nansum(group.d, axis=0)[valid],
+            )
 
-def test_repeated_trial_labels(
-    trial_data: nap.TsTrials | nap.TsdTrials,
-) -> None:
-    with pytest.raises(ValueError, match="Repeated trial labels"):
-        trial_data[[0, 0]]
-
-
-def test_groupby_after_selection(
-    trial_data: nap.TsTrials | nap.TsdTrials,
-) -> None:
-    subset = trial_data[[2, 1]]
-    groups = subset.groupby("condition")
-
-    np.testing.assert_array_equal(subset.trial_ids, [1, 2])
-    np.testing.assert_array_equal(groups["a"].trial_ids, [2])
-    np.testing.assert_array_equal(groups["b"].trial_ids, [1])
-
-    nested = groups["a"].groupby("condition")
-    np.testing.assert_array_equal(nested["a"].trial_ids, [2])
-
-    assert subset.groupby_apply("condition", len) == {"a": 1, "b": 1}
-
-
-@pytest.mark.parametrize(
-    "start, end, message",
-    [
-        (1.0, 1.0, "start must be less than end"),
-        (2.0, 1.0, "start must be less than end"),
-        (np.nan, 1.0, "must be finite"),
-        (0.0, np.inf, "must be finite"),
-    ],
-)
-def test_invalid_window(
-    ts_trials: nap.TsTrials,
-    tsd_trials: nap.TsdTrials,
-    start: float,
-    end: float,
-    message: str,
-) -> None:
-    for trials in (ts_trials, tsd_trials):
+    @pytest.mark.parametrize(
+        "start, end, message",
+        [
+            (1.0, 1.0, "start must be less than end"),
+            (2.0, 1.0, "start must be less than end"),
+            (np.nan, 1.0, "must be finite"),
+            (0.0, np.inf, "must be finite"),
+        ],
+    )
+    def test_invalid_window(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+        start: float,
+        end: float,
+        message: str,
+    ) -> None:
         with pytest.raises(ValueError, match=message):
-            trials.get(start, end)
+            trial_data.get(start, end)
+
+    def test_empty_selection(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        result = trial_data[:0]
+
+        assert result.shape == (0, *trial_data.shape[1:])
+        assert len(result) == 0
+        assert "No trials." in repr(result)
+
+        if isinstance(result, nap.TsTrials):
+            assert len(result.timestamps) == 0
 
 
 def test_invalid_constructor_types(
     intervals: nap.IntervalSet,
     spike_source: nap.TsGroup,
-    sampled_source: nap.Tsd | nap.TsdFrame,
+    sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
 ) -> None:
     with pytest.raises(TypeError, match="source must be a TsGroup"):
         nap.TsTrials(sampled_source, intervals)
@@ -1552,51 +2418,41 @@ def test_invalid_constructor_types(
     with pytest.raises(TypeError, match="trials must be an IntervalSet"):
         nap.TsTrials(spike_source, [])
 
-    with pytest.raises(TypeError, match="source must be a Tsd, TsdFrame, or TsdTensor"):
-        nap.TsdTrials(spike_source, intervals)
+    with pytest.raises(
+        TypeError,
+        match="source must be a Tsd, TsdFrame, or TsdTensor",
+    ):
+        nap.TsdTrials(
+            spike_source,
+            intervals,
+            sample_period=0.25,
+        )
 
     with pytest.raises(TypeError, match="trials must be an IntervalSet"):
-        nap.TsdTrials(sampled_source, [])
-
-
-@pytest.mark.parametrize(
-    "timestamps, start, end, message",
-    [
-        ([0.0], 0.0, 1.0, "at least two samples"),
-        ([0.0, 1.0, 2.5], 0.0, 1.0, "uniformly sampled"),
-        ([0.0, 1.0, 2.0], 0.5, 1.5, "sampling grid"),
-        ([0.0, 1.0, 2.0], -1.0, 1.0, "must align"),
-        ([0.0, 1.0, 2.0], 0.0, 4.0, "source time range"),
-    ],
-)
-def test_invalid_sampled_source(
-    timestamps: list[float],
-    start: float,
-    end: float,
-    message: str,
-) -> None:
-    source = nap.Tsd(
-        t=timestamps,
-        d=np.arange(len(timestamps)),
-        time_support=nap.IntervalSet(-2.0, 5.0),
-    )
-
-    with pytest.raises(ValueError, match=message):
-        nap.TsdTrials(source, nap.IntervalSet(start, end))
+        nap.TsdTrials(
+            sampled_source,
+            [],
+            sample_period=0.25,
+        )
 
 
 def test_empty_trials(
     spike_source: nap.TsGroup,
-    sampled_source: nap.Tsd | nap.TsdFrame,
+    sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
 ) -> None:
     intervals = nap.IntervalSet([], [])
     timestamps = nap.TsTrials(spike_source, intervals)
-    sampled = nap.TsdTrials(sampled_source, intervals)
+    sampled = nap.TsdTrials(
+        sampled_source,
+        intervals,
+        sample_period=0.25,
+    )
     counts = timestamps.count(0.5)
 
     assert timestamps.shape == (0, 2)
     assert len(timestamps.timestamps) == 0
-    assert sampled.shape[:2] == (0, 0)
+    assert sampled.shape == (0, 0, *sampled_source.shape[1:])
+    assert sampled.valid.shape == (0, 0)
     assert counts.shape == (0, 0, 2)
     assert counts.valid.shape == (0, 0)
 
@@ -1605,47 +2461,31 @@ def test_empty_trials(
         assert "No trials." in repr(trials)
 
 
-def test_empty_selection(
-    ts_trials: nap.TsTrials,
-    tsd_trials: nap.TsdTrials,
-) -> None:
-    timestamps = ts_trials[:0]
-    sampled = tsd_trials[:0]
-
-    assert timestamps.shape == (0, 2)
-    assert len(timestamps.timestamps) == 0
-    assert sampled.shape == (0, *tsd_trials.shape[1:])
+# Representation
 
 
-def test_count_get_requires_complete_bins(ts_trials: nap.TsTrials) -> None:
-    counts = ts_trials.count(0.5)
-    result = counts.get(0.2, 1.3)
+def test_repr(trial_data: nap.TsTrials | nap.TsdTrials) -> None:
+    representation = repr(trial_data)
 
-    np.testing.assert_allclose(result.t, [0.75])
-    np.testing.assert_array_equal(result.d, counts.d[:, 1:2])
-
-
-def test_repr(
-    ts_trials: nap.TsTrials,
-    tsd_trials: nap.TsdTrials,
-) -> None:
-    for trials in (ts_trials, tsd_trials, ts_trials.count(0.5)):
-        representation = repr(trials)
-
-        if isinstance(trials, nap.TsTrials):
-            names = ["trial", "unit"]
+    if isinstance(trial_data, nap.TsTrials):
+        names = ["trial", "unit"]
+    else:
+        names = ["trial", "time"]
+        if trial_data.ndim == 3:
+            names.append("unit" if trial_data.data_kind == "count" else "feature")
         else:
-            names = ["trial", "time"]
-            if trials.ndim == 3:
-                names.append("unit" if trials.data_kind == "count" else "feature")
+            names.extend(f"axis_{axis}" for axis in range(2, trial_data.ndim))
 
-        dimensions = ", ".join(
-            f"{name}: {size}" for name, size in zip(names, trials.shape)
-        )
+        if trial_data.ndim > 3:
+            assert "tensor (flattened)" in representation
 
-        assert f"shape: ({dimensions})" in representation
-        assert "align: 'start'" in representation
-        assert "size:" in representation
+    dimensions = ", ".join(
+        f"{name}: {size}" for name, size in zip(names, trial_data.shape)
+    )
+
+    assert f"shape: ({dimensions})" in representation
+    assert "align: 'start'" in representation
+    assert "size:" in representation
 
 
 @pytest.mark.parametrize(
@@ -1712,760 +2552,3 @@ def test_format_axes_wrapping(wrap_left: bool) -> None:
         expected.append(f"{label}{left:14}  {right}".rstrip())
 
     assert result.splitlines() == expected
-
-
-@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
-def test_count_timestamps(compiled: bool) -> None:
-    count_timestamps = _count_timestamps if compiled else _count_timestamps.py_func
-    valid = np.array([[True, False, True], [True, True, False]])
-
-    result = count_timestamps(
-        times_ns=np.array(
-            [-11, -10, -1, 0, 10, 19, 20, -10, 0, 9, 10],
-            dtype=np.int64,
-        ),
-        trial_index=np.array([0] * 7 + [1] * 4, dtype=np.int64),
-        unit_index=np.array(
-            [0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1],
-            dtype=np.int64,
-        ),
-        first_edge_ns=-10,
-        bin_size_ns=10,
-        valid=valid,
-        n_units=2,
-    )
-
-    expected = np.array(
-        [
-            [[2, 0], [0, 0], [0, 2]],
-            [[0, 1], [1, 1], [0, 0]],
-        ],
-        dtype=np.int64,
-    )
-
-    assert result.dtype == np.int64
-    np.testing.assert_array_equal(result, expected)
-
-
-@pytest.mark.parametrize("compiled", [False, True], ids=["python", "numba"])
-@pytest.mark.parametrize("shape", [(2, 3), (0, 3), (2, 0)])
-def test_count_timestamps_without_events(
-    compiled: bool,
-    shape: tuple[int, int],
-) -> None:
-    count_timestamps = _count_timestamps if compiled else _count_timestamps.py_func
-    empty = np.array([], dtype=np.int64)
-
-    result = count_timestamps(
-        times_ns=empty,
-        trial_index=empty,
-        unit_index=empty,
-        first_edge_ns=0,
-        bin_size_ns=10,
-        valid=np.ones(shape, dtype=bool),
-        n_units=2,
-    )
-
-    np.testing.assert_array_equal(
-        result,
-        np.zeros((*shape, 2), dtype=np.int64),
-    )
-
-
-REDUCTIONS = [
-    np.mean,
-    np.nanmean,
-    np.sum,
-    np.nansum,
-    np.std,
-    np.nanstd,
-    np.var,
-    np.nanvar,
-    np.min,
-    np.nanmin,
-    np.max,
-    np.nanmax,
-    np.median,
-    np.nanmedian,
-    np.prod,
-    np.nanprod,
-    np.all,
-    np.any,
-]
-
-
-@pytest.fixture(params=[(2, 3), (2, 1, 3)], ids=["matrix", "tensor"])
-def tensor_source(
-    request: pytest.FixtureRequest,
-) -> nap.TsdTensor:
-    time = np.arange(57) / 4
-    shape = (len(time), *request.param)
-    values = np.arange(np.prod(shape), dtype=float).reshape(shape) / 100
-
-    return nap.TsdTensor(t=time, d=values)
-
-
-@pytest.fixture
-def tensor_trials(
-    tensor_source: nap.TsdTensor,
-    intervals: nap.IntervalSet,
-) -> nap.TsdTrials:
-    return nap.TsdTrials(tensor_source, intervals)
-
-
-def test_replace_frame_with_tensor() -> None:
-    source = nap.TsdFrame(
-        t=np.arange(5),
-        d=np.ones((5, 2)),
-        columns=["x", "y"],
-        metadata={"region": ["ca1", "ca3"]},
-    )
-    trials = nap.TsdTrials(source, nap.IntervalSet(0.0, 4.0))
-
-    result = trials.replace_data(np.ones((1, 5, 2, 3)))
-
-    assert result.feature_names is None
-    assert result.feature_metadata is None
-    assert isinstance(result[0], nap.TsdTensor)
-
-    np.testing.assert_array_equal(trials.columns, ["x", "y"])
-    np.testing.assert_array_equal(
-        trials.feature_metadata["region"],
-        ["ca1", "ca3"],
-    )
-
-
-class TestTsdTrialsTensor:
-    def test_create(
-        self,
-        tensor_trials: nap.TsdTrials,
-        tensor_source: nap.TsdTensor,
-        intervals: nap.IntervalSet,
-    ) -> None:
-        trials = tensor_trials
-
-        assert trials.shape == (3, 13, *tensor_source.shape[1:])
-        assert trials.sample_period == pytest.approx(0.25)
-        assert trials.feature_names is None
-        assert trials.feature_metadata is None
-        np.testing.assert_array_equal(trials.valid.sum(axis=1), [9, 7, 13])
-        np.testing.assert_array_equal(trials.trial_ids, intervals.index)
-        np.testing.assert_array_equal(
-            trials.trials["condition"],
-            intervals["condition"],
-        )
-        np.testing.assert_allclose(trials.t, np.arange(13) / 4)
-
-        for trial, (start, end) in enumerate(zip(intervals.start, intervals.end)):
-            selected = (tensor_source.t >= start) & (tensor_source.t <= end)
-            np.testing.assert_array_equal(
-                trials.d[trial, trials.valid[trial]],
-                tensor_source.d[selected],
-            )
-
-        assert np.isnan(trials.d[~trials.valid]).all()
-        with pytest.raises(AttributeError):
-            _ = trials.columns
-
-    def test_single_trial(self, tensor_trials: nap.TsdTrials) -> None:
-        result = tensor_trials[1]
-
-        assert isinstance(result, nap.TsdTensor)
-        np.testing.assert_array_equal(result.t, tensor_trials.t[:7])
-        np.testing.assert_array_equal(result.d, tensor_trials.d[1, :7])
-        np.testing.assert_array_equal(result.time_support.start, [0.0])
-        np.testing.assert_array_equal(result.time_support.end, [1.5])
-
-    def test_dimension_transitions(
-        self,
-        tensor_trials: nap.TsdTrials,
-    ) -> None:
-        # Keep only the last tensor axis.
-        key = (
-            (slice(None), slice(None))
-            + (0,) * (tensor_trials.ndim - 3)
-            + (slice(None),)
-        )
-        frame = tensor_trials[key]
-
-        assert frame.shape == (3, 13, 3)
-        np.testing.assert_array_equal(frame.d, tensor_trials.d[key])
-        pd.testing.assert_index_equal(frame.columns, pd.RangeIndex(3))
-        pd.testing.assert_frame_equal(
-            frame.feature_metadata,
-            pd.DataFrame(index=frame.columns),
-        )
-
-        single = tensor_trials[(1, *key[1:])]
-        assert isinstance(single, nap.TsdFrame)
-        np.testing.assert_array_equal(single.d, frame.d[1, :7])
-
-        scalar_key = key[:-1] + (0,)
-        scalar = tensor_trials[scalar_key]
-        assert scalar.shape == (3, 13)
-        assert scalar.feature_names is None
-        assert scalar.feature_metadata is None
-        np.testing.assert_array_equal(
-            scalar.d,
-            tensor_trials.d[scalar_key],
-        )
-
-        single = tensor_trials[(1, *scalar_key[1:])]
-        assert isinstance(single, nap.Tsd)
-        np.testing.assert_array_equal(single.d, scalar.d[1, :7])
-
-    def test_orthogonal_selection(
-        self,
-        tensor_trials: nap.TsdTrials,
-    ) -> None:
-        result = tensor_trials[[2, 0], [4, 0], [1, 0], ..., [2, 0]]
-        expected = tensor_trials.d
-
-        for axis, positions in (
-            (0, [0, 2]),
-            (1, [0, 4]),
-            (2, [1, 0]),
-            (tensor_trials.ndim - 1, [2, 0]),
-        ):
-            expected = np.take(expected, positions, axis=axis)
-
-        np.testing.assert_array_equal(result.d, expected)
-        np.testing.assert_array_equal(result.trial_ids, [0, 2])
-        np.testing.assert_array_equal(result.t, [0.0, 1.0])
-        np.testing.assert_array_equal(
-            result.valid,
-            tensor_trials.valid[np.ix_([0, 2], [0, 4])],
-        )
-
-    def test_positional_tensor_axes(
-        self,
-        tensor_trials: nap.TsdTrials,
-    ) -> None:
-        for key in (
-            (..., -1),
-            (..., slice(None, None, -1)),
-            (..., [True, False, True]),
-        ):
-            result = tensor_trials[key]
-            np.testing.assert_array_equal(result.d, tensor_trials.d[key])
-
-        with pytest.raises(IndexError):
-            tensor_trials[..., tensor_trials.shape[-1]]
-
-        with pytest.raises(IndexError, match="None"):
-            tensor_trials[None]
-
-    def test_scalar_time(self, tensor_trials: nap.TsdTrials) -> None:
-        for key in ((slice(None), 0), (1, 0), (1, 0, Ellipsis, 0)):
-            result = tensor_trials[key]
-            assert isinstance(result, np.ndarray)
-            np.testing.assert_array_equal(result, tensor_trials.d[key])
-
-        key = (1, 0) + (0,) * (tensor_trials.ndim - 2)
-        assert np.isscalar(tensor_trials[key])
-        assert tensor_trials[key] == tensor_trials.d[key]
-
-    def test_get(self, tensor_trials: nap.TsdTrials) -> None:
-        result = tensor_trials.get(0.5, 2.5)
-
-        np.testing.assert_array_equal(result.t, tensor_trials.t[2:11])
-        np.testing.assert_array_equal(result.d, tensor_trials.d[:, 2:11])
-        np.testing.assert_array_equal(
-            result.valid,
-            tensor_trials.valid[:, 2:11],
-        )
-        np.testing.assert_array_equal(result.window_starts, [0.5] * 3)
-        np.testing.assert_array_equal(result.window_ends, [2.0, 1.5, 2.5])
-        np.testing.assert_array_equal(result.durations, [1.5, 1.0, 2.0])
-        assert np.isnan(result.d[~result.valid]).all()
-
-    @pytest.mark.parametrize(
-        "operation",
-        [
-            pytest.param(lambda x: x + 2, id="add"),
-            pytest.param(lambda x: 2 - x, id="reverse-subtract"),
-            pytest.param(lambda x: x + x, id="binary-trials"),
-            pytest.param(np.negative, id="negative"),
-            pytest.param(np.isfinite, id="isfinite"),
-            pytest.param(lambda x: x > 2, id="comparison"),
-        ],
-    )
-    def test_operations(
-        self,
-        tensor_trials: nap.TsdTrials,
-        operation: Any,
-    ) -> None:
-        original = tensor_trials.d.copy()
-        valid = tensor_trials.valid.reshape(
-            tensor_trials.valid.shape + (1,) * (tensor_trials.ndim - 2)
-        )
-        expected = np.where(valid, operation(original), np.nan)
-
-        result = operation(tensor_trials)
-
-        np.testing.assert_array_equal(result.d, expected)
-        np.testing.assert_array_equal(tensor_trials.d, original)
-        assert_same_axes(result, tensor_trials)
-
-    @pytest.mark.parametrize("axes", [None, (0, 1), 1, -1])
-    def test_normalize(
-        self,
-        tensor_trials: nap.TsdTrials,
-        axes: int | tuple[int, ...] | None,
-    ) -> None:
-        original = tensor_trials.d.copy()
-        mean = np.nanmean(original, axis=axes, keepdims=True)
-        std = np.nanstd(original, axis=axes, keepdims=True)
-        expected = (original - mean) / np.where(std == 0, 1.0, std)
-
-        result = tensor_trials.normalize(axes=axes)
-
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-        np.testing.assert_array_equal(tensor_trials.d, original)
-        assert_same_axes(result, tensor_trials)
-
-    @pytest.mark.parametrize("trim", ["both", "left", "right"])
-    def test_convolve(
-        self,
-        tensor_trials: nap.TsdTrials,
-        trim: str,
-    ) -> None:
-        kernel = np.array([1.0, 2.0, 3.0, 4.0]) / 10
-        original = tensor_trials.d.copy()
-        expected = np.full_like(original, np.nan)
-        start = {"both": 1, "left": 3, "right": 0}[trim]
-
-        for trial in range(len(tensor_trials)):
-            valid = tensor_trials.valid[trial]
-            for coordinate in np.ndindex(tensor_trials.shape[2:]):
-                key = (trial, slice(None), *coordinate)
-                padded = np.where(valid, original[key], 0.0)
-                convolved = np.convolve(padded, kernel, mode="full")
-                trimmed = convolved[start : start + tensor_trials.shape[1]]
-                expected[key] = np.where(valid, trimmed, np.nan)
-
-        result = tensor_trials.convolve(kernel, trim=trim)
-
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-        np.testing.assert_array_equal(tensor_trials.d, original)
-        assert_same_axes(result, tensor_trials)
-
-    @pytest.mark.parametrize("norm", [False, True])
-    def test_smooth(
-        self,
-        tensor_trials: nap.TsdTrials,
-        norm: bool,
-    ) -> None:
-        kernel = signal.windows.gaussian(5, std=1.0)
-        if norm:
-            kernel /= kernel.sum()
-
-        expected = tensor_trials.convolve(kernel)
-        result = tensor_trials.smooth(
-            std=0.25,
-            windowsize=1.0,
-            norm=norm,
-        )
-
-        np.testing.assert_allclose(result.d, expected.d, equal_nan=True)
-        assert_same_axes(result, tensor_trials)
-
-    @pytest.mark.parametrize("trailing_shape", [(), (4,), (2, 3), (2, 1, 3)])
-    def test_replace_data(
-        self,
-        tensor_trials: nap.TsdTrials,
-        trailing_shape: tuple[int, ...],
-    ) -> None:
-        original = tensor_trials.d.copy()
-        values = np.ones((*tensor_trials.shape[:2], *trailing_shape))
-        values[0, 0] = np.nan
-
-        result = tensor_trials.replace_data(values)
-
-        assert result.shape == values.shape
-        np.testing.assert_array_equal(
-            result.d[result.valid],
-            values[result.valid],
-        )
-        assert np.isnan(result.d[~result.valid]).all()
-        np.testing.assert_array_equal(tensor_trials.d, original)
-        np.testing.assert_array_equal(result.valid, tensor_trials.valid)
-        np.testing.assert_array_equal(result.t, tensor_trials.t)
-
-        if result.ndim == 3:
-            pd.testing.assert_index_equal(result.columns, pd.RangeIndex(4))
-            pd.testing.assert_frame_equal(
-                result.feature_metadata,
-                pd.DataFrame(index=result.columns),
-            )
-        else:
-            assert result.feature_names is None
-            assert result.feature_metadata is None
-
-        if result.shape == tensor_trials.shape:
-            assert_same_axes(result, tensor_trials)
-
-    def test_reject_tensor_columns(
-        self,
-        tensor_trials: nap.TsdTrials,
-    ) -> None:
-        with pytest.raises(ValueError, match="three-dimensional"):
-            tensor_trials.replace_data(
-                tensor_trials.d,
-                columns=["a", "b"],
-            )
-
-    def test_groupby(self, tensor_trials: nap.TsdTrials) -> None:
-        groups = tensor_trials.groupby("condition")
-
-        for condition, positions in {"a": [0, 2], "b": [1]}.items():
-            expected = tensor_trials[positions]
-            np.testing.assert_array_equal(groups[condition].d, expected.d)
-            assert_same_axes(groups[condition], expected)
-
-        means = tensor_trials.groupby_apply("condition", np.nansum, axis=0)
-        for condition, group in groups.items():
-            assert isinstance(means[condition], nap.TsdTensor)
-            valid = group.valid.any(axis=0)
-            np.testing.assert_array_equal(
-                means[condition].d,
-                np.nansum(group.d, axis=0)[valid],
-            )
-
-    def test_empty_axes(
-        self,
-        tensor_trials: nap.TsdTrials,
-        tensor_source: nap.TsdTensor,
-    ) -> None:
-        empty = nap.TsdTrials(tensor_source, nap.IntervalSet([], []))
-        assert empty.shape == (0, 0, *tensor_source.shape[1:])
-        assert empty.valid.shape == (0, 0)
-        assert "No trials." in repr(empty)
-
-        selections = (
-            tensor_trials[:0],
-            tensor_trials[:, :0],
-            tensor_trials[..., :0],
-        )
-        for selected in selections:
-            assert selected.d.size == 0
-            repr(selected)
-
-            for result in (
-                selected + 1,
-                selected.convolve(np.ones(3)),
-                selected.smooth(0.25, windowsize=1.0),
-            ):
-                assert result.shape == selected.shape
-                assert_same_axes(result, selected)
-
-    def test_repr(self, tensor_trials: nap.TsdTrials) -> None:
-        representation = repr(tensor_trials)
-        names = ["trial", "time"] + [
-            f"axis_{axis}" for axis in range(2, tensor_trials.ndim)
-        ]
-        dimensions = ", ".join(
-            f"{name}: {size}" for name, size in zip(names, tensor_trials.shape)
-        )
-
-        assert f"shape: ({dimensions})" in representation
-        assert "tensor (flattened)" in representation
-        assert "align: 'start'" in representation
-
-
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
-class TestTsdTrialsTensorReductions:
-    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
-    @pytest.mark.parametrize(
-        "axis",
-        [None, (), 0, 1, -1, (0, -1), (2, 3), (0, 2, 3)],
-    )
-    @pytest.mark.parametrize("keepdims", [False, True])
-    def test_reduction(
-        self,
-        tensor_trials: nap.TsdTrials,
-        reduction: Any,
-        axis: int | tuple[int, ...] | None,
-        keepdims: bool,
-    ) -> None:
-        trials = tensor_trials
-        original = trials.d.copy()
-        expected = reduction(original, axis=axis, keepdims=keepdims)
-        result = reduction(trials, axis=axis, keepdims=keepdims)
-
-        axes = (
-            tuple(range(trials.ndim))
-            if axis is None
-            else axis
-            if isinstance(axis, tuple)
-            else (axis,)
-        )
-        axes = tuple(value % trials.ndim for value in axes)
-
-        if axis is None or 1 in axes or (axes and keepdims):
-            assert not isinstance(
-                result,
-                (nap.TsdTrials, nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            )
-            np.testing.assert_allclose(result, expected, equal_nan=True)
-
-        elif 0 in axes:
-            expected_type = (
-                nap.Tsd
-                if expected.ndim == 1
-                else nap.TsdFrame
-                if expected.ndim == 2
-                else nap.TsdTensor
-            )
-            assert isinstance(result, expected_type)
-
-            valid = trials.valid.any(axis=0)
-            np.testing.assert_array_equal(result.t, trials.t[valid])
-            np.testing.assert_allclose(
-                result.d,
-                expected[valid],
-                equal_nan=True,
-            )
-            np.testing.assert_array_equal(
-                result.time_support.start,
-                [trials.window_starts.min()],
-            )
-            np.testing.assert_array_equal(
-                result.time_support.end,
-                [trials.window_ends.max()],
-            )
-
-            if isinstance(result, nap.TsdFrame):
-                np.testing.assert_array_equal(
-                    result.columns,
-                    np.arange(expected.shape[1]),
-                )
-                assert len(result.metadata_columns) == 0
-
-        else:
-            assert isinstance(result, nap.TsdTrials)
-            np.testing.assert_allclose(result.d, expected, equal_nan=True)
-            assert_same_axes(result, trials.replace_data(expected))
-
-        np.testing.assert_array_equal(trials.d, original)
-
-    def test_omit_globally_invalid_times(
-        self,
-        tensor_trials: nap.TsdTrials,
-    ) -> None:
-        trials = tensor_trials[:2]
-        valid = trials.valid.any(axis=0)
-
-        result = np.nanmean(trials, axis=0)
-
-        assert isinstance(result, nap.TsdTensor)
-        assert not valid.all()
-        np.testing.assert_array_equal(result.t, trials.t[valid])
-        np.testing.assert_allclose(
-            result.d,
-            np.nanmean(trials.d[:, valid], axis=0),
-            equal_nan=True,
-        )
-
-    def test_out(self, tensor_trials: nap.TsdTrials) -> None:
-        expected = np.nanmean(tensor_trials.d, axis=0)
-        output = np.empty_like(expected)
-
-        result = np.nanmean(tensor_trials, axis=0, out=output)
-
-        assert result is output
-        np.testing.assert_allclose(output, expected, equal_nan=True)
-
-
-@pytest.mark.filterwarnings("ignore::RuntimeWarning")
-class TestTsdTrialsReductions:
-    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
-    @pytest.mark.parametrize(
-        "axis",
-        [
-            None,
-            (),
-            0,
-            1,
-            2,
-            -1,
-            -2,
-            -3,
-            (0, 1),
-            (0, 2),
-            (1, 2),
-            (0, 1, 2),
-            (2, 0),
-        ],
-    )
-    @pytest.mark.parametrize("keepdims", [False, True])
-    def test_reduction(
-        self,
-        tsd_trials: nap.TsdTrials,
-        reduction: Any,
-        axis: int | tuple[int, ...] | None,
-        keepdims: bool,
-    ) -> None:
-        axes = (
-            tuple(range(tsd_trials.ndim))
-            if axis is None
-            else axis
-            if isinstance(axis, tuple)
-            else (axis,)
-        )
-        if any(not -tsd_trials.ndim <= value < tsd_trials.ndim for value in axes):
-            pytest.skip("Axis is not present in scalar trial data.")
-
-        axes = tuple(value % tsd_trials.ndim for value in axes)
-        original = tsd_trials.d.copy()
-        expected = reduction(original, axis=axis, keepdims=keepdims)
-        result = reduction(tsd_trials, axis=axis, keepdims=keepdims)
-
-        if axis is None or 1 in axes or (axes and keepdims):
-            assert not isinstance(result, (nap.TsdTrials, nap.Tsd, nap.TsdFrame))
-            assert np.shape(result) == np.shape(expected)
-            np.testing.assert_allclose(result, expected, equal_nan=True)
-
-        elif 0 in axes:
-            expected_type = (
-                nap.Tsd if tsd_trials.ndim == 2 or 2 in axes else nap.TsdFrame
-            )
-            assert isinstance(result, expected_type)
-
-            valid = tsd_trials.valid.any(axis=0)
-            np.testing.assert_array_equal(result.t, tsd_trials.t[valid])
-            np.testing.assert_allclose(
-                result.d,
-                expected[valid],
-                equal_nan=True,
-            )
-            np.testing.assert_allclose(
-                result.time_support.start,
-                [tsd_trials.window_starts.min()],
-            )
-            np.testing.assert_allclose(
-                result.time_support.end,
-                [tsd_trials.window_ends.max()],
-            )
-
-            if isinstance(result, nap.TsdFrame):
-                np.testing.assert_array_equal(
-                    result.columns,
-                    tsd_trials.columns,
-                )
-                for column in tsd_trials.feature_metadata.columns:
-                    np.testing.assert_array_equal(
-                        result[column],
-                        tsd_trials.feature_metadata[column],
-                    )
-
-        else:
-            assert isinstance(result, nap.TsdTrials)
-            np.testing.assert_allclose(result.d, expected, equal_nan=True)
-
-            expected_axes = (
-                tsd_trials[:, :, tsd_trials.columns[0]] if 2 in axes else tsd_trials
-            )
-            assert_same_axes(result, expected_axes)
-
-        np.testing.assert_array_equal(tsd_trials.d, original)
-
-    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
-    def test_positional_axis(
-        self,
-        tsd_trials: nap.TsdTrials,
-        reduction: Any,
-    ) -> None:
-        result = reduction(tsd_trials, 0)
-        expected = reduction(tsd_trials.d, axis=0)
-
-        assert isinstance(result, (nap.Tsd, nap.TsdFrame))
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-
-    @pytest.mark.parametrize("reduction", REDUCTIONS, ids=lambda f: f.__name__)
-    def test_out(
-        self,
-        tsd_trials: nap.TsdTrials,
-        reduction: Any,
-    ) -> None:
-        expected = reduction(tsd_trials.d, axis=0)
-        output = np.empty_like(expected)
-
-        result = reduction(tsd_trials, axis=0, out=output)
-
-        assert result is output
-        np.testing.assert_allclose(output, expected, equal_nan=True)
-
-    @pytest.mark.parametrize(
-        "reduction, kwargs",
-        [
-            (np.mean, {"dtype": np.float32}),
-            (np.nanmean, {"dtype": np.float32}),
-            (np.sum, {"initial": 5.0}),
-            (np.nansum, {"initial": 5.0}),
-            (np.std, {"ddof": 1}),
-            (np.nanstd, {"ddof": 1}),
-            (np.var, {"ddof": 1}),
-            (np.nanvar, {"ddof": 1}),
-            (np.min, {"initial": -100.0}),
-            (np.max, {"initial": 100.0}),
-        ],
-    )
-    def test_reduction_arguments(
-        self,
-        tsd_trials: nap.TsdTrials,
-        reduction: Any,
-        kwargs: dict[str, Any],
-    ) -> None:
-        expected = reduction(tsd_trials.d, axis=0, **kwargs)
-        result = reduction(tsd_trials, axis=0, **kwargs)
-
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-        assert result.d.dtype == expected.dtype
-
-    def test_where(self, tsd_trials: nap.TsdTrials) -> None:
-        valid = (
-            tsd_trials.valid[..., None] if tsd_trials.ndim == 3 else tsd_trials.valid
-        )
-
-        expected = np.mean(tsd_trials.d, axis=0, where=valid)
-        result = np.mean(tsd_trials, axis=0, where=valid)
-
-        np.testing.assert_allclose(result.d, expected, equal_nan=True)
-
-    def test_mean_nan_behavior(self, tsd_trials: nap.TsdTrials) -> None:
-        ordinary = np.mean(tsd_trials, axis=0)
-        ignoring_nan = np.nanmean(tsd_trials, axis=0)
-        partially_valid = tsd_trials.valid.any(axis=0) & ~tsd_trials.valid.all(axis=0)
-
-        assert np.isnan(ordinary.d[partially_valid]).all()
-        assert np.isfinite(ignoring_nan.d[partially_valid]).all()
-
-    def test_omit_globally_invalid_times(
-        self,
-        tsd_trials: nap.TsdTrials,
-    ) -> None:
-        trials = tsd_trials[:2]
-        result = np.nanmean(trials, axis=0)
-        valid = trials.valid.any(axis=0)
-
-        assert not valid.all()
-        np.testing.assert_array_equal(result.t, trials.t[valid])
-        np.testing.assert_allclose(
-            result.d,
-            np.nanmean(trials.d[:, valid], axis=0),
-            equal_nan=True,
-        )
-
-    @pytest.mark.parametrize("axis", [100, (0, 0)])
-    def test_invalid_axis(
-        self,
-        tsd_trials: nap.TsdTrials,
-        axis: int | tuple[int, ...],
-    ) -> None:
-        with pytest.raises((IndexError, ValueError)):
-            np.mean(tsd_trials, axis=axis)
-
-    def test_unsupported_function(self, tsd_trials: nap.TsdTrials) -> None:
-        with pytest.raises(TypeError):
-            np.transpose(tsd_trials)
