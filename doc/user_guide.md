@@ -36,7 +36,7 @@ Correlograms <user_guide/05_correlograms>
 
 ```{toctree}
 :maxdepth: 2
-ISI & burst detection <user_guide/15_isi_bursts>
+Inter-spike interval (ISI) & burst detection <user_guide/15_isi_bursts>
 ```
 
 ```{toctree}

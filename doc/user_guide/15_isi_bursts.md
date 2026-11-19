@@ -38,7 +38,7 @@ ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
 ts_group
 ```
 
-## Interspike interval (ISI) distribution
+## ISI distribution
 
 The interspike interval distribution, computed with [`compute_isi_distribution`](pynapple.process.isi.compute_isi_distribution), shows how the time differences between subsequent spikes (events) are distributed.
 The input can be any object with timestamps. Passing `epochs` restricts the computation to the given epochs.

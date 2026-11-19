@@ -1,8 +1,5 @@
 """
-Functions based on interspike intervals: ISI distribution and burst detection.
-
-The :doc:`user guide </user_guide/15_isi_bursts>` illustrates the burst detection methods
-and their parameters with figures.
+Interspike interval functions: ISI distribution and burst detection.
 """
 
 from __future__ import annotations
