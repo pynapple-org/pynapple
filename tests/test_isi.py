@@ -474,6 +474,34 @@ def test_poisson_surprise_min_surprise():
     assert len(bursts) >= 3
 
 
+# The next two tests cover the two places where the method departs from the R
+# code. _PS_TRAIN does not exercise either, so test_poisson_surprise_matches_r
+# passes with or without them.
+
+
+def test_poisson_surprise_long_isi_elsewhere_does_not_stop_burst():
+    # The burst (spikes 5 to 11) has a longer ISI in the middle, so the surprise
+    # drops before it rises again. The R code stops extending it there, because
+    # it reads the 3 s ISI between spikes 2 and 3 of the train.
+    t = np.array(
+        [0.3, 0.9, 1.5, 4.5, 5.2, 6.0, 6.05, 6.1, 6.45, 6.5, 6.55, 6.6, 7.8, 8.9, 10.0]
+    )
+    bursts = nap.detect_spike_bursts(nap.Ts(t=t), method="poisson_surprise")
+    _assert_bursts(bursts, [6.0], [6.6], [7])
+
+
+def test_poisson_surprise_max_isi_burst_is_a_hard_limit():
+    # The spike at 4.05 increases the surprise, but is 30 ms after the previous
+    # one. `max_isi_burst` takes precedence, so it is left out.
+    t = np.array([0, 1, 2, 3, 4.0, 4.005, 4.01, 4.015, 4.02, 4.05, 5, 6, 7, 8])
+    bursts = nap.detect_spike_bursts(nap.Ts(t=t), method="poisson_surprise")
+    _assert_bursts(bursts, [4.0], [4.05], [6])
+    bursts = nap.detect_spike_bursts(
+        nap.Ts(t=t), method="poisson_surprise", max_isi_burst=0.02
+    )
+    _assert_bursts(bursts, [4.0], [4.02], [5])
+
+
 @pytest.mark.parametrize(
     "params, expectation",
     [

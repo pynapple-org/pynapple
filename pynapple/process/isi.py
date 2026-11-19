@@ -524,14 +524,17 @@ def _poisson_surprise_bursts(times, mean_isi, max_isi_burst):
             improved = False
             while check > 0:
                 check -= 1
+                # `isi_thresh` takes precedence over the surprise: a spike further
+                # than this from the last spike of the burst is never added, even
+                # if it would increase the surprise. This departs from the R code,
+                # which tests the ISI only after the surprise failed to increase,
+                # and reads it at spike `i` of the train rather than of the burst.
+                if times[first + n_spikes] - times[first + n_spikes - 1] > isi_thresh:
+                    break
                 n_spikes += 1
                 s_new = _poisson_surprise(times, first, n_spikes, mean_isi)
                 if s_new > s:
                     improved = True
-                    break
-                # As in the R code, this reads the ISI ending at spike `n_spikes`
-                # of the train, not spike `n_spikes` of the burst.
-                if times[n_spikes - 1] - times[n_spikes - 2] > isi_thresh:
                     break
             if not improved:
                 n_spikes = n_spikes_cur
