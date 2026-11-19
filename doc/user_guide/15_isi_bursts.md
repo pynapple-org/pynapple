@@ -31,9 +31,16 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 Let's generate some data. Here we have two neurons recorded together. We can group them in a TsGroup.
 
 ```{code-cell} ipython3
-ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
-ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
-epoch = nap.IntervalSet(start=0, end=1000, time_units="s")
+np.random.seed(0)
+duration = 600
+background = np.random.uniform(0, duration, 1200)
+burst_starts = np.random.uniform(0, duration, 300)
+burst_spikes = [s + np.cumsum(np.random.uniform(0.005, 0.015, 5)) for s in burst_starts]
+
+ts1 = nap.Ts(t=np.sort(np.random.uniform(0, duration, 1200)))
+ts2 = nap.Ts(t=np.sort(np.concatenate([background] + burst_spikes)))
+
+epoch = nap.IntervalSet(start=0, end=duration)
 ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
 ts_group
 ```
@@ -89,7 +96,7 @@ for col in isi_distribution.columns:
         align='center',
         edgecolor='none'
     )
-plt.xlabel("log ISI (s)")
+plt.xlabel("ISI (s)")
 plt.ylabel("Count")
 plt.legend(title="Unit")
 plt.show()
@@ -105,6 +112,11 @@ isi_distribution
 
 ```{code-cell} ipython3
 :tags: [hide-input]
+# finer bins for plotting (with log_scale=True, bin edges are given in log units)
+isi_distribution = nap.compute_isi_distribution(
+    data=ts_group, bins=np.linspace(-10, 2.5, 54), log_scale=True, epochs=epoch
+    )
+plt.figure(figsize=(10, 3))
 for col in isi_distribution.columns:
     plt.bar(
         isi_distribution.index,
@@ -115,9 +127,11 @@ for col in isi_distribution.columns:
         align='center',
         edgecolor='none'
     )
+plt.xlim(-10, 2.5)
 plt.xlabel("log ISI (s)")
 plt.ylabel("Count")
 plt.legend(title="Unit")
+plt.tight_layout()
 plt.show()
 ```
 
@@ -128,15 +142,10 @@ A burst is a group of spikes much closer to each other than to the spikes around
 methods and returns an `IntervalSet` from the first to the last spike of each burst, with the
 number of spikes as metadata.
 
-Let's simulate a neuron firing at a low background rate with occasional bursts of 5 spikes about 10 ms apart:
+Let's take the second neuron generated above, firing at a low background rate with occasional bursts of 5 spikes about 10 ms apart:
 
 ```{code-cell} ipython3
-np.random.seed(0)
-duration = 600
-background = np.random.uniform(0, duration, 1200)
-burst_starts = np.random.uniform(0, duration, 300)
-bursts = [s + np.cumsum(np.random.uniform(0.005, 0.015, 5)) for s in burst_starts]
-spikes = nap.Ts(t=np.sort(np.concatenate([background] + bursts)))
+spikes = ts_group[1]
 spikes
 ```
 
@@ -183,10 +192,12 @@ threshold
 edges = np.logspace(0, 4, 40) / 1000
 isi_distribution = nap.compute_isi_distribution(spikes, bins=edges)
 plt.figure(figsize=(10, 3))
-plt.bar(edges[:-1], isi_distribution[0], width=np.diff(edges), align="edge", edgecolor="none")
-plt.axvline(threshold, color="red", label="threshold")
-plt.xscale("log")
-plt.xlabel("ISI (s)")
+# plotted in natural-log units, like the log-scaled ISI distribution above
+log_edges = np.log(edges)
+plt.bar(log_edges[:-1], isi_distribution[0], width=np.diff(log_edges), align="edge", edgecolor="none")
+plt.axvline(np.log(threshold), color="red", label="threshold")
+plt.xlim(-10, 2.5)
+plt.xlabel("log ISI (s)")
 plt.ylabel("Count")
 plt.legend()
 plt.tight_layout();
