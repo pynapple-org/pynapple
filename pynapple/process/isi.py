@@ -7,7 +7,6 @@ from __future__ import annotations
 import inspect
 import math
 import numbers
-import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -226,37 +225,6 @@ def _jitdrop_small_runs(times, first, last, min_burst_duration, min_spikes_in_bu
     return first[keep], last[keep]
 
 
-@jit(nopython=True, cache=True)
-def _jitextend_to_related_spikes(times, first, last, threshold):
-    """
-    Extend each core to the run of spikes with consecutive intervals no longer
-    than `threshold` that contains it. Cores inside the same run become one burst.
-    """
-    run_first, run_last = _jitfind_runs(times, threshold, threshold)
-    extended_first = np.empty(len(first), dtype=np.int64)
-    extended_last = np.empty(len(first), dtype=np.int64)
-    count = 0
-    r = 0
-    for k in range(len(first)):
-        # cores and runs are sorted: the first run that ends at or after the
-        # core is the only one that can contain it
-        while r < len(run_first) and run_last[r] < last[k]:
-            r += 1
-        if r < len(run_first) and run_first[r] <= first[k]:
-            new_first, new_last = run_first[r], run_last[r]
-        else:
-            new_first, new_last = first[k], last[k]
-        if (
-            count == 0
-            or extended_first[count - 1] != new_first
-            or extended_last[count - 1] != new_last
-        ):
-            extended_first[count] = new_first
-            extended_last[count] = new_last
-            count += 1
-    return extended_first[:count], extended_last[:count]
-
-
 def _no_runs():
     return np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64)
 
@@ -328,189 +296,6 @@ def _detect_bursts_max_interval(
         )
 
     return _apply(spikes, find_bursts)
-
-
-# ---------------------------------------------------------------------------
-# logISI
-# ---------------------------------------------------------------------------
-
-
-def _interspike_intervals(spikes):
-    """
-    The intervals (in seconds) between consecutive spikes, within each epoch
-    of the time support only.
-    """
-    # time_diff() cannot read a train with no spikes at all.
-    if len(spikes) == 0:
-        return np.empty(0)
-    return spikes.time_diff().values
-
-
-def _log_isi_histogram(spikes, isi_ms):
-    """
-    Histogram of the interspike intervals on a logarithmic axis, computed with
-    `compute_isi_distribution`: 10 bin edges per decade from 1 ms to the decade
-    above the longest interval, intervals under 1 ms left out, counts
-    normalised to sum to one. Returns (left edges in ms, normalised counts).
-    """
-    decades = max(1, int(np.ceil(np.log10(isi_ms.max()))))
-    edges_ms = np.logspace(0, decades, 10 * decades)
-    counts = compute_isi_distribution(spikes, bins=edges_ms / 1000)[0].values
-    return edges_ms[:-1], counts / counts.sum()
-
-
-def _find_peaks(density):
-    """
-    Bins strictly higher than every bin within two bins of them, excluding the
-    first and last bin.
-    """
-    peaks = []
-    for k in range(1, len(density) - 1):
-        neighbours = np.delete(density[max(0, k - 2) : k + 3], min(k, 2))
-        if np.all(density[k] > neighbours):
-            peaks.append(k)
-    return peaks
-
-
-def _log_isi_valley(spikes, max_cutoff):
-    """
-    The threshold of Pasquale et al. (2010): the ISI at the first valley that
-    separates the intra-burst peak of the log-ISI histogram from a later peak
-    with a void parameter of at least 0.7.
-
-    Returns (has_intraburst_peak, threshold in seconds or None).
-    """
-    isi_ms = _interspike_intervals(spikes) * 1000
-    if len(isi_ms) == 0 or not np.any(isi_ms >= 1):
-        return False, None
-    edges, density = _log_isi_histogram(spikes, isi_ms)
-    peaks = _find_peaks(density)
-    intraburst = [k for k in peaks if edges[k] < max_cutoff * 1000]
-    if not intraburst:
-        return False, None
-    peak = max(intraburst, key=lambda k: density[k])
-    for later in peaks:
-        if later <= peak:
-            continue
-        between = density[peak : later + 1]
-        valley = peak + int(np.argmin(between))
-        void = 1 - between.min() / np.sqrt(density[peak] * density[later])
-        if void >= 0.7:
-            return True, float(edges[valley] / 1000)
-    return True, None
-
-
-def compute_log_isi_threshold(spikes, max_cutoff=0.1):
-    """
-    Compute the burst threshold of the logISI method.
-
-    The threshold is the ISI at the minimum of the log-ISI histogram between the
-    intra-burst peak (below `max_cutoff`) and the next well separated peak,
-    following Pasquale et al. (2010). See
-    :func:`detect_spike_bursts` for the reference.
-
-    Parameters
-    ----------
-    spikes : Ts or TsGroup
-        Spike times.
-    max_cutoff : float, optional
-        Largest ISI, in seconds, at which the intra-burst peak may lie. Default is 0.1.
-
-    Returns
-    -------
-    float, None or dict
-        Threshold in seconds, or None if the histogram has no intra-burst peak or no clear minimum.
-        A dictionary keyed by unit for a TsGroup.
-
-    Raises
-    ------
-    TypeError
-        If `spikes` is not a Ts or TsGroup.
-        If `max_cutoff` is not a number.
-    ValueError
-        If `max_cutoff` is not positive.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import pynapple as nap
-    >>> t = np.concatenate([s + np.arange(5) * 0.01 for s in np.arange(200) * 1.5])
-    >>> spikes = nap.Ts(t=t)
-    >>> round(nap.compute_log_isi_threshold(spikes), 4)
-    0.0106
-    """
-    _check_spikes(spikes)
-    _check_positive("max_cutoff", max_cutoff)
-    if isinstance(spikes, nap.TsGroup):
-        return {k: compute_log_isi_threshold(spikes[k], max_cutoff) for k in spikes}
-    return _log_isi_valley(spikes, max_cutoff)[1]
-
-
-def _log_isi_bursts_single(spikes, max_cutoff, min_spikes_in_burst, fallback):
-    """logISI bursts of one Ts. Returns (bursts, whether a threshold was missing)."""
-    has_peak, threshold = _log_isi_valley(spikes, max_cutoff)
-    no_valley = threshold is None or threshold >= 1.0
-    max_cutoff = float(max_cutoff)
-
-    def find_bursts(times):
-        if not has_peak or (no_valley and not fallback):
-            return _no_runs()
-        if no_valley:
-            runs = _jitfind_runs(times, max_cutoff, max_cutoff)
-            return _jitdrop_small_runs(times, *runs, 0.0, min_spikes_in_burst)
-        if threshold > max_cutoff:
-            cores = _jitfind_runs(times, max_cutoff, max_cutoff)
-            cores = _jitmerge_close_runs(times, *cores, threshold)
-            cores = _jitdrop_small_runs(times, *cores, 0.0, min_spikes_in_burst)
-            return _jitextend_to_related_spikes(times, *cores, threshold)
-        runs = _jitfind_runs(times, threshold, threshold)
-        return _jitdrop_small_runs(times, *runs, 0.0, min_spikes_in_burst)
-
-    return (
-        _detect_per_epoch(spikes, find_bursts),
-        has_peak and no_valley and not fallback,
-    )
-
-
-def _detect_bursts_log_isi(
-    spikes, max_cutoff=0.1, min_spikes_in_burst=3, fallback=False
-):
-    """logISI method of Pasquale et al. (2010), see `detect_spike_bursts`."""
-    _check_positive("max_cutoff", max_cutoff)
-    _check_min_spikes("min_spikes_in_burst", min_spikes_in_burst)
-    if not isinstance(fallback, bool):
-        raise TypeError(f"`fallback` must be a bool, got {type(fallback)}")
-
-    if isinstance(spikes, nap.TsGroup):
-        results = {
-            k: _log_isi_bursts_single(
-                spikes[k], max_cutoff, min_spikes_in_burst, fallback
-            )
-            for k in spikes
-        }
-        missing = [k for k, (_, no_threshold) in results.items() if no_threshold]
-        if missing:
-            warnings.warn(
-                f"No clear minimum in the log-ISI histogram of unit(s) {missing}: "
-                "no bursts returned. Set `fallback=True` to use `max_cutoff` as the "
-                "threshold instead, as in the published method.",
-                UserWarning,
-                stacklevel=3,
-            )
-        return {k: bursts for k, (bursts, _) in results.items()}
-
-    bursts, no_threshold = _log_isi_bursts_single(
-        spikes, max_cutoff, min_spikes_in_burst, fallback
-    )
-    if no_threshold:
-        warnings.warn(
-            "No clear minimum in the log-ISI histogram: no bursts returned. "
-            "Set `fallback=True` to use `max_cutoff` as the threshold instead, "
-            "as in the published method.",
-            UserWarning,
-            stacklevel=3,
-        )
-    return bursts
 
 
 # ---------------------------------------------------------------------------
@@ -643,6 +428,17 @@ def _jitpoisson_surprise_bursts(times, mean_isi, isi_thresh):
     return burst_first[:count], burst_last[:count], burst_surprise[:count]
 
 
+def _interspike_intervals(spikes):
+    """
+    The intervals (in seconds) between consecutive spikes, within each epoch
+    of the time support only.
+    """
+    # time_diff() cannot read a train with no spikes at all.
+    if len(spikes) == 0:
+        return np.empty(0)
+    return spikes.time_diff().values
+
+
 def _poisson_surprise_single(spikes, min_surprise, max_isi_burst):
     isi = _interspike_intervals(spikes)
     if len(isi) == 0:
@@ -676,14 +472,13 @@ def _detect_bursts_poisson_surprise(spikes, min_surprise=5.0, max_isi_burst=None
 # ---------------------------------------------------------------------------
 
 _BURST_METHODS = {
-    "log_isi": _detect_bursts_log_isi,
-    "max_interval": _detect_bursts_max_interval,
     "poisson_surprise": _detect_bursts_poisson_surprise,
+    "max_interval": _detect_bursts_max_interval,
     "instantaneous_rate": _detect_bursts_instantaneous_rate,
 }
 
 
-def detect_spike_bursts(spikes, method="log_isi", **params):
+def detect_spike_bursts(spikes, method="poisson_surprise", **params):
     """
     Detect bursts in spike trains.
 
@@ -691,33 +486,26 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
     Bursts are detected within each epoch of the time support, so they never span a gap in it.
     Method can be:
 
-    - `"log_isi"` (default): logISI method [1]_. The threshold between intra- and inter-burst
-      intervals is read off the log-ISI histogram of each spike train, see
-      :func:`compute_log_isi_threshold`. Parameters: `max_cutoff` (float, default 0.1), the
-      largest ISI in seconds at which the intra-burst peak may lie; `min_spikes_in_burst`
-      (int, default 3); `fallback` (bool, default False), whether to use `max_cutoff` as the
-      threshold when no clear minimum is found, as the published method does. Otherwise no
-      bursts are returned and a warning is raised.
-    - `"max_interval"`: MaxInterval method [2]_ with fixed thresholds, in seconds:
-      `max_isi_start` (default 0.17), `max_isi_burst` (0.3), `min_inter_burst_interval` (0.2),
-      `min_burst_duration` (0.01) and `min_spikes_in_burst` (int, default 3).
-    - `"poisson_surprise"`: Poisson surprise method [3]_, as implemented by [2]_. A burst
-      starts at three spikes with ISIs below half the mean ISI and is grown, then trimmed,
-      to maximise its surprise: -log of the probability of that many spikes in that time
-      under a Poisson process at the mean rate of the train. Parameters: `min_surprise`
+    - `"poisson_surprise"` (default): Poisson surprise method [1]_, as implemented by [2]_.
+      A burst starts at three spikes with ISIs below half the mean ISI and is grown, then
+      trimmed, to maximise its surprise: -log of the probability of that many spikes in that
+      time under a Poisson process at the mean rate of the train. Parameters: `min_surprise`
       (float, default 5), the smallest surprise of a burst; `max_isi_burst` (float or None,
       default None, i.e. twice the mean ISI), in seconds, the ISI beyond which spikes are
       no longer added.
+    - `"max_interval"`: MaxInterval method [2]_ with fixed thresholds, in seconds:
+      `max_isi_start` (default 0.17), `max_isi_burst` (0.3), `min_inter_burst_interval` (0.2),
+      `min_burst_duration` (0.01) and `min_spikes_in_burst` (int, default 3).
     - `"instantaneous_rate"`: runs of spikes whose instantaneous firing rate (1 / ISI) stays
-      above `rate_threshold` (float, default 125 Hz) [4]_, with at least `min_spikes_in_burst`
+      above `rate_threshold` (float, default 125 Hz) [3]_, with at least `min_spikes_in_burst`
       spikes (int, default 2).
 
     Parameters
     ----------
     spikes : Ts or TsGroup
         Spike times.
-    method : {"log_isi", "max_interval", "poisson_surprise", "instantaneous_rate"}, optional
-        Detection method. Default is "log_isi".
+    method : {"poisson_surprise", "max_interval", "instantaneous_rate"}, optional
+        Detection method. Default is "poisson_surprise".
     **params
         Parameters of the chosen method, listed above.
 
@@ -737,8 +525,7 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
 
     See Also
     --------
-    compute_log_isi_threshold : Threshold of the logISI method.
-    compute_isi_distribution : Histogram the threshold is read from.
+    compute_isi_distribution : Distribution of the interspike intervals.
 
     Examples
     --------
@@ -778,17 +565,13 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
 
     References
     ----------
-    .. [1] Pasquale, V., Martinoia, S., & Chiappalone, M. (2010). A self-adapting
-       approach for the detection of bursts and network bursts in neuronal
-       cultures. Journal of Computational Neuroscience, 29(1-2), 213-229.
-       https://doi.org/10.1007/s10827-009-0175-1
-    .. [2] Cotterill, E., & Eglen, S. J. (2018). Burst detection methods.
-       arXiv:1802.01287. https://arxiv.org/abs/1802.01287
-    .. [3] Legendy, C. R., & Salcman, M. (1985). Bursts and recurrences of bursts
+    .. [1] Legendy, C. R., & Salcman, M. (1985). Bursts and recurrences of bursts
        in the spike trains of spontaneously active striate cortex neurons.
        Journal of Neurophysiology, 53(4), 926-939.
        https://doi.org/10.1152/jn.1985.53.4.926
-    .. [4] Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control
+    .. [2] Cotterill, E., & Eglen, S. J. (2018). Burst detection methods.
+       arXiv:1802.01287. https://arxiv.org/abs/1802.01287
+    .. [3] Leonardo, A., & Fee, M. S. (2005). Ensemble coding of vocal control
        in birdsong. Journal of Neuroscience, 25(3), 652-661.
        https://doi.org/10.1523/JNEUROSCI.3036-04.2005
     """

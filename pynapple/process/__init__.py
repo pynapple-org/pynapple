@@ -13,7 +13,6 @@ from .filtering import (
 )
 from .isi import (
     compute_isi_distribution,
-    compute_log_isi_threshold,
     detect_spike_bursts,
 )
 from .perievent import (

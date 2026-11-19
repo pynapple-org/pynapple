@@ -1,7 +1,6 @@
 """Tests of burst detection in pynapple.process.isi"""
 
 import re
-import warnings
 from contextlib import nullcontext as does_not_raise
 
 import numpy as np
@@ -29,12 +28,12 @@ def _assert_bursts(bursts, starts, ends, n_spikes):
 # ---------------------------------------------------------------------------
 
 
-def test_default_method_is_log_isi():
+def test_default_method_is_poisson_surprise():
     spikes = _regular_bursts()
     default = nap.detect_spike_bursts(spikes)
-    log_isi = nap.detect_spike_bursts(spikes, method="log_isi")
-    np.testing.assert_array_equal(default.start, log_isi.start)
-    np.testing.assert_array_equal(default.end, log_isi.end)
+    poisson_surprise = nap.detect_spike_bursts(spikes, method="poisson_surprise")
+    np.testing.assert_array_equal(default.start, poisson_surprise.start)
+    np.testing.assert_array_equal(default.end, poisson_surprise.end)
     assert len(default) == 200
     assert np.all(np.asarray(default.n_spikes) == 5)
 
@@ -44,7 +43,7 @@ def test_default_method_is_log_isi():
     [
         (
             None,
-            "log_isi",
+            "poisson_surprise",
             {},
             pytest.raises(
                 TypeError,
@@ -53,7 +52,7 @@ def test_default_method_is_log_isi():
         ),
         (
             nap.Tsd(t=[0, 1], d=[0, 1]),
-            "log_isi",
+            "poisson_surprise",
             {},
             pytest.raises(TypeError, match="`spikes` must be `Ts` or `TsGroup`"),
         ),
@@ -71,56 +70,40 @@ def test_default_method_is_log_isi():
         ),
         (
             nap.Ts(t=[0.0, 1.0]),
-            "log_isi",
+            "poisson_surprise",
             {"max_isi_start": 0.1},
             pytest.raises(
                 TypeError,
                 match=re.escape(
-                    "Unknown parameter(s) ['max_isi_start'] for method 'log_isi'"
+                    "Unknown parameter(s) ['max_isi_start'] "
+                    "for method 'poisson_surprise'"
                 ),
             ),
         ),
         (
             nap.Ts(t=[0.0, 1.0]),
             "instantaneous_rate",
-            {"fallback": False, "max_cutoff": 0.1},
+            {"max_isi_burst": 0.1, "min_surprise": 5},
             pytest.raises(
                 TypeError,
-                match=re.escape("Unknown parameter(s) ['fallback', 'max_cutoff']"),
+                match=re.escape(
+                    "Unknown parameter(s) ['max_isi_burst', 'min_surprise']"
+                ),
             ),
         ),
-        # log_isi parameters
         (
             nap.Ts(t=[0.0, 1.0]),
             "log_isi",
-            {"max_cutoff": "a"},
-            pytest.raises(TypeError, match="`max_cutoff` must be a number"),
+            {},
+            pytest.raises(ValueError, match="`method` must be one of"),
         ),
+        # max_interval parameters
         (
             nap.Ts(t=[0.0, 1.0]),
-            "log_isi",
-            {"max_cutoff": 0},
-            pytest.raises(ValueError, match="`max_cutoff` must be > 0"),
-        ),
-        (
-            nap.Ts(t=[0.0, 1.0]),
-            "log_isi",
+            "max_interval",
             {"min_spikes_in_burst": 2.5},
             pytest.raises(TypeError, match="`min_spikes_in_burst` must be an integer"),
         ),
-        (
-            nap.Ts(t=[0.0, 1.0]),
-            "log_isi",
-            {"min_spikes_in_burst": 1},
-            pytest.raises(ValueError, match="`min_spikes_in_burst` must be >= 2"),
-        ),
-        (
-            nap.Ts(t=[0.0, 1.0]),
-            "log_isi",
-            {"fallback": 1},
-            pytest.raises(TypeError, match="`fallback` must be a bool"),
-        ),
-        # max_interval parameters
         (
             nap.Ts(t=[0.0, 1.0]),
             "max_interval",
@@ -171,38 +154,13 @@ def test_detect_spike_bursts_errors(spikes, method, params, expectation):
         nap.detect_spike_bursts(spikes, method=method, **params)
 
 
-@pytest.mark.parametrize(
-    "spikes, expectation",
-    [
-        (None, pytest.raises(TypeError, match="`spikes` must be `Ts` or `TsGroup`")),
-        (nap.Ts(t=[0.0, 1.0]), does_not_raise()),
-    ],
-)
-def test_compute_log_isi_threshold_spikes_type(spikes, expectation):
-    with expectation:
-        nap.compute_log_isi_threshold(spikes)
-
-
-@pytest.mark.parametrize(
-    "max_cutoff, expectation",
-    [
-        ("a", pytest.raises(TypeError, match="`max_cutoff` must be a number")),
-        (0, pytest.raises(ValueError, match="`max_cutoff` must be > 0")),
-        (0.1, does_not_raise()),
-    ],
-)
-def test_compute_log_isi_threshold_max_cutoff(max_cutoff, expectation):
-    with expectation:
-        nap.compute_log_isi_threshold(nap.Ts(t=[0.0, 1.0]), max_cutoff=max_cutoff)
-
-
 # ---------------------------------------------------------------------------
 # Shared behaviour
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+    "method", ["poisson_surprise", "max_interval", "instantaneous_rate"]
 )
 def test_tsgroup_returns_dict_per_unit(method):
     t = np.concatenate([[0.0, 0.1, 0.2, 0.3], [2.0, 2.05, 2.1], [5.0]])
@@ -221,7 +179,7 @@ def test_tsgroup_returns_dict_per_unit(method):
 
 
 @pytest.mark.parametrize(
-    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+    "method", ["poisson_surprise", "max_interval", "instantaneous_rate"]
 )
 def test_bursts_do_not_span_time_support_gaps(method):
     spikes = _regular_bursts(n_bursts=100, spikes_per_burst=6, intra=0.005)
@@ -238,7 +196,7 @@ def test_bursts_do_not_span_time_support_gaps(method):
 
 
 @pytest.mark.parametrize(
-    "method", ["log_isi", "max_interval", "instantaneous_rate", "poisson_surprise"]
+    "method", ["poisson_surprise", "max_interval", "instantaneous_rate"]
 )
 @pytest.mark.parametrize("t", [[], [1.0], [1.0, 2.0, 3.0]])
 def test_no_bursts(method, t):
@@ -326,118 +284,6 @@ def test_instantaneous_rate():
 
 
 # ---------------------------------------------------------------------------
-# logISI
-# ---------------------------------------------------------------------------
-
-
-def test_log_isi_threshold_regular_bursts():
-    spikes = _regular_bursts()
-    threshold = nap.compute_log_isi_threshold(spikes)
-    # valley is the first bin after the 10 ms peak on a 10 bins / decade axis
-    assert threshold == pytest.approx(0.0106, abs=1e-4)
-    group = nap.TsGroup({0: spikes, 1: spikes})
-    thresholds = nap.compute_log_isi_threshold(group)
-    assert isinstance(thresholds, dict)
-    assert thresholds[0] == thresholds[1] == threshold
-
-
-@pytest.mark.parametrize(
-    "spikes",
-    [
-        nap.Ts(t=np.array([])),
-        nap.Ts(t=np.array([1.0])),
-        # all intervals under 1 ms
-        nap.Ts(t=np.arange(100) * 0.0005),
-        # no intra-burst peak: all intervals at 1 s
-        nap.Ts(t=np.arange(100) * 1.0),
-    ],
-)
-def test_log_isi_threshold_none_without_intraburst_peak(spikes):
-    assert nap.compute_log_isi_threshold(spikes) is None
-    # no intra-burst peak at all: no bursts, and nothing to warn about
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        assert len(nap.detect_spike_bursts(spikes)) == 0
-        assert len(nap.detect_spike_bursts(spikes, fallback=True)) == 0
-
-
-def _train_without_clear_minimum():
-    # Intra-burst peak at 10 ms, then a ramp of inter-burst intervals whose
-    # counts increase up to the last bin: no later peak, so no clear minimum.
-    isis = [0.01] * 300 + [
-        v for k, v in enumerate(np.logspace(-1.6, -0.1, 15)) for _ in range(k + 1)
-    ]
-    return nap.Ts(t=np.cumsum(np.random.default_rng(0).permutation(isis)))
-
-
-def test_log_isi_no_minimum_returns_no_bursts_and_warns():
-    spikes = _train_without_clear_minimum()
-    assert nap.compute_log_isi_threshold(spikes) is None
-    with pytest.warns(UserWarning, match="No clear minimum.*Set `fallback=True`"):
-        bursts = nap.detect_spike_bursts(spikes)
-    assert len(bursts) == 0
-    # the published fallback is opt-in and does not warn
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        with_fallback = nap.detect_spike_bursts(spikes, fallback=True)
-    assert len(with_fallback) > 0
-    assert np.all(np.asarray(with_fallback.n_spikes) >= 3)
-
-
-def test_log_isi_no_minimum_tsgroup_warns_once_with_units():
-    group = nap.TsGroup(
-        {
-            2: _train_without_clear_minimum(),
-            5: _regular_bursts(),
-            7: _train_without_clear_minimum(),
-        }
-    )
-    with pytest.warns(UserWarning, match=re.escape("unit(s) [2, 7]")) as record:
-        bursts = nap.detect_spike_bursts(group)
-    assert len(record) == 1
-    assert len(bursts[2]) == 0 and len(bursts[7]) == 0 and len(bursts[5]) == 200
-
-
-def test_log_isi_threshold_above_max_cutoff_extends_cores():
-    # Each burst has a core of 5 spikes at 50 ms intervals followed by 8
-    # "burst-related" spikes at intervals growing by one histogram bin each,
-    # up to 330 ms, then a 5 s gap. The valley lies above max_cutoff (100 ms),
-    # so the cores found with max_cutoff are extended to the tail spikes.
-    tails = 0.05 * 1.266 ** np.arange(1, 9)
-    burst = np.concatenate([[0.0], np.cumsum([0.05] * 4 + list(tails))])
-    starts = np.arange(100) * 5.0
-    spikes = nap.Ts(t=np.concatenate([s + burst for s in starts]))
-    threshold = nap.compute_log_isi_threshold(spikes)
-    assert threshold is not None and threshold > 0.1
-    bursts = nap.detect_spike_bursts(spikes)
-    assert len(bursts) == 100
-    assert np.all(np.asarray(bursts.n_spikes) == 13)
-    np.testing.assert_allclose(bursts.end - bursts.start, burst[-1])
-    # with fallback=False nothing changes, since a valley was found
-    bursts = nap.detect_spike_bursts(spikes, fallback=False)
-    assert len(bursts) == 100
-
-
-def test_log_isi_min_spikes():
-    spikes = _regular_bursts(spikes_per_burst=3)
-    assert len(nap.detect_spike_bursts(spikes, min_spikes_in_burst=3)) == 200
-    assert len(nap.detect_spike_bursts(spikes, min_spikes_in_burst=4)) == 0
-
-
-def test_log_isi_histogram_uses_compute_isi_distribution():
-    # The log-ISI histogram is built with compute_isi_distribution on a
-    # 10-bins-per-decade axis in seconds.
-    spikes = _regular_bursts()
-    isi_ms = spikes.time_diff().values * 1000
-    decades = int(np.ceil(np.log10(isi_ms.max())))
-    edges = np.logspace(0, decades, 10 * decades) / 1000
-    hist = nap.compute_isi_distribution(spikes, bins=edges)
-    assert hist[0].sum() == len(isi_ms)
-    # two populated bins: 10 ms and 1.46 s
-    assert np.sum(hist[0].values > 0) == 2
-
-
-# ---------------------------------------------------------------------------
 # Poisson surprise
 # ---------------------------------------------------------------------------
 
@@ -509,7 +355,7 @@ def test_poisson_surprise_max_isi_burst_is_a_hard_limit():
         ({"min_surprise": "a"}, pytest.raises(TypeError, match="`min_surprise`")),
         ({"max_isi_burst": 0}, pytest.raises(ValueError, match="`max_isi_burst`")),
         ({"max_isi_burst": 0.5}, does_not_raise()),
-        ({"max_cutoff": 0.1}, pytest.raises(TypeError, match="Unknown parameter")),
+        ({"max_isi_start": 0.1}, pytest.raises(TypeError, match="Unknown parameter")),
     ],
 )
 def test_poisson_surprise_errors(params, expectation):

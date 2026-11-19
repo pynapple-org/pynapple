@@ -1,7 +1,7 @@
 """Benchmark `detect_spike_bursts` (issue #668: python loops against jitted loops).
 
 Every burst detection method walks the spikes of each unit in a loop. This
-script times the four methods on a single `Ts`, a medium `TsGroup` and a big
+script times the three methods on a single `Ts`, a medium `TsGroup` and a big
 `TsGroup`, using only the public API so it runs unchanged on any version.
 
 Run before and after a change, saving one and comparing the other:
@@ -35,7 +35,7 @@ DURATION = 1200.0
 BACKGROUND_RATE = 5.0
 BURST_RATE = 1.0
 UNIT_COUNTS = [1, 50, 1000]
-METHODS = ["max_interval", "log_isi", "instantaneous_rate", "poisson_surprise"]
+METHODS = ["poisson_surprise", "max_interval", "instantaneous_rate"]
 
 
 def median_ms(fn, repeat=5, min_time=0.02, slow=0.5):
