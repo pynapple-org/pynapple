@@ -662,12 +662,29 @@ def detect_spike_bursts(spikes, method="log_isi", **params):
 
     Other methods are selected with `method` and tuned with their own parameters:
 
-    >>> spikes = nap.Ts(t=[0.0, 0.1, 0.2, 0.3, 2.0, 2.05, 2.1, 5.0])
-    >>> nap.detect_spike_bursts(spikes, method="max_interval", max_isi_start=0.15)
-      index    start    end    n_spikes
-          0        0    0.3           4
-          1        2    2.1           3
-    shape: (2, 2), time unit: sec.
+    .. plot::
+        :include-source: True
+        :caption: Spikes (black) and the detected bursts (shaded)
+
+        >>> import pynapple as nap
+        >>> import matplotlib
+        >>> matplotlib.use("Agg")
+        >>> import matplotlib.pyplot as plt
+        >>> spikes = nap.Ts(t=[0.0, 0.1, 0.2, 0.3, 2.0, 2.05, 2.1, 5.0])
+        >>> bursts = nap.detect_spike_bursts(
+        ...     spikes, method="max_interval", max_isi_start=0.15
+        ... )
+        >>> bursts
+          index    start    end    n_spikes
+              0        0    0.3           4
+              1        2    2.1           3
+        shape: (2, 2), time unit: sec.
+        >>> fig, ax = plt.subplots(figsize=(8, 2))
+        >>> _ = ax.eventplot(spikes.t, color="k")
+        >>> for start, end in zip(bursts.start, bursts.end):
+        ...     _ = ax.axvspan(start, end, color="tab:orange", alpha=0.3)
+        >>> _ = ax.set(xlabel="Time (s)", yticks=[])
+        >>> plt.show()
 
     References
     ----------
