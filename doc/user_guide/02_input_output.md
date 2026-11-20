@@ -530,8 +530,8 @@ print(project["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"])
 ```
 ### JSON sidecar file
 
-A good practice for sharing datasets is to write as many
-metainformation as possible. Following
+A good practice for sharing datasets is to write as many 
+metainformation as possible. Following 
 [BIDS](https://bids.neuroimaging.io/getting_started/index.html)
 specifications, any data files should be accompanied by a JSON sidecar file.
 
