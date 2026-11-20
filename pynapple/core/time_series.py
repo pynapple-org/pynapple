@@ -1290,7 +1290,7 @@ class TsdTensor(_BaseTsd):
                 )
             key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
             output = self.values.__getitem__(key)
-            index = self.index.__getitem__(key[0])
+            index = np.ndarray.__getitem__(self.index, key[0])
             if index.ndim > 1:
                 index = np.squeeze(index)
         else:
@@ -1865,7 +1865,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         (
                             np.hstack(
                                 (
-                                    self.index[0:n_rows, None],
+                                    self.index.values[0:n_rows, None],
                                     self.values[0:n_rows, 0:max_cols],
                                     ends,
                                 ),
@@ -1881,7 +1881,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             ),
                             np.hstack(
                                 (
-                                    self.index[-n_rows:, None],
+                                    self.index.values[-n_rows:, None],
                                     self.values[-n_rows:, 0:max_cols],
                                     ends,
                                 ),
@@ -1893,7 +1893,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     ends = np.array([end] * len(self))
                     table = np.hstack(
                         (
-                            self.index[:, None],
+                            self.index.values[:, None],
                             self.values[:, 0:max_cols],
                             ends,
                         ),
@@ -2071,7 +2071,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             columns = self.columns
 
             if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
+                index = np.ndarray.__getitem__(self.index, key[0])
                 if index.ndim > 1:
                     index = np.squeeze(index)
                 if len(key) == 2 and key[1] is not None:
@@ -3161,7 +3161,7 @@ class Tsd(_BaseTsd):
                 else:
                     return (
                         tabulate(
-                            np.vstack((self.index, self.values)).T,
+                            np.vstack((self.index.values, self.values)).T,
                             headers=headers,
                             colalign=("left",),
                         )
@@ -3209,7 +3209,7 @@ class Tsd(_BaseTsd):
         output = self.values.__getitem__(key)
 
         if isinstance(key, tuple):
-            index = self.index.__getitem__(key[0])
+            index = np.ndarray.__getitem__(self.index, key[0])
             if index.ndim > 1:
                 index = np.squeeze(index)
         elif isinstance(key, Number):
@@ -3909,7 +3909,7 @@ class Ts(_ReconstructMixin, _Base):
 
     def __getitem__(self, key):
         if isinstance(key, tuple):
-            index = self.index.__getitem__(key[0])
+            index = np.ndarray.__getitem__(self.index, key[0])
             if index.ndim > 1:
                 index = np.squeeze(index)
         else:

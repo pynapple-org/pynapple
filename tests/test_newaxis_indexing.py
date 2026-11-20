@@ -321,3 +321,55 @@ def test_ragged_sequence_index_preserves_native_error(key, as_tuple):
         frame.values[key]
     with pytest.raises(type(native_error.value)):
         frame[key]
+
+
+@pytest.mark.parametrize("n_times", [3], indirect=True)
+@pytest.mark.parametrize("index_shape", [(2, 1), (2, 1, 1)])
+def test_singleton_advanced_time_axes_preserve_timestamps(series, index_shape):
+    key = (np.array([0, 2]).reshape(index_shape),)
+
+    assert_time_result(series[key], series.values[key], [10, 30], series.time_support)
+
+
+@pytest.mark.parametrize("n_times", [3], indirect=True)
+def test_advanced_time_axis_not_leading_returns_native_array(series):
+    key = (np.array([[0, 2]]),)
+
+    assert_native_result(series[key], series.values[key])
+
+
+@pytest.mark.parametrize("index_shape", [(2, 1), (1, 2), (2, 1, 1)])
+def test_ts_singleton_advanced_time_axes_preserve_timestamps(index_shape):
+    support = nap.IntervalSet(0, 50)
+    obj = nap.Ts(t=[10, 20, 30], time_support=support)
+
+    result = obj[(np.array([0, 2]).reshape(index_shape),)]
+
+    assert isinstance(result, nap.Ts)
+    np.testing.assert_array_equal(result.t, [10, 30])
+    np.testing.assert_array_equal(result.time_support.values, support.values)
+
+
+@pytest.mark.parametrize(
+    "cls, tail",
+    [(nap.Ts, None), (nap.Tsd, ()), (nap.TsdFrame, (2,)), (nap.TsdTensor, (2, 3))],
+)
+@pytest.mark.parametrize(
+    "selector, expected_times",
+    [(slice(None, None, -1), [30, 20, 10]), ([2, 0], [30, 10])],
+)
+def test_tuple_time_selection_preserves_order(cls, tail, selector, expected_times):
+    support = nap.IntervalSet(0, 50)
+    kwargs = {"t": [10, 20, 30], "time_support": support}
+    if cls is not nap.Ts:
+        data = np.arange(3 * int(np.prod(tail))).reshape((3,) + tail)
+        kwargs["d"] = data
+    obj = cls(**kwargs)
+
+    result = obj[(selector,)]
+
+    assert isinstance(result, cls)
+    np.testing.assert_array_equal(result.t, expected_times)
+    np.testing.assert_array_equal(result.time_support.values, support.values)
+    if cls is not nap.Ts:
+        np.testing.assert_array_equal(result.values, data[selector])
