@@ -1,5 +1,6 @@
 """Tests of correlograms for `pynapple` package."""
 
+import math
 from contextlib import nullcontext as does_not_raise
 from itertools import combinations
 
@@ -504,7 +505,10 @@ def test_lagged_correlation_scales_match_selected_samples(counts, max_lag):
         maximums = np.zeros(data.shape[1])
         for row in data[rows]:
             maximums = np.fmax(maximums, np.abs(row))
-        expected.append(np.ldexp(1.0, np.frexp(maximums)[1] - 1))
+        # math.frexp always gives an exponent of 0 for inf, as numba does. The
+        # exponent np.frexp gives for inf depends on the C library (-1 on some
+        # Windows installations).
+        expected.append([math.ldexp(1.0, math.frexp(m)[1] - 1) for m in maximums])
     np.testing.assert_array_equal(scales, expected)
 
 
