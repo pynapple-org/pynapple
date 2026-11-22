@@ -33,14 +33,17 @@ def compute_isi_distribution(
     bins : int or array-like, optional
         Number of equal-width bins, or the bin edges. Default is 10.
     log_scale : bool, optional
-        If True, the intervals are log-transformed before binning. Default is False.
+        If True, the natural logarithm of the intervals is taken before binning.
+        Default is False.
     epochs : IntervalSet, optional
         Epochs within which intervals are computed. Default is the time support of `data`.
 
     Returns
     -------
     pandas.DataFrame
-        Counts per bin, with bin centres as index and one column per unit.
+        Counts per bin, with one column per unit and the bin centres as index, in seconds
+        (or in log seconds if `log_scale` is True). The column of a unit without any
+        interval is NaN.
 
     Raises
     ------
