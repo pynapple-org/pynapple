@@ -76,7 +76,7 @@ def compute_isi_distribution(
     if not isinstance(data, (nap.base_class._Base, nap.TsGroup)):
         raise TypeError("data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.")
 
-    if not isinstance(bins, (int, list, np.ndarray)):
+    if isinstance(bins, bool) or not isinstance(bins, (int, list, np.ndarray)):
         raise TypeError("bins should be either int, list or np.ndarray.")
 
     if not isinstance(log_scale, bool):
@@ -92,32 +92,39 @@ def compute_isi_distribution(
     if log_scale:
         time_diffs = {k: np.log(v) for k, v in time_diffs.items()}
 
+    time_diffs = {k: np.asarray(v.values) for k, v in time_diffs.items()}
+
     if np.ndim(bins) == 0:
         if bins < 1:
             raise ValueError("`bins` must be positive, when an integer")
-        all_time_diffs = np.hstack([time_diff.d for time_diff in time_diffs.values()])
-        min_isi, max_isi = np.min(all_time_diffs), np.max(all_time_diffs)
-        histogram_range = (min_isi, max_isi)
+        all_time_diffs = np.hstack(list(time_diffs.values()))
+        # the log of an interval of 0 is -inf, which cannot bound the bins
+        all_time_diffs = all_time_diffs[np.isfinite(all_time_diffs)]
+        # with no intervals at all, numpy falls back on the range (0, 1)
+        histogram_range = (
+            (np.min(all_time_diffs), np.max(all_time_diffs))
+            if len(all_time_diffs)
+            else None
+        )
         bin_edges = np.histogram_bin_edges(
             all_time_diffs, bins=bins, range=histogram_range
         )
-        histograms = {
-            i: np.histogram(
-                time_diffs[i].values,
-                bins=bins,
-                range=histogram_range,
-            )[0]
-            for i in time_diffs
-        }
     elif np.ndim(bins) == 1:
         bin_edges = np.asarray(bins)
         if np.any(bin_edges[:-1] > bin_edges[1:]):
             raise ValueError("`bins` must increase monotonically, when an array")
-        histograms = {
-            i: np.histogram(time_diffs[i].values, bin_edges)[0] for i in time_diffs
-        }
     else:
         raise ValueError("`bins` must be 1d, when an array")
+
+    # a unit without intervals has no distribution: its column is NaN
+    histograms = {
+        i: (
+            np.histogram(time_diffs[i], bins=bin_edges)[0]
+            if len(time_diffs[i])
+            else np.full(len(bin_edges) - 1, np.nan)
+        )
+        for i in time_diffs
+    }
 
     return pd.DataFrame(
         index=(bin_edges[:-1] + bin_edges[1:]) / 2,
