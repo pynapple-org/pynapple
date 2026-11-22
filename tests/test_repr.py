@@ -18,8 +18,9 @@ from pynapple.core.metadata_class import _Metadata
 def mock_terminal_size(size):
     columns, rows = size
     fake_size = os.terminal_size((columns, rows))
-    with patch("os.get_terminal_size", return_value=fake_size), patch(
-        "shutil.get_terminal_size", return_value=fake_size
+    with (
+        patch("os.get_terminal_size", return_value=fake_size),
+        patch("shutil.get_terminal_size", return_value=fake_size),
     ):
         yield
 

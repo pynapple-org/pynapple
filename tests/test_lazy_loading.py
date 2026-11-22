@@ -344,14 +344,17 @@ def test_lazy_load_hdf5_time_diff_does_not_read_values(
         )
         data = cls(t=t, d=dataset, load_array=False)
         assert isinstance(data.values, h5py.Dataset)
-        with patch.object(
-            h5py.Dataset,
-            "__getitem__",
-            side_effect=AssertionError("signal values were indexed"),
-        ), patch.object(
-            h5py.Dataset,
-            "__array__",
-            side_effect=AssertionError("signal values were materialized"),
+        with (
+            patch.object(
+                h5py.Dataset,
+                "__getitem__",
+                side_effect=AssertionError("signal values were indexed"),
+            ),
+            patch.object(
+                h5py.Dataset,
+                "__array__",
+                side_effect=AssertionError("signal values were materialized"),
+            ),
         ):
             result = data.time_diff(align=align, epochs=epochs)
 
