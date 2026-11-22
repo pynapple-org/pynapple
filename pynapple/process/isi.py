@@ -512,7 +512,8 @@ def detect_spike_bursts(spikes, method="poisson_surprise", **params):
       trimmed, to maximise its surprise: -log of the probability of that many spikes in that
       time under a Poisson process at the mean rate of the train. Parameters: `min_surprise`
       (float, default 5), the smallest surprise of a burst; `max_isi_burst` (float or None,
-      default None, i.e. twice the mean ISI), in seconds, the longest ISI within a burst.
+      default None, i.e. twice the mean ISI), in seconds, an upper limit on the ISIs within
+      a burst, whatever the surprise.
     - `"max_interval"`: MaxInterval method [2]_ with fixed thresholds, in seconds:
       `max_isi_start` (default 0.17), `max_isi_burst` (0.3), `min_inter_burst_interval` (0.2),
       `min_burst_duration` (0.01) and `min_spikes_in_burst` (int, default 3).
