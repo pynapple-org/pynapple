@@ -5,8 +5,10 @@ from contextlib import nullcontext as does_not_raise
 
 import numpy as np
 import pytest
+from scipy import special, stats
 
 import pynapple as nap
+from pynapple.process.isi import _jitpoisson_surprise
 
 
 def _regular_bursts(n_bursts=200, spikes_per_burst=5, intra=0.01, period=1.5):
@@ -346,6 +348,48 @@ def test_poisson_surprise_max_isi_burst_is_a_hard_limit():
         nap.Ts(t=t), method="poisson_surprise", max_isi_burst=0.02
     )
     _assert_bursts(bursts, [4.0], [4.02], [5])
+
+
+@pytest.mark.parametrize(
+    "n_spikes, duration, mean_isi",
+    [
+        (3, 0.02, 1.0),
+        (8, 0.07, 0.37),
+        (30, 0.5, 0.1),
+        # more spikes expected than observed: the sum runs over the lower side
+        (5, 3.0, 1.0),
+        (4, 10.0, 1.0),
+    ],
+)
+def test_poisson_surprise_value(n_spikes, duration, mean_isi):
+    times = np.linspace(0.0, duration, n_spikes)
+    surprise = _jitpoisson_surprise(times, 0, n_spikes, mean_isi)
+    expected = -stats.poisson.logsf(n_spikes - 2, duration / mean_isi)
+    np.testing.assert_allclose(surprise, expected, rtol=1e-10)
+
+
+@pytest.mark.parametrize(
+    "n_spikes, duration, mean_isi",
+    [(50, 1e-7, 10.0), (200, 1e-9, 100.0), (1000, 1e-6, 1e3)],
+)
+def test_poisson_surprise_does_not_underflow(n_spikes, duration, mean_isi):
+    # The probability is below the smallest float, so its log cannot be taken
+    # directly. It is dominated by its first term.
+    times = np.linspace(0.0, duration, n_spikes)
+    surprise = _jitpoisson_surprise(times, 0, n_spikes, mean_isi)
+    k, expected = n_spikes - 1, duration / mean_isi
+    first_term = k * np.log(expected) - expected - special.gammaln(k + 1)
+    assert first_term < np.log(np.finfo(float).tiny)
+    assert np.isfinite(surprise)
+    np.testing.assert_allclose(surprise, -first_term, rtol=1e-6)
+
+
+def test_poisson_surprise_extreme_burst():
+    # 100 spikes 1 ns apart in a train firing once every 100 s
+    burst = 5050.0 + np.arange(100) * 1e-9
+    t = np.sort(np.concatenate([np.arange(100) * 100.0, burst]))
+    bursts = nap.detect_spike_bursts(nap.Ts(t=t), method="poisson_surprise")
+    _assert_bursts(bursts, [burst[0]], [burst[-1]], [100])
 
 
 @pytest.mark.parametrize(

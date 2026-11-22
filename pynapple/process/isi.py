@@ -339,16 +339,17 @@ def _jitpoisson_surprise(times, first, n_spikes, mean_isi):
     # The probability of `k` or more spikes is a sum of Poisson terms. The terms
     # decrease away from `expected`, so the sum runs over the shorter side.
     if expected <= k:
-        term = math.exp(k * math.log(expected) - expected - math.lgamma(k + 1.0))
-        tail = term
+        # The first term can be too small for a float, so it stays in log space
+        # and the other terms are summed relative to it.
+        log_term = k * math.log(expected) - expected - math.lgamma(k + 1.0)
+        term = 1.0
+        tail = 1.0
         j = k
         while term > 1e-17 * tail:
             j += 1
             term *= expected / j
             tail += term
-        if tail <= 0:
-            return np.inf
-        return -math.log(tail)
+        return -log_term - math.log(tail)
     j = k - 1
     term = math.exp(j * math.log(expected) - expected - math.lgamma(j + 1.0))
     below = term
