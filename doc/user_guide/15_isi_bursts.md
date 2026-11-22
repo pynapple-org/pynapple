@@ -116,7 +116,8 @@ plt.legend(title="Unit")
 plt.show()
 ```
 
-The `log_scale` argument allows for applying the log-transform to the ISIs:
+The `log_scale` argument takes the natural logarithm of the ISIs before binning. The index of the
+output is then the natural log of the ISI in seconds:
 ```{code-cell} ipython3
 isi_distribution = nap.compute_isi_distribution(
     data=ts_group, bins=10, log_scale=True, epochs=epoch
@@ -126,9 +127,10 @@ isi_distribution
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-# finer bins for plotting (with log_scale=True, bin edges are given in log units)
+# finer bins for plotting, from 0.1 ms to 10 s
+# (with log_scale=True, the bin edges are given as the natural log of seconds)
 isi_distribution = nap.compute_isi_distribution(
-    data=ts_group, bins=np.linspace(-10, 2.5, 54), log_scale=True, epochs=epoch
+    data=ts_group, bins=np.linspace(np.log(1e-4), np.log(10), 54), log_scale=True, epochs=epoch
     )
 plt.figure(figsize=(10, 3))
 for col in isi_distribution.columns:
@@ -141,8 +143,10 @@ for col in isi_distribution.columns:
         align='center',
         edgecolor='none'
     )
-plt.xlim(-10, 2.5)
-plt.xlabel("log ISI (s)")
+# the ticks are placed in log units and labelled with the ISI they stand for
+plt.xticks(np.log([1e-3, 1e-2, 1e-1, 1, 10]), ["0.001", "0.01", "0.1", "1", "10"])
+plt.xlim(np.log(1e-4), np.log(10))
+plt.xlabel("ISI (s)")
 plt.ylabel("Count")
 plt.legend(title="Unit")
 plt.tight_layout()
@@ -156,21 +160,12 @@ A burst is a group of spikes much closer to each other than to the spikes around
 `IntervalSet` from the first to the last spike of each burst, with the number of spikes as
 metadata.
 
-There is no single agreed definition of a burst, and many detection methods exist. Cotterill &
-Eglen (2018) [^1] compared eight of them and chose MaxInterval, logISI, Poisson surprise and CMA
-as the best performing. Two of these are available in pynapple:
+There is no best method for detecting bursts: many have been proposed and evaluated in the
+literature [^1]. Pynapple provides the following three, selected with the `method` argument:
 
-- `poisson_surprise` (default) compares each group of spikes with the mean firing rate of its
-  own spike train, so it needs little tuning per neuron or class of neurons. The review
-  recommends it when intra- and inter-burst intervals are not clearly separated.
-- `max_interval` is the review's first choice. Its five thresholds are easy to interpret, but
-  they have to be tuned by hand to the data.
-
-A third method, `instantaneous_rate`, is not part of the review. It is a single threshold on the
-instantaneous firing rate, the burst definition used in the birdsong field [^3].
-
-logISI is not included: it was developed for neuronal cultures, and according to the review it
-is most effective when intra- and inter-burst intervals are clearly distinct.
+- `"poisson_surprise"` (default): Poisson surprise [^2]
+- `"max_interval"`: MaxInterval [^1]
+- `"instantaneous_rate"`: instantaneous firing rate threshold [^3]
 
 With every method, a `TsGroup` is processed unit by unit and returns a dictionary of `IntervalSet`
 keyed by unit. Bursts are detected within each epoch of the time support, so a burst never spans
@@ -193,7 +188,8 @@ A surprise maximisation algorithm then finds the bursts with the highest surpris
 spike train [^1]:
 
 1. Initial bursts are identified as any sequence of three consecutive spikes separated by ISIs
-   which are less than half of the mean ISI of the spike train.
+   which are less than half of the mean ISI of the spike train, and no longer than
+   `max_isi_burst`.
 2. Spikes are added to the end of each initial burst while this increases the surprise. Up to 10
    spikes ahead are tried, but none beyond an ISI longer than `max_isi_burst`.
 3. Spikes are removed from the beginning of the burst while this increases the surprise, which
@@ -205,7 +201,7 @@ For details, see [^1] and [^2].
 | Argument | Default | Meaning |
 |---|---|---|
 | `min_surprise` | 5 | Bursts with a lower surprise are discarded. |
-| `max_isi_burst` | `None` | ISI, in seconds, beyond which no more spikes are looked at when extending a burst. `None` uses twice the mean ISI. |
+| `max_isi_burst` | `None` | Upper limit, in seconds, on the ISIs within a burst: a spike further than this from the previous one is never added, even if it would increase the surprise. `None` uses twice the mean ISI. |
 
 The same call, with the default parameters, finds bursts in both units:
 
@@ -214,27 +210,20 @@ bursts_ps = nap.detect_spike_bursts(ts_group)
 bursts_ps[1]
 ```
 
-The method assumes Poisson firing, which real spike trains only approximate. The review notes
-that it tends to overestimate bursting in spike trains with sparse or no bursting, and advises
-screening the detected bursts for outliers in duration. Here too, some bursts run on through the
-background spikes and last for seconds:
-
-```{code-cell} ipython3
-{unit: float(np.max(bursts.end - bursts.start)) for unit, bursts in bursts_ps.items()}
-```
-
-A lower `max_isi_burst` keeps bursts from being extended that far:
+By default, `max_isi_burst` scales with the mean ISI of each unit, so two bursts close to each
+other can be joined through a background spike. A lower value keeps them apart. Here it is set
+to 0.1 s, because most ISIs within the simulated bursts are shorter than that:
 
 ```{code-cell} ipython3
 bursts_ps_capped = nap.detect_spike_bursts(ts_group, max_isi_burst=0.1)
-{unit: float(np.max(bursts.end - bursts.start)) for unit, bursts in bursts_ps_capped.items()}
 ```
 
 ### Choosing thresholds from the ISI distribution
 
 The other two methods use fixed thresholds on the ISI. The log-scaled ISI distribution is the
 place to start: bursts appear as a separate peak at short ISIs, and the valley after that peak
-is a natural threshold. The first unit has such a valley, at about 20 ms:
+is a natural threshold. The first unit has such a valley at about 20 ms, used as the threshold
+for both methods below:
 
 ```{code-cell} ipython3
 threshold = 0.02
@@ -243,7 +232,7 @@ threshold = 0.02
 ```{code-cell} ipython3
 :tags: [hide-input]
 isi_distribution = nap.compute_isi_distribution(
-    ts_group, bins=np.linspace(-10, 2.5, 54), log_scale=True
+    ts_group, bins=np.linspace(np.log(1e-4), np.log(10), 54), log_scale=True
 )
 fig, axes = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
 for ax, unit in zip(axes, isi_distribution.columns):
@@ -258,8 +247,9 @@ for ax, unit in zip(axes, isi_distribution.columns):
     ax.set_ylabel("Count")
     ax.set_title(f"Unit {unit}")
 axes[0].legend()
-axes[1].set_xlim(-10, 2.5)
-axes[1].set_xlabel("log ISI (s)")
+axes[1].set_xticks(np.log([1e-3, 1e-2, 1e-1, 1, 10]), ["0.001", "0.01", "0.1", "1", "10"])
+axes[1].set_xlim(np.log(1e-4), np.log(10))
+axes[1].set_xlabel("ISI (s)")
 plt.tight_layout();
 ```
 
@@ -300,8 +290,14 @@ bursts_mi = nap.detect_spike_bursts(
 
 The `instantaneous_rate` method defines a burst as a run of spikes whose instantaneous firing
 rate (1 / ISI) stays above `rate_threshold`. This is the burst definition used in the
-birdsong field, with 125 Hz as the default (see Leonardo & Fee, 2005 [^3]). Runs with fewer than
-`min_spikes_in_burst` spikes are discarded:
+birdsong field, with 125 Hz as the default (see Leonardo & Fee, 2005 [^3]).
+
+| Argument | Default | Meaning |
+|---|---|---|
+| `rate_threshold` | 125 | Instantaneous firing rate (1 / ISI), in Hz, above which consecutive spikes belong to a burst. |
+| `min_spikes_in_burst` | 2 | Bursts with fewer spikes are discarded. |
+
+Here the rate threshold is the inverse of the ISI threshold read above:
 
 ```{code-cell} ipython3
 bursts_ir = nap.detect_spike_bursts(
@@ -342,15 +338,6 @@ for ax in axes[-1]:
     ax.set_xlabel("time (s)")
 plt.tight_layout();
 ```
-
-:::{card}
-Authors
-^^^
-[Akseli Ilmanen](https://github.com/Akseli-Ilmanen)
-
-Wolf De Wulf
-
-:::
 
 ## References
 
