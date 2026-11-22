@@ -1,6 +1,5 @@
 *.npz
 *.nwb
-repos/
 
 *.pickle
 *.py.md5
