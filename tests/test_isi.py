@@ -404,6 +404,24 @@ def test_poisson_surprise_max_isi_burst_is_a_hard_limit():
     _assert_bursts(bursts, [4.0], [4.02], [5])
 
 
+def test_poisson_surprise_max_isi_burst_applies_to_first_spikes():
+    # The three spikes 0.3 s apart are closer than half the mean ISI (0.5 s), so
+    # they start a burst, unless `max_isi_burst` is shorter than their ISIs.
+    t = np.concatenate(
+        [np.arange(20.0), 20.0 + np.arange(3) * 0.3, 22.0 + np.arange(20)]
+    )
+    spikes = nap.Ts(t=t)
+    kwargs = dict(method="poisson_surprise", min_surprise=0)
+    _assert_bursts(nap.detect_spike_bursts(spikes, **kwargs), [20.0], [20.6], [3])
+    _assert_bursts(
+        nap.detect_spike_bursts(spikes, max_isi_burst=0.35, **kwargs),
+        [20.0],
+        [20.6],
+        [3],
+    )
+    assert len(nap.detect_spike_bursts(spikes, max_isi_burst=0.2, **kwargs)) == 0
+
+
 @pytest.mark.parametrize(
     "n_spikes, duration, mean_isi",
     [

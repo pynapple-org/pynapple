@@ -392,9 +392,17 @@ def _jitpoisson_surprise_bursts(times, mean_isi, isi_thresh):
     # Unlike the R code (`n < nspikes - 2`, 1-based), the last three spikes are
     # also tested as the start of a burst.
     while first + 2 < n_total:
+        isi_1 = times[first + 1] - times[first]
+        isi_2 = times[first + 2] - times[first + 1]
+        # A burst starts at three spikes whose two ISIs are below `start_isi`
+        # and no longer than `isi_thresh`, so that no ISI of a burst exceeds
+        # `isi_thresh`. The second test only matters when `isi_thresh` is set
+        # below `start_isi` (the R code does not have it).
         if not (
-            times[first + 1] - times[first] < start_isi
-            and times[first + 2] - times[first + 1] < start_isi
+            isi_1 < start_isi
+            and isi_2 < start_isi
+            and isi_1 <= isi_thresh
+            and isi_2 <= isi_thresh
         ):
             first += 1
             continue
@@ -504,8 +512,7 @@ def detect_spike_bursts(spikes, method="poisson_surprise", **params):
       trimmed, to maximise its surprise: -log of the probability of that many spikes in that
       time under a Poisson process at the mean rate of the train. Parameters: `min_surprise`
       (float, default 5), the smallest surprise of a burst; `max_isi_burst` (float or None,
-      default None, i.e. twice the mean ISI), in seconds, the ISI beyond which spikes are
-      no longer added.
+      default None, i.e. twice the mean ISI), in seconds, the longest ISI within a burst.
     - `"max_interval"`: MaxInterval method [2]_ with fixed thresholds, in seconds:
       `max_isi_start` (default 0.17), `max_isi_burst` (0.3), `min_inter_burst_interval` (0.2),
       `min_burst_duration` (0.01) and `min_spikes_in_burst` (int, default 3).
