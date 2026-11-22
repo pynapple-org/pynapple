@@ -135,17 +135,19 @@ def _check_spikes(spikes):
         raise TypeError(f"`spikes` must be `Ts` or `TsGroup`, got {type(spikes)}")
 
 
-def _check_positive(name, value, strict=True):
-    if not isinstance(value, numbers.Real):
+def _check_positive(name: str, value: numbers.Real, strict: bool = True) -> None:
+    if isinstance(value, bool) or not isinstance(value, numbers.Real):
         raise TypeError(f"`{name}` must be a number, got {type(value)}")
+    if not math.isfinite(value):
+        raise ValueError(f"`{name}` must be finite")
     if strict and value <= 0:
         raise ValueError(f"`{name}` must be > 0")
     if not strict and value < 0:
         raise ValueError(f"`{name}` must be >= 0")
 
 
-def _check_min_spikes(name, value):
-    if not isinstance(value, numbers.Integral):
+def _check_min_spikes(name: str, value: numbers.Integral) -> None:
+    if isinstance(value, bool) or not isinstance(value, numbers.Integral):
         raise TypeError(f"`{name}` must be an integer, got {type(value)}")
     if value < 2:
         raise ValueError(f"`{name}` must be >= 2, a burst has at least two spikes")

@@ -149,11 +149,67 @@ def test_default_method_is_poisson_surprise():
             {"min_spikes_in_burst": 1},
             pytest.raises(ValueError, match="`min_spikes_in_burst` must be >= 2"),
         ),
+        # booleans are not numbers
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "max_interval",
+            {"max_isi_start": True},
+            pytest.raises(TypeError, match="`max_isi_start` must be a number"),
+        ),
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "max_interval",
+            {"min_burst_duration": False},
+            pytest.raises(TypeError, match="`min_burst_duration` must be a number"),
+        ),
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "instantaneous_rate",
+            {"rate_threshold": np.True_},
+            pytest.raises(TypeError, match="`rate_threshold` must be a number"),
+        ),
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "instantaneous_rate",
+            {"min_spikes_in_burst": True},
+            pytest.raises(TypeError, match="`min_spikes_in_burst` must be an integer"),
+        ),
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "max_interval",
+            {"min_spikes_in_burst": np.nan},
+            pytest.raises(TypeError, match="`min_spikes_in_burst` must be an integer"),
+        ),
+        # numpy scalars are numbers
+        (
+            nap.Ts(t=[0.0, 1.0]),
+            "max_interval",
+            {"max_isi_start": np.float32(0.1), "min_spikes_in_burst": np.int64(3)},
+            does_not_raise(),
+        ),
     ],
 )
 def test_detect_spike_bursts_errors(spikes, method, params, expectation):
     with expectation:
         nap.detect_spike_bursts(spikes, method=method, **params)
+
+
+@pytest.mark.parametrize(
+    "method, name",
+    [
+        ("max_interval", "max_isi_start"),
+        ("max_interval", "max_isi_burst"),
+        ("max_interval", "min_inter_burst_interval"),
+        ("max_interval", "min_burst_duration"),
+        ("instantaneous_rate", "rate_threshold"),
+        ("poisson_surprise", "min_surprise"),
+        ("poisson_surprise", "max_isi_burst"),
+    ],
+)
+@pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
+def test_detect_spike_bursts_non_finite_parameters(method, name, value):
+    with pytest.raises(ValueError, match=f"`{name}` must be finite"):
+        nap.detect_spike_bursts(nap.Ts(t=[0.0, 1.0]), method=method, **{name: value})
 
 
 # ---------------------------------------------------------------------------
@@ -314,9 +370,7 @@ def test_poisson_surprise_matches_r():
 
 def test_poisson_surprise_min_surprise():
     spikes = nap.Ts(t=_PS_TRAIN)
-    bursts = nap.detect_spike_bursts(
-        spikes, method="poisson_surprise", min_surprise=10
-    )
+    bursts = nap.detect_spike_bursts(spikes, method="poisson_surprise", min_surprise=10)
     np.testing.assert_array_equal(np.asarray(bursts.n_spikes), [8, 7])
     bursts = nap.detect_spike_bursts(spikes, method="poisson_surprise", min_surprise=0)
     assert len(bursts) >= 3
@@ -396,6 +450,8 @@ def test_poisson_surprise_extreme_burst():
     "params, expectation",
     [
         ({"min_surprise": -1}, pytest.raises(ValueError, match="`min_surprise`")),
+        ({"min_surprise": True}, pytest.raises(TypeError, match="`min_surprise`")),
+        ({"max_isi_burst": True}, pytest.raises(TypeError, match="`max_isi_burst`")),
         ({"min_surprise": "a"}, pytest.raises(TypeError, match="`min_surprise`")),
         ({"max_isi_burst": 0}, pytest.raises(ValueError, match="`max_isi_burst`")),
         ({"max_isi_burst": 0.5}, does_not_raise()),
