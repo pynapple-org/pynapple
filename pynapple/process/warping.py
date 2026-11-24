@@ -5,6 +5,7 @@ Functions to create trial-based tensors and warp times
 from __future__ import annotations
 
 import inspect
+import warnings
 from functools import wraps
 from numbers import Number
 from typing import Optional, Union
@@ -158,6 +159,13 @@ def build_tensor(
             [180., 181., 182., 183., 184., 185., 186., 187., 188.]]])
 
     """
+    warnings.warn(
+        "build_tensor() is deprecated. Use TsTrials(...).count(...) for "
+        "timestamps or TsdTrials(..., sample_period=...) for sampled data.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
+
     if time_unit not in ["s", "ms", "us"]:
         raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
     if align not in ["start", "end"]:

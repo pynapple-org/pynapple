@@ -81,7 +81,7 @@ Extracting phases and envelopes <user_guide/13_phases_and_envelopes>
 
 ```{toctree}
 :maxdepth: 2
-Building trial-based tensors <user_guide/14_warping>
+Time warping <user_guide/14_warping>
 ```
 
 :::
