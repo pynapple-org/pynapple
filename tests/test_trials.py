@@ -264,18 +264,19 @@ class TestTsTrials:
         assert "rate" not in ts_trials.unit_metadata.columns
 
     @pytest.mark.parametrize(
-        "start, end",
+        "start, end, expected",
         [
-            (-1.0, 1.0),
-            (4.0, 8.0),
-            (4.0, 11.0),
-            (6.0, 7.0),
+            (-1.0, 1.0, [1.5]),
+            (4.0, 8.0, [0.5]),
+            (4.0, 11.0, [0.5, 6.5]),
+            (6.0, 7.0, []),
         ],
     )
     def test_trials_outside_source_support(
         self,
         start: float,
         end: float,
+        expected: list[float],
     ) -> None:
         support = nap.IntervalSet(
             start=[0.0, 10.0],
@@ -285,9 +286,17 @@ class TestTsTrials:
             {10: nap.Ts(t=[0.5, 4.5, 10.5], time_support=support)},
             time_support=support,
         )
+        intervals = nap.IntervalSet(start, end)
 
-        with pytest.raises(ValueError, match="source time-support interval"):
-            nap.TsTrials(source, nap.IntervalSet(start, end))
+        result = nap.TsTrials(source, intervals)
+
+        assert result.shape == (1, 1)
+        assert len(result) == 1
+        np.testing.assert_array_equal(result.trial_ids, intervals.index)
+        np.testing.assert_array_equal(result.trials.values, intervals.values)
+        np.testing.assert_allclose(result.window_starts, [0.0])
+        np.testing.assert_allclose(result.window_ends, [end - start])
+        np.testing.assert_allclose(result[0, 10].t, expected)
 
     def test_supported_silence_is_valid(self) -> None:
         support = nap.IntervalSet(0.0, 5.0)
@@ -1152,6 +1161,99 @@ class TestTsdTrialsInterpolation:
                 atol=1e-9,
             )
 
+    @pytest.mark.parametrize("trailing_shape", [(), (2,), (2, 3)])
+    def test_trial_downsampling_matches_decimate(
+        self,
+        trailing_shape: tuple[int, ...],
+    ) -> None:
+        time = np.arange(401) / 100
+        n_features = int(np.prod(trailing_shape))
+        values = (
+            np.sin(2 * np.pi * time[:, None])
+            + 0.5 * np.sin(2 * np.pi * 35 * time[:, None])
+            + np.arange(n_features)
+        ).reshape(len(time), *trailing_shape)
+        source = make_source(time, values)
+        original = source.d.copy()
+
+        result = nap.TsdTrials(
+            source,
+            nap.IntervalSet(0.0, 4.0),
+            sample_period=0.04,
+        )
+        expected = source.decimate(4)
+
+        assert result.shape == (1, 101, *trailing_shape)
+        assert result.valid.all()
+        np.testing.assert_allclose(result.t, expected.t)
+        np.testing.assert_allclose(result.d[0], expected.d, atol=1e-10)
+        np.testing.assert_array_equal(source.d, original)
+
+    @pytest.mark.parametrize("sample_period", [0.005, 0.01, 0.015, 0.04])
+    def test_trial_resampling_uses_requested_grid(
+        self,
+        sample_period: float,
+    ) -> None:
+        time = np.arange(401) / 100
+        source = nap.Tsd(t=time, d=np.sin(2 * np.pi * time))
+        intervals = nap.IntervalSet(0.125, 1.125)
+
+        result = nap.TsdTrials(
+            source,
+            intervals,
+            sample_period=sample_period,
+        )
+
+        expected_time = (
+            np.arange(int(np.floor((1.0 + sample_period * 1e-6) / sample_period)) + 1)
+            * sample_period
+        )
+        expected_values = source.d
+
+        if sample_period > 0.01:
+            sos = signal.cheby1(
+                8,
+                0.05,
+                0.8 * 0.01 / sample_period,
+                output="sos",
+            )
+            expected_values = signal.sosfiltfilt(sos, expected_values)
+
+        np.testing.assert_allclose(result.t, expected_time)
+        np.testing.assert_allclose(
+            result.d[0],
+            np.interp(0.125 + result.t, source.t, expected_values),
+            atol=1e-10,
+        )
+        assert result.valid.all()
+
+    def test_trial_downsampling_preserves_empty_trials_and_support_gaps(self) -> None:
+        time = np.concatenate([np.arange(101) / 100, 2 + np.arange(101) / 100])
+        source = nap.Tsd(
+            t=time,
+            d=np.concatenate([np.zeros(101), np.ones(101)]),
+            time_support=nap.IntervalSet(
+                start=[0.0, 2.0],
+                end=[1.0, 3.0],
+            ),
+        )
+        intervals = nap.IntervalSet(
+            start=[-2.0, 0.0, 4.0],
+            end=[-1.0, 3.0, 5.0],
+        )
+
+        result = nap.TsdTrials(source, intervals, sample_period=0.04)
+
+        assert result.shape == (3, 76)
+        np.testing.assert_array_equal(result.trial_ids, intervals.index)
+        assert not result.valid[[0, 2]].any()
+        assert np.isnan(result.d[[0, 2]]).all()
+
+        expected_valid = (result.t <= 1.0) | (result.t >= 2.0)
+        np.testing.assert_array_equal(result.valid[1], expected_valid)
+        assert np.isnan(result.d[1, ~expected_valid]).all()
+        np.testing.assert_allclose(result.d[1, result.t <= 1.0], 0.0)
+
 
 # Sampled trials: scalar, frame, and tensor
 
@@ -1581,6 +1683,100 @@ class TestTsdTrials:
             ):
                 assert result.shape == selected.shape
                 assert_same_axes(result, selected)
+
+
+@pytest.mark.parametrize("trailing_shape", [(), (2,), (2, 3)])
+def test_trial_downsampling_matches_decimate(
+    trailing_shape: tuple[int, ...],
+) -> None:
+    time = np.arange(401) / 100
+    n_features = int(np.prod(trailing_shape))
+    values = (
+        np.sin(2 * np.pi * time[:, None])
+        + 0.5 * np.sin(2 * np.pi * 35 * time[:, None])
+        + np.arange(n_features)
+    ).reshape(len(time), *trailing_shape)
+    source = make_source(time, values)
+    original = source.d.copy()
+
+    result = nap.TsdTrials(
+        source,
+        nap.IntervalSet(0.0, 4.0),
+        sample_period=0.04,
+    )
+    expected = source.decimate(4)
+
+    assert result.shape == (1, 101, *trailing_shape)
+    assert result.valid.all()
+    np.testing.assert_allclose(result.t, expected.t)
+    np.testing.assert_allclose(result.d[0], expected.d, atol=1e-10)
+    np.testing.assert_array_equal(source.d, original)
+
+
+@pytest.mark.parametrize("sample_period", [0.005, 0.01, 0.015, 0.04])
+def test_trial_resampling_uses_requested_grid(
+    sample_period: float,
+) -> None:
+    time = np.arange(401) / 100
+    source = nap.Tsd(t=time, d=np.sin(2 * np.pi * time))
+    intervals = nap.IntervalSet(0.125, 1.125)
+
+    result = nap.TsdTrials(
+        source,
+        intervals,
+        sample_period=sample_period,
+    )
+
+    expected_time = (
+        np.arange(int(np.floor((1.0 + sample_period * 1e-6) / sample_period)) + 1)
+        * sample_period
+    )
+    expected_values = source.d
+
+    if sample_period > 0.01:
+        sos = signal.cheby1(
+            8,
+            0.05,
+            0.8 * 0.01 / sample_period,
+            output="sos",
+        )
+        expected_values = signal.sosfiltfilt(sos, expected_values)
+
+    np.testing.assert_allclose(result.t, expected_time)
+    np.testing.assert_allclose(
+        result.d[0],
+        np.interp(0.125 + result.t, source.t, expected_values),
+        atol=1e-10,
+    )
+    assert result.valid.all()
+
+
+def test_trial_downsampling_preserves_empty_trials_and_support_gaps() -> None:
+    time = np.concatenate([np.arange(101) / 100, 2 + np.arange(101) / 100])
+    source = nap.Tsd(
+        t=time,
+        d=np.concatenate([np.zeros(101), np.ones(101)]),
+        time_support=nap.IntervalSet(
+            start=[0.0, 2.0],
+            end=[1.0, 3.0],
+        ),
+    )
+    intervals = nap.IntervalSet(
+        start=[-2.0, 0.0, 4.0],
+        end=[-1.0, 3.0, 5.0],
+    )
+
+    result = nap.TsdTrials(source, intervals, sample_period=0.04)
+
+    assert result.shape == (3, 76)
+    np.testing.assert_array_equal(result.trial_ids, intervals.index)
+    assert not result.valid[[0, 2]].any()
+    assert np.isnan(result.d[[0, 2]]).all()
+
+    expected_valid = (result.t <= 1.0) | (result.t >= 2.0)
+    np.testing.assert_array_equal(result.valid[1], expected_valid)
+    assert np.isnan(result.d[1, ~expected_valid]).all()
+    np.testing.assert_allclose(result.d[1, result.t <= 1.0], 0.0)
 
 
 # Tensor-specific indexing
@@ -2552,3 +2748,68 @@ def test_format_axes_wrapping(wrap_left: bool) -> None:
         expected.append(f"{label}{left:14}  {right}".rstrip())
 
     assert result.splitlines() == expected
+
+
+@pytest.mark.parametrize("all_empty", [False, True])
+def test_preserves_trials_without_data(
+    spike_source: nap.TsGroup,
+    sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
+    all_empty: bool,
+) -> None:
+    intervals = nap.IntervalSet(
+        start=[-2.0, 0.0, 3.0, 13.5, 16.0],
+        end=[-1.0, 1.0, 3.5, 14.5, 17.0],
+        metadata={"condition": ["a", "b", "c", "d", "e"]},
+    )
+    expected_valid = np.array(
+        [
+            [False, False, False, False, False],
+            [True, True, True, True, True],
+            [True, True, True, False, False],
+            [True, True, True, False, False],
+            [False, False, False, False, False],
+        ]
+    )
+    expected_event_counts = np.array([0, 4, 0, 0, 0])
+
+    if all_empty:
+        intervals = intervals[[0, 4]]
+        expected_valid = expected_valid[[0, 4]]
+        expected_event_counts = expected_event_counts[[0, 4]]
+
+    timestamps = nap.TsTrials(spike_source, intervals)
+    sampled = nap.TsdTrials(
+        sampled_source,
+        intervals,
+        sample_period=0.25,
+    )
+
+    n_trials = len(intervals)
+    assert timestamps.shape == (n_trials, 2)
+    assert sampled.shape == (n_trials, 5, *sampled_source.shape[1:])
+    assert sampled.valid.shape == (n_trials, 5)
+
+    for result in (timestamps, sampled):
+        assert len(result) == n_trials
+        np.testing.assert_array_equal(result.trial_ids, intervals.index)
+        np.testing.assert_array_equal(result.trials.values, intervals.values)
+        np.testing.assert_array_equal(
+            result.trials["condition"],
+            intervals["condition"],
+        )
+        np.testing.assert_allclose(result.window_starts, 0.0)
+        np.testing.assert_allclose(
+            result.window_ends,
+            intervals.end - intervals.start,
+        )
+        np.testing.assert_allclose(
+            result.durations,
+            intervals.end - intervals.start,
+        )
+
+    for trial_id, expected in zip(timestamps.trial_ids, expected_event_counts):
+        assert np.count_nonzero(timestamps.trial_index == trial_id) == expected
+
+    np.testing.assert_array_equal(sampled.t, np.arange(5) / 4)
+    np.testing.assert_array_equal(sampled.valid, expected_valid)
+    assert np.isnan(sampled.d[~expected_valid]).all()

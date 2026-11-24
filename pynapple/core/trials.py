@@ -637,7 +637,6 @@ class TsTrials(_TrialMetadataMixin):
             raise TypeError("source must be a TsGroup.")
         if not isinstance(trials, IntervalSet):
             raise TypeError("trials must be an IntervalSet.")
-
         if any(not isinstance(source[key], Ts) for key in source):
             raise TypeError("TsTrials requires a TsGroup containing Ts entries.")
 
@@ -645,17 +644,6 @@ class TsTrials(_TrialMetadataMixin):
         self._trial_ids = np.asarray(trials.index).copy()
         starts = np.asarray(trials.start, dtype=float)
         ends = np.asarray(trials.end, dtype=float)
-
-        support = source.time_support
-        support_positions = np.searchsorted(support.start, starts, side="right") - 1
-
-        if len(starts) and (
-            np.any(support_positions < 0)
-            or np.any(ends > support.end[support_positions])
-        ):
-            raise ValueError(
-                "Each trial must be fully contained within a source time-support interval."
-            )
 
         self.alignment = "start"
         self.window_starts = np.zeros(len(trials), dtype=float)
@@ -1482,7 +1470,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
     ----------
     source : Tsd, TsdFrame, or TsdTensor
         Source data containing at least two samples.
-        Timestamps are linearly interpolated to a uniform grid.
+        Values are resampled onto a uniform grid, with antialias filtering
+        when downsampling uniformly sampled source intervals.
         Columns and column metadata are retained for a TsdFrame source.
         Tensor dimensions are positional and have no labels or metadata.
     trials : IntervalSet
@@ -1508,8 +1497,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Shared aligned timestamps in seconds.
     valid : numpy.ndarray
         Boolean mask with shape ``(trial, time)`` indicating which
-        samples belong to each trial's current window. Validity applies
-        to all trailing dimensions.
+        timestamps lie within the trial window and have source coverage.
+        Validity applies to all trailing dimensions and does not imply
+        that the corresponding values are finite.
     shape : tuple of int
         Dimensions of the data array.
     ndim : int
@@ -1541,25 +1531,54 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
 
     Notes
     -----
-    Construction linearly interpolates source values onto a shared grid
-    starting at relative time zero, with spacing ``sample_period``.
-    Each trial is evaluated at its start plus these relative timestamps.
-    Trial endpoints are included only when they lie on the grid, within
-    numerical tolerance.
+    Construction resamples source values onto a shared grid starting at
+    relative time zero, with spacing ``sample_period``. Each trial is
+    evaluated at its start plus these relative timestamps. Trial endpoints
+    are included only when they lie on the grid, within numerical tolerance.
 
-    Interpolation is performed independently for every trailing coordinate.
-    Source NaNs are not removed or filled: evaluating a source NaN or
-    interpolating between samples when either endpoint is NaN produces NaN.
+    Resampling is performed independently within each source time-support
+    interval. The source sampling interval is estimated from the median
+    difference between consecutive timestamps. Sampling is considered
+    uniform when these differences match the estimate within a relative
+    tolerance of ``1e-6`` and an absolute tolerance of ``1e-12`` seconds.
 
-    Interpolation may use source samples outside the trial boundaries, but
-    never crosses separate source time-support intervals. No extrapolation
-    is performed beyond the available samples, apart from clipping numerical
-    roundoff at the boundaries.
+    For uniformly sampled intervals, if ``sample_period`` exceeds the
+    source sampling interval by more than a relative tolerance of ``1e-6``,
+    an eighth-order Chebyshev type I low-pass filter is applied before
+    resampling. The filter has 0.05 dB passband ripple and a critical
+    frequency of ``0.8 / ratio``, normalized to the source Nyquist
+    frequency, where ``ratio = sample_period / source_sampling_interval``.
+    Forward-backward filtering gives zero phase shift. Short intervals
+    use reduced filter padding and may exhibit stronger boundary artifacts.
 
-    The ``valid`` mask describes interpolation availability, not whether
-    values are finite. Samples outside a trial or without source coverage
-    are invalid and contain NaN. Samples affected by source NaNs remain
-    valid but contain NaN.
+    Filtered values are linearly interpolated onto the exact trial grid.
+    This supports noninteger sampling ratios and trial starts between
+    source timestamps. With an integer ratio and matching grid origins,
+    this is equivalent to selecting every ``ratio``-th filtered sample.
+    Note that interpolation will be incorrect for circular data.
+
+    Equal-rate sampling, upsampling, and irregularly sampled source
+    intervals use linear interpolation without antialias filtering.
+    Downsampling irregularly sampled data therefore has no antialias
+    protection. Single-sample support intervals are not filtered and
+    provide coverage only at that sample, within numerical tolerance.
+
+    Filtering and interpolation operate independently for every trailing
+    coordinate. Source NaNs are not removed or filled. Without filtering,
+    evaluating a source NaN or interpolating between samples with a NaN
+    endpoint produces NaN. With filtering, a source NaN can propagate
+    throughout its trailing coordinate within that source support interval.
+
+    Filtering and interpolation may use source samples outside the trial
+    boundaries, but never cross separate source time-support intervals.
+    No extrapolation is performed beyond the available samples, apart
+    from clipping numerical roundoff at the boundaries.
+
+    All trial intervals are retained, including those partially or entirely
+    outside source coverage. The shared grid is determined by trial
+    durations, not by source coverage. Unavailable samples have
+    ``valid=False`` and contain NaN. Samples affected by source NaNs
+    remain valid but contain NaN.
 
     Indexing follows the axis order ``(trial, time, ...)``.
     Trial scalar/list selectors use original trial identifiers.
@@ -1913,7 +1932,9 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         sample_period: float,
         time_support: IntervalSet,
     ) -> tuple[np.ndarray, TsIndex, np.ndarray]:
-        """Interpolate trials without extrapolating or removing source NaNs."""
+        """Antialias downsampling and interpolate onto the trial grid."""
+        from scipy import signal
+
         tolerance = max(sample_period * 1e-6, np.finfo(float).eps * 32)
         sample_counts = (
             np.floor((durations + tolerance) / sample_period).astype(int) + 1
@@ -1948,6 +1969,37 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 & (absolute_time >= source_time[0] - tolerance)
                 & (absolute_time <= source_time[-1] + tolerance)
             )
+            if not available.any():
+                continue
+
+            source_data = source_flat[left:right]
+            if len(source_time) > 1 and n_features:
+                differences = np.diff(source_time)
+                source_period = float(np.median(differences))
+                uniform = np.allclose(
+                    differences,
+                    source_period,
+                    rtol=1e-6,
+                    atol=1e-12,
+                )
+                ratio = sample_period / source_period
+
+                if uniform and ratio > 1.0 + 1e-6:
+                    sos = signal.cheby1(
+                        8,
+                        0.05,
+                        0.8 / ratio,
+                        output="sos",
+                    )
+                    # Default padding for this filter, bounded for short inputs.
+                    padlen = min(3 * (2 * len(sos) + 1), len(source_time) - 1)
+                    source_data = signal.sosfiltfilt(
+                        sos,
+                        source_data,
+                        axis=0,
+                        padlen=padlen,
+                    )
+
             query = np.clip(
                 absolute_time[available],
                 source_time[0],
@@ -1958,7 +2010,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
                 values[:, :, feature][available] = np.interp(
                     query,
                     source_time,
-                    source_flat[left:right, feature],
+                    source_data[:, feature],
                 )
 
             valid |= available
