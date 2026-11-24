@@ -31,6 +31,11 @@ Metadata <user_guide/03_metadata>
 :::{card} High-level analysis
 ```{toctree}
 :maxdepth: 2
+Trials <user_guide/04_trials>
+```
+
+```{toctree}
+:maxdepth: 2
 Correlograms & ISI <user_guide/05_correlograms_isi>
 ```
 
@@ -76,7 +81,7 @@ Extracting phases and envelopes <user_guide/13_phases_and_envelopes>
 
 ```{toctree}
 :maxdepth: 2
-Building trial-based tensors <user_guide/14_warping>
+Time warping <user_guide/14_warping>
 ```
 
 :::

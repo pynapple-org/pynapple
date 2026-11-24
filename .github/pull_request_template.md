@@ -1,4 +1,4 @@
-Thank you for opening this PR. Filling out this template will help the maintainers of pynapple to review your contribution. 
+Thank you for opening this PR. Filling out this template will help the maintainers of pynapple to review your contribution.
 
 This PR template has 2 sections. Please fill the first section yourself. Optionally, description of the PR by a LLM can be included in the second section.
 
@@ -31,5 +31,3 @@ Affirm that you have done the following:
 - [ ] I have added any necessary documentation. This includes docstrings, updates to existing files found in `doc/`, or (for large changes) adding new files to the `doc/` folder.
 
 # AI description of the PR (optional)
-
-
