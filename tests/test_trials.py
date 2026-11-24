@@ -1711,6 +1711,57 @@ class TestTsdTrials:
                 assert result.shape == selected.shape
                 assert_same_axes(result, selected)
 
+    @pytest.mark.parametrize("only_empty", [False, True])
+    def test_recompute_support_includes_empty_trials(
+        self,
+        sampled_source: nap.Tsd | nap.TsdFrame | nap.TsdTensor,
+        only_empty: bool,
+    ) -> None:
+        intervals = nap.IntervalSet(
+            start=[0.0, 20.0, 30.0],
+            end=[1.0, 23.0, 32.0],
+            metadata={"condition": ["a", "b", "c"]},
+        )
+        data = nap.TsdTrials(
+            sampled_source,
+            intervals,
+            sample_period=0.25,
+        )
+        subset = data[[2]] if only_empty else data[[0, 2]]
+
+        result = subset.recompute_support()
+        expected = subset[:, :9]
+
+        assert data.shape[1] == 13
+        assert subset.shape[1] == 13
+        assert result.shape == (len(subset), 9, *sampled_source.shape[1:])
+        np.testing.assert_array_equal(result.t, np.arange(9) / 4)
+        np.testing.assert_array_equal(result.d, expected.d)
+        assert_same_axes(result, expected)
+
+        # The empty two-second trial determines the retained grid.
+        assert not result.valid[-1].any()
+        assert np.isnan(result.d[-1]).all()
+
+    def test_recompute_support_without_trials(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        result = tsd_trials[:0].recompute_support()
+
+        assert result.shape == (0, 0, *tsd_trials.shape[2:])
+        assert result.valid.shape == (0, 0)
+
+    def test_recompute_support_does_not_restore_times(
+        self,
+        tsd_trials: nap.TsdTrials,
+    ) -> None:
+        subset = tsd_trials[:, :3]
+        result = subset.recompute_support()
+
+        np.testing.assert_array_equal(result.d, subset.d)
+        assert_same_axes(result, subset)
+
 
 @pytest.mark.parametrize("trailing_shape", [(), (2,), (2, 3)])
 def test_trial_downsampling_matches_decimate(

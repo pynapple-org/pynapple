@@ -2659,6 +2659,48 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             alignment=self.alignment,
         )
 
+    def recompute_support(self) -> TsdTrials:
+        """
+        Trim the shared time axis to the current trial windows.
+
+        All trials are retained. Empty trials contribute their full window
+        boundaries, regardless of sample validity or available values.
+
+        Returns
+        -------
+        TsdTrials
+            Selected time points with unchanged trial windows and metadata.
+            The original object is unchanged.
+
+        Notes
+        -----
+        Continuous data retain timestamps within the earliest window start
+        and latest window end. Count data retain bins overlapping this
+        range, including partial boundary bins with their existing validity.
+
+        This method only trims existing time points. It does not resample,
+        restore removed samples, or change the validity of retained samples.
+        """
+        if not len(self):
+            return self[:, :0]
+
+        start = float(self.window_starts.min())
+        end = float(self.window_ends.max())
+        tolerance = max(
+            abs(self.sample_period) * 1e-6 if self.sample_period is not None else 0.0,
+            np.finfo(float).eps * 32,
+        )
+
+        if self.data_kind == "count":
+            half_bin = self.bin_size / 2
+            selected = (self.t + half_bin > start + tolerance) & (
+                self.t - half_bin < end - tolerance
+            )
+        else:
+            selected = (self.t >= start - tolerance) & (self.t <= end + tolerance)
+
+        return self[:, selected]
+
     def normalize(
         self,
         axes: int | tuple[int, ...] | None = (0, 1),
