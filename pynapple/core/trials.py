@@ -268,6 +268,47 @@ def _expand_key(key: object, ndim: int) -> tuple[object, ...]:
     return keys + (slice(None),) * missing
 
 
+class _TrialIndexer:
+    """Select trial data by position or label."""
+
+    def __init__(
+        self,
+        obj: TsTrials | TsdTrials,
+        *,
+        positional: bool,
+    ) -> None:
+        self._obj = obj
+        self._positional = positional
+
+    def __getitem__(self, key: object) -> Any:
+        obj = self._obj
+        if not self._positional:
+            return obj[key]
+
+        keys = list(_expand_key(key, len(obj.shape)))
+        label_axes = {0: obj.trial_ids}
+
+        if isinstance(obj, TsTrials):
+            label_axes[1] = obj.unit_keys
+        elif obj.feature_names is not None:
+            label_axes[2] = obj.feature_names
+
+        for axis, labels in label_axes.items():
+            selector = keys[axis]
+            if selector is None:
+                raise IndexError("Adding axes with None is not supported.")
+
+            positions, scalar = _normalize_positions(
+                selector,
+                obj.shape[axis],
+                f"axis {axis}",
+            )
+            selected = np.asarray(labels)[positions]
+            keys[axis] = selected[0] if scalar else selected
+
+        return obj[tuple(keys)]
+
+
 class _TrialMetadataMixin:
     trials: IntervalSet
     _trial_ids: np.ndarray
@@ -281,6 +322,16 @@ class _TrialMetadataMixin:
     def trial_ids(self) -> np.ndarray:
         """Original identifiers of the selected trials."""
         return self._trial_ids
+
+    @property
+    def iloc(self) -> _TrialIndexer:
+        """Index all axes positionally, with stop-exclusive slices."""
+        return _TrialIndexer(self, positional=True)
+
+    @property
+    def loc(self) -> _TrialIndexer:
+        """Index trial/unit/feature labels using the same rules as []."""
+        return _TrialIndexer(self, positional=False)
 
     def groupby(self, by: str):
         """

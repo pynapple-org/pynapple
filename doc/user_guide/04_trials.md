@@ -538,6 +538,79 @@ the `(trial, time)` validity mask applies to every pixel, and unavailable
 samples are padded with `NaN`.
 
 
+## Indexing by position or label
+
+Both trial classes provide `.iloc[...]` for positional indexing and
+`.loc[...]` for the same selection rules as ordinary `[...]` indexing.
+
+Trial identifiers are preserved when selecting a subset. For example,
+the left-target trials have identifiers `0` and `2`:
+
+```{code-cell} ipython3
+left_signals = signal_trials[signal_trials.trials["target"] == "left"]
+left_signals.trial_ids
+```
+
+Use `.iloc` to select the second trial in this subset by position:
+
+```{code-cell} ipython3
+second_left_trial = left_signals.iloc[1]
+second_left_trial
+```
+
+Use `.loc` to select the same trial by its original identifier:
+
+```{code-cell} ipython3
+same_trial = left_signals.loc[2]
+same_trial
+```
+
+`left_signals[2]` is equivalent to `left_signals.loc[2]`.
+In contrast, `left_signals[1]` raises a `KeyError` because trial identifier
+`1` is absent from this subset.
+
+### Selecting units and features
+
+For `TsTrials`, `.iloc` selects both trials and units by position:
+
+```{code-cell} ipython3
+second_unit = spike_trials.iloc[:, 1]
+second_unit
+```
+
+For `TsdTrials`, `.iloc` selects features by position instead of column name:
+
+```{code-cell} ipython3
+second_signal = signal_trials.iloc[:, :, 1]
+second_signal
+```
+
+The equivalent label-based selection is:
+
+```{code-cell} ipython3
+second_signal = signal_trials.loc[:, :, "signal_2"]
+```
+
+Time and tensor dimensions are positional with either indexer.
+To select a window using time values rather than positions, use
+`get(start, end)`.
+
+### Keeping axes and using slices
+
+A scalar trial selector returns a regular time-series object.
+Use a list or slice to retain the trial axis:
+
+```{code-cell} ipython3
+one_trial = left_signals.iloc[[1]]
+one_trial.shape
+```
+
+Negative positions count from the end:
+
+```{code-cell} ipython3
+last_trial = left_signals.iloc[-1]
+```
+
 ## Grouping trials
 
 Both trial classes support grouping by a trial metadata column.

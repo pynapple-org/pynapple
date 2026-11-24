@@ -263,6 +263,18 @@ class TestTsTrials:
         )
         assert "rate" not in ts_trials.unit_metadata.columns
 
+    def test_iloc_units(self, ts_trials: nap.TsTrials) -> None:
+        np.testing.assert_array_equal(
+            ts_trials.iloc[0, 1].t,
+            ts_trials.loc[0, 20].t,
+        )
+
+        result = ts_trials.iloc[:, [1, 0]]
+        np.testing.assert_array_equal(result.unit_keys, [20, 10])
+
+        with pytest.raises(IndexError):
+            ts_trials.iloc[:, 20]
+
     @pytest.mark.parametrize(
         "start, end, expected",
         [
@@ -1304,6 +1316,21 @@ class TestTsdTrials:
             np.testing.assert_array_equal(
                 result["region"],
                 ["ca1", "ca3"],
+            )
+
+    def test_iloc_trailing_axes(self, tsd_trials: nap.TsdTrials) -> None:
+        result = tsd_trials.iloc[..., -1]
+        expected = tsd_trials.d[..., -1]
+        actual = result.d if isinstance(result, nap.TsdTrials) else result
+
+        np.testing.assert_array_equal(actual, expected)
+
+        if tsd_trials.ndim == 3:
+            selected = tsd_trials.iloc[:, :, [1, 0]]
+            np.testing.assert_array_equal(selected.columns, ["y", "x"])
+            np.testing.assert_array_equal(
+                selected.d,
+                tsd_trials.loc[:, :, ["y", "x"]].d,
             )
 
     def test_columns(self, tsd_trials: nap.TsdTrials) -> None:
@@ -2601,6 +2628,54 @@ class TestTrialSelectionAndGrouping:
 
         if isinstance(result, nap.TsTrials):
             assert len(result.timestamps) == 0
+
+    def test_iloc_trial_positions(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        subset = trial_data[[0, 2]]
+
+        for position in (1, -1):
+            actual = subset.iloc[position]
+            expected = subset.loc[2]
+
+            if isinstance(subset, nap.TsTrials):
+                for unit in subset.unit_keys:
+                    np.testing.assert_array_equal(
+                        actual[unit].t,
+                        expected[unit].t,
+                    )
+            else:
+                assert_time_series(actual, expected.t, expected.d)
+
+        selected = subset.iloc[[1, 0]]
+        np.testing.assert_array_equal(selected.trial_ids, [0, 2])
+
+        selected = subset.iloc[1:]
+        np.testing.assert_array_equal(selected.trial_ids, [2])
+
+        selected = subset.iloc[[False, True]]
+        np.testing.assert_array_equal(selected.trial_ids, [2])
+
+        with pytest.raises(IndexError):
+            subset.iloc[2]
+
+        with pytest.raises(KeyError):
+            subset.loc[1]
+
+    def test_loc_matches_getitem(
+        self,
+        trial_data: nap.TsTrials | nap.TsdTrials,
+    ) -> None:
+        actual = trial_data.loc[[2, 0]]
+        expected = trial_data[[2, 0]]
+
+        np.testing.assert_array_equal(actual.trial_ids, expected.trial_ids)
+        np.testing.assert_array_equal(actual.t, expected.t)
+        np.testing.assert_array_equal(actual.d, expected.d)
+
+        if isinstance(actual, nap.TsdTrials):
+            assert_same_axes(actual, expected)
 
 
 def test_invalid_constructor_types(
