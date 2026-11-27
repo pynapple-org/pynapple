@@ -9,6 +9,45 @@ from scipy import signal
 import pynapple as nap
 
 
+@pytest.mark.parametrize(
+    "kind, cutoff",
+    [("lowpass", 10), ("highpass", 10), ("bandpass", (10, 30)), ("bandstop", (10, 30))],
+)
+@pytest.mark.parametrize("shape", [(300,), (300, 2), (300, 2, 3)])
+@pytest.mark.parametrize(
+    "dtype", [np.int16, np.uint16, np.int64, np.float32, np.float64, np.complex128]
+)
+@pytest.mark.parametrize("split", [False, True])
+def test_butterworth_output_dtype(kind, cutoff, shape, dtype, split):
+    t = np.arange(300) / 500
+    rng = np.random.default_rng(42)
+    data = rng.integers(1, 200, size=shape).astype(dtype)
+    if dtype == np.complex128:
+        data += 1j * rng.normal(size=shape)
+    ep = (
+        nap.IntervalSet(start=[0, 0.4], end=[0.2, 0.598])
+        if split
+        else nap.IntervalSet(0, 0.598)
+    )
+    cls = {1: nap.Tsd, 2: nap.TsdFrame, 3: nap.TsdTensor}[len(shape)]
+    sig = cls(t=t, d=data, time_support=ep)
+    before = sig.values.copy()
+    out = getattr(nap, "apply_" + kind + "_filter")(sig, cutoff, fs=500)
+    sos = signal.butter(4, cutoff, btype=kind, fs=500, output="sos")
+    reference = np.zeros(sig.shape, dtype=np.result_type(data.dtype, sos.dtype))
+    for start, end in ep.values:
+        selected = (sig.t >= start) & (sig.t <= end)
+        reference[selected] = signal.sosfiltfilt(sos, sig.values[selected], axis=0)
+    np.testing.assert_allclose(out.values, reference, rtol=1e-12, atol=1e-12)
+    assert out.dtype == reference.dtype
+    assert isinstance(out, cls)
+    np.testing.assert_array_equal(out.t, sig.t)
+    np.testing.assert_array_equal(out.time_support.values, sig.time_support.values)
+    np.testing.assert_array_equal(sig.values, before)
+    if isinstance(sig, nap.TsdFrame):
+        np.testing.assert_array_equal(out.columns, sig.columns)
+
+
 # @pytest.fixture
 def sample_data():
     # Create a sample Tsd data object
