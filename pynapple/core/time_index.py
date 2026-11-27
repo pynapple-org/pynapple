@@ -178,6 +178,13 @@ class TsIndex(np.ndarray):
         """
         return np.asarray(self)
 
+    def __getitem__(self, key):
+        """Index timestamps, rejecting multidimensional results."""
+        result = super().__getitem__(key)
+        if isinstance(result, np.ndarray) and result.ndim > 1:
+            raise ValueError("TsIndex must remain one-dimensional.")
+        return result
+
     def __setitem__(self, *args, **kwargs):
         raise RuntimeError("TsIndex object is not mutable.")
 
