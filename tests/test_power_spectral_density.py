@@ -8,6 +8,45 @@ from scipy import signal
 
 import pynapple as nap
 
+
+@pytest.mark.parametrize("n", [80, 128, 157, 256])
+@pytest.mark.parametrize("frame", [False, True])
+@pytest.mark.parametrize("full_range", [False, True])
+@pytest.mark.parametrize("restrict", [False, True])
+def test_periodogram_transform_length(n, frame, full_range, restrict):
+    rng = np.random.default_rng(42)
+    data = rng.normal(size=(128, 2) if frame else 128)
+    t = np.arange(128) / 100
+    sig = (nap.TsdFrame if frame else nap.Tsd)(t=t, d=data)
+    kwargs = {}
+    if restrict:
+        kwargs["ep"] = nap.IntervalSet(0.2, 1.09)
+    before = sig.values.copy()
+    actual = nap.compute_power_spectral_density(
+        sig, fs=100, n=n, full_range=full_range, **kwargs
+    )
+    observed = data[20:110] if restrict else data
+    freq, reference = signal.periodogram(
+        observed, fs=100, nfft=n, detrend=False, return_onesided=not full_range, axis=0
+    )
+    if full_range:
+        order = np.argsort(freq)
+        freq, reference = freq[order], reference[order]
+    else:
+        selected = freq < 50  # The public API excludes the even-length Nyquist bin.
+        freq, reference = freq[selected], reference[selected]
+    np.testing.assert_allclose(actual.index.values, freq, atol=1e-12)
+    np.testing.assert_allclose(
+        actual.values, reference.reshape(len(freq), -1), rtol=1e-12, atol=1e-12
+    )
+    if full_range:
+        integrated = actual.values.sum(axis=0) * 100 / n
+        np.testing.assert_allclose(
+            integrated, np.mean(observed[:n] ** 2, axis=0), rtol=1e-12
+        )
+    np.testing.assert_array_equal(sig.values, before)
+
+
 ############################################################
 # Test for power_spectral_density
 ############################################################
