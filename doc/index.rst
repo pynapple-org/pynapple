@@ -123,7 +123,7 @@ pynapple: python neural analysis package
 
    .. grid-item-card:: Correlation
       :text-align: center
-      :link: ./user_guide/05_correlograms_isi.html
+      :link: ./user_guide/05_correlograms.html
 
       .. image:: _static/example_thumbs/correlation.svg
          :width: 100px

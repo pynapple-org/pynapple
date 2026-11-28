@@ -1,5 +1,6 @@
 """Tests of correlograms for `pynapple` package."""
 
+import math
 from contextlib import nullcontext as does_not_raise
 from itertools import combinations
 
@@ -504,7 +505,10 @@ def test_lagged_correlation_scales_match_selected_samples(counts, max_lag):
         maximums = np.zeros(data.shape[1])
         for row in data[rows]:
             maximums = np.fmax(maximums, np.abs(row))
-        expected.append(np.ldexp(1.0, np.frexp(maximums)[1] - 1))
+        # math.frexp always gives an exponent of 0 for inf, as numba does. The
+        # exponent np.frexp gives for inf depends on the C library (-1 on some
+        # Windows installations).
+        expected.append([math.ldexp(1.0, math.frexp(m)[1] - 1) for m in maximums])
     np.testing.assert_array_equal(scales, expected)
 
 
@@ -1242,6 +1246,12 @@ def test_crosscorrelogram_reverse():
                 TypeError, match="bins should be either int, list or np.ndarray."
             ),
         ),
+        (
+            (get_group(), True),
+            pytest.raises(
+                TypeError, match="bins should be either int, list or np.ndarray."
+            ),
+        ),
         ((get_group(), 2), does_not_raise()),
         ((get_group(), [1, 2, 3]), does_not_raise()),
         ((get_group(), np.array((10,))), does_not_raise()),
@@ -1388,6 +1398,53 @@ def test_compute_isi_distribution_constant_intervals(
         np.testing.assert_array_equal(actual[column], expected)
     np.testing.assert_allclose(actual.index, edges[:-1] + np.diff(edges) / 2)
     assert actual.index.is_unique
+
+
+@pytest.mark.parametrize("bins", [3, [0.0, 1.5, 3.0]])
+@pytest.mark.parametrize("log_scale", [False, True])
+def test_compute_isi_distribution_empty_unit(bins, log_scale):
+    # units 1 and 2 have no interval: their columns are NaN, and they do not
+    # change the bins or the counts of unit 0
+    group = nap.TsGroup(
+        {
+            0: nap.Ts(np.array([1.0, 2.0, 4.0])),
+            1: nap.Ts(np.array([])),
+            2: nap.Ts(np.array([3.0])),
+        },
+        time_support=nap.IntervalSet(0, 10),
+    )
+    actual = nap.compute_isi_distribution(group, bins=bins, log_scale=log_scale)
+    expected = nap.compute_isi_distribution(group[0], bins=bins, log_scale=log_scale)
+    assert list(actual.columns) == [0, 1, 2]
+    np.testing.assert_allclose(actual.index, expected.index)
+    np.testing.assert_array_equal(actual[0], expected[0])
+    assert expected[0].sum() == 2
+    assert actual[[1, 2]].isna().all(axis=None)
+
+
+@pytest.mark.parametrize("bins", [3, [0.0, 1.5, 3.0]])
+@pytest.mark.parametrize("times", [[[]], [[1.0]], [[], [1.0]]])
+def test_compute_isi_distribution_no_intervals(times, bins):
+    data = nap.TsGroup(
+        {i: nap.Ts(np.array(t)) for i, t in enumerate(times)},
+        time_support=nap.IntervalSet(0, 10),
+    )
+    if len(times) == 1:
+        data = data[0]
+    actual = nap.compute_isi_distribution(data, bins=bins)
+    assert isinstance(actual, pd.DataFrame)
+    assert len(actual) == (bins if isinstance(bins, int) else len(bins) - 1)
+    assert actual.isna().all(axis=None)
+
+
+def test_compute_isi_distribution_log_scale_zero_interval():
+    # the log of the interval between the two identical times is -inf: it is
+    # left out of the bins, which span the finite values
+    data = nap.Ts(np.array([1.0, 1.0, 2.0, 2.0 + np.e]))
+    with np.errstate(divide="ignore"):
+        actual = nap.compute_isi_distribution(data, bins=2, log_scale=True)
+    np.testing.assert_allclose(actual.index, [0.25, 0.75])
+    np.testing.assert_array_equal(actual[0], [1, 1])
 
 
 @pytest.mark.parametrize("n_units", [2, 5, 12])

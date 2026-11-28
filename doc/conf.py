@@ -150,7 +150,7 @@ copybutton_prompt_text = r">>> |\$ |# "
 copybutton_prompt_is_regexp = True
 
 # Enable markdown and notebook support
-myst_enable_extensions = ["colon_fence"]  # For improved markdown
+myst_enable_extensions = ["colon_fence", "dollarmath"]  # For improved markdown and $...$ math
 
 # # ----------------------------------------------------------------------------
 # # -- Autodoc and Napoleon Options -------------------------------------------------
